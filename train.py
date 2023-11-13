@@ -1,18 +1,17 @@
 import os
 import time
-from Dataloader import Dataloader
-import cv2
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from umap import UMAP
+
+from Dataloader import Dataloader
 from SSIM import SSIM
 # from MMD_Loss import calculate_mmd
 from model import Autoencodermodel
-import matplotlib.pyplot as plt
-
-
 
 epochs = 150
 batch_size = 128
