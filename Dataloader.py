@@ -54,8 +54,7 @@ class Dataloader(Dataset):
         datasets = {}
         remove_keys = ["15-48904.PB.PAP~B.1272-1272.TIF", "15-48904.PB.PAP~B.1514-1514.TIF"]
 
-        datasets_dir = ("/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL"
-                        "'-AML_MLLdataset.dat.gz")
+        datasets_dir = ("/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz")
         keys = np.unique([x.split("-")[1] for x in os.listdir(datasets_dir)])
 
         for k in keys:
