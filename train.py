@@ -33,6 +33,7 @@ criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 
 all_z = []
+latent_space_dimension = None
 
 umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
@@ -79,6 +80,11 @@ for epoch in range(epochs):
     model.eval()
 
     if epoch % 10 == 0:
+
+        if latent_space_dimension is None:
+            z_shape = z.shape[1]  # Get the number of features in z
+            latent_space_dimension = z_shape
+
         # UMAP for latent space
         latent_data = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             np.vstack(all_z))
