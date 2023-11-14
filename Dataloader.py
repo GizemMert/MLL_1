@@ -4,7 +4,6 @@ import pickle
 import os
 import cv2
 from torch.utils.data import Dataset
-from torch.utils.data import DataLoader, TensorDataset
 
 equivalent_classes = {
 
@@ -48,51 +47,33 @@ label_map = {
 
 class Dataloader(Dataset):
     def __init__(self):
-        self.datasets_names = ["INT-20"]
 
-        # loading features
-        datasets = {}
-        remove_keys = ["15-48904.PB.PAP~B.1272-1272.TIF", "15-48904.PB.PAP~B.1514-1514.TIF"]
-
-        datasets_dir = ("/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz")
-        keys = np.unique([x.split("-")[1] for x in os.listdir(datasets_dir)])
-
-        for k in keys:
-            datasets[k] = [x for x in os.listdir(datasets_dir) if x.split("-")[1] == k]
+        features_mll_path = (
+            "/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz")
 
         samples = {}
-        for dataset in datasets:
-            for file in datasets[dataset]:
-                print("loading ", dataset, "... ", end="", flush=True)
-                with gzip.open(os.path.join(datasets_dir, file), "rb") as f:
-                    data = pickle.load(f)
-                    for d in data:
-                        data[d]["dataset"] = dataset
-                        if "label" not in data[d].keys() and dataset == "AML":
-                            data[d]["label"] = d.split("_")[0]
-                    samples = {**samples, **data}
-                print("[done]")
+        with gzip.open(os.path.join(features_mll_path), "rb") as f:
+            data = pickle.load(f)
+            for d in data:
+                data[d]["dataset"] = "MLL-AML"
+                if "label" not in data[d].keys() and dataset == "AML":
+                    data[d]["label"] = d.split("_")[0]
+            samples = {**samples, **data}
+        print("[done]")
 
         samples2 = samples.copy()
         for s in samples2:
             if equivalent_classes[samples[s]["label"]] == "unknown":
                 samples.pop(s, None)
 
-        for k in remove_keys:
-            samples.pop(k, None)
-        # for k in cleanup_pbc:
-        #     samples.pop(k, None)
-
         # loading images
         images = {}
-        images_dir = "/lustre/groups/aih/raheleh.salehi/Master-thesis/save_files/ mll_images.pkl.gz"
-        image_files = os.listdir(images_dir)
-        for img_file in image_files:
-            print("loading", img_file, "...", end="", flush=True)
-            with gzip.open(os.path.join(images_dir, img_file), "rb") as f:
-                file_images = pickle.load(f)
-            images = {**images, **file_images}
-            print("[done]")
+        images_path = "/lustre/groups/aih/raheleh.salehi/Master-thesis/save_files/mll_images.pkl.gz"
+
+        with gzip.open(os.path.join(images_path), "rb") as f:
+            file_images = pickle.load(f)
+        images = {**images, **file_images}
+        print("[done]")
 
         self.datasets = datasets
         self.samples = samples
@@ -127,8 +108,4 @@ class Dataloader(Dataset):
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        ds = np.zeros(len(self.datasets_names))
-        ds[self.datasets_names.index(self.samples[key]['dataset'])] = 1
-
-        return feat, roi_cropped, label_fold, ds, key
-
+        return feat, roi_cropped, label_fold, key

@@ -10,7 +10,6 @@ from umap import UMAP
 
 from Dataloader import Dataloader
 from SSIM import SSIM
-# from MMD_Loss import calculate_mmd
 from model import Autoencodermodel
 
 epochs = 150
@@ -26,28 +25,31 @@ if ngpu > 1:
 
 model = model.to(device)
 
-## Load the dataset
+# Load the dataset
 dataset = Dataloader()
-traindataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)  ##32
+traindataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 
 all_z = []
 
+umap_dir = 'umap_figures'
+if not os.path.exists(umap_dir):
+    os.makedirs(umap_dir)
+
 for epoch in range(epochs):
     loss = 0
     acc_imrec_loss = 0
     acc_featrec_loss = 0
-    # acc_mmdloss1 = 0
-    # acc_mmdloss2 = 0
+
     model.train()
 
-    for feat, scimg, label, ds, _ in traindataloader:
+    for feat, scimg, label, _ in traindataloader:
         feat = feat.float()
         scimg = scimg.float()
 
-        feat, scimg, ds = feat.to(device), scimg.to(device), ds.to(device)
+        feat, scimg = feat.to(device), scimg.to(device)
 
         optimizer.zero_grad()
 
@@ -58,7 +60,6 @@ for epoch in range(epochs):
 
         feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
-        # mmd_loss1, mmd_loss2 = calculate_mmd(z, ds)
         train_loss = imrec_loss + feat_rec_loss
 
         train_loss.backward()
@@ -67,29 +68,33 @@ for epoch in range(epochs):
         loss += train_loss.data.cpu()
         acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += imrec_loss.data.cpu()
-        # acc_mmdloss1+=mmd_loss1.data.cpu()
-        # acc_mmdloss2+=mmd_loss2.data.cpu()
 
     loss = loss / len(traindataloader)
     acc_featrec_loss = acc_featrec_loss / len(traindataloader)
     acc_imrec_loss = acc_imrec_loss / len(traindataloader)
-    # acc_mmdloss1 = acc_mmdloss1/ len(traindataloader)
-    # acc_mmdloss2 = acc_mmdloss2/ len(traindataloader)
     # display the epoch training loss
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f},imrec_loss = {:.6f}".format
           (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss))
 
-    # UMAP
-    latent_data = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-        np.vstack(all_z))
+    model.eval()
 
-    plt.figure(figsize=(12, 10), dpi=150)
-    scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1, cmap='Spectral')
-    plt.colorbar(scatter)
-    plt.title('Latent Space Representation using UMAP', fontsize=18)
-    plt.xlabel('UMAP Dimension 1', fontsize=14)
-    plt.ylabel('UMAP Dimension 2', fontsize=14)
-    plt.savefig('latent_space_umap.png', dpi=300)
+    if epoch % 10 == 0:
+        # UMAP for latent space
+        latent_data = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+            np.vstack(all_z))
+
+        plt.figure(figsize=(12, 10), dpi=150)
+        scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1, cmap='Spectral')
+        plt.colorbar(scatter)
+        plt.title('Latent Space Representation using UMAP', fontsize=18)
+        plt.xlabel('UMAP Dimension 1', fontsize=14)
+        plt.ylabel('UMAP Dimension 2', fontsize=14)
+
+        umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
+
+        # Save the UMAP figure
+        plt.savefig(umap_figure_filename, dpi=300)
+        plt.close()
 
     """
     model.eval()
