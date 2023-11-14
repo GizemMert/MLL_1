@@ -77,15 +77,11 @@ for epoch in range(epochs):
 
     if epoch % 10 == 0:
 
-        if latent_space_dimension is None:
-            z_shape = z.shape
-            z_umap = z.view(-1, z_shape[-1]).data.cpu().numpy()
-            z_umap_shape = z_umap.shape[1]  # Get the number of features in z
-            latent_space_dimension = z_umap_shape
+        z_cpu = z.data.cpu().numpy()
+        z_latent = z_cpu.reshape(-1, z_cpu.shape[-1])
 
         # UMAP for latent space
-        latent_data = UMAP(n_neighbors=15, min_dist=0.1, n_components=latent_space_dimension, metric='euclidean').fit_transform(
-            np.vstack(z_umap))
+        latent_data = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(z_latent)
 
         plt.figure(figsize=(12, 10), dpi=150)
         scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1, cmap='Spectral')
