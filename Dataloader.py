@@ -75,7 +75,6 @@ class Dataloader(Dataset):
         images = {**images, **file_images}
         print("[done]")
 
-        self.datasets = datasets
         self.samples = samples
         self.images = images
 
