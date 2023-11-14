@@ -32,7 +32,6 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 
-all_z = []
 latent_space_dimension = None
 
 umap_dir = 'umap_figures'
@@ -55,9 +54,6 @@ for epoch in range(epochs):
         optimizer.zero_grad()
 
         z, output, im_out = model(feat)
-        z_cpu = z.data.cpu().numpy()
-        all_z.extend(z_cpu)
-        im_out = im_out.squeeze()
 
         feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
@@ -82,12 +78,14 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
 
         if latent_space_dimension is None:
-            z_shape = z.shape[1]  # Get the number of features in z
-            latent_space_dimension = z_shape
+            z_shape = z.shape
+            z_umap = z.view(-1, z_shape[-1]).data.cpu().numpy()
+            z_umap_shape = z_umap.shape[1]  # Get the number of features in z
+            latent_space_dimension = z_umap_shape
 
         # UMAP for latent space
-        latent_data = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-            np.vstack(all_z))
+        latent_data = UMAP(n_neighbors=15, min_dist=0.1, n_components=latent_space_dimension, metric='euclidean').fit_transform(
+            np.vstack(z_umap))
 
         plt.figure(figsize=(12, 10), dpi=150)
         scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1, cmap='Spectral')
