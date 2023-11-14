@@ -84,9 +84,9 @@ for epoch in range(epochs):
         latent_data = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(z_latent)
 
         plt.figure(figsize=(12, 10), dpi=150)
-        scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1, cmap='Spectral')
+        scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1, cmap='viridis')
         plt.colorbar(scatter)
-        plt.title('Latent Space Representation using UMAP', fontsize=18)
+        plt.title('Latent Space Representation', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
         plt.ylabel('UMAP Dimension 2', fontsize=14)
 
