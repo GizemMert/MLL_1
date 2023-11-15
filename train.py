@@ -96,7 +96,7 @@ for epoch in range(epochs):
         scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1)
         # c=all_labels, cmap='viridis'
         plt.colorbar(scatter)
-        plt.title('Latent Space Representation', fontsize=18)
+        plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
         plt.ylabel('UMAP Dimension 2', fontsize=14)
 
