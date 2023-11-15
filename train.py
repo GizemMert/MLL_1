@@ -32,7 +32,6 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 
-latent_space_dimension = None
 
 umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
@@ -45,11 +44,17 @@ for epoch in range(epochs):
 
     model.train()
 
+    if epoch % 10 == 0:
+        # all_labels = []
+        all_latent_representations = []
+
     for feat, scimg, label, _ in traindataloader:
         feat = feat.float()
         scimg = scimg.float()
 
         feat, scimg = feat.to(device), scimg.to(device)
+        # add label value above
+        # label.to(device)
 
         optimizer.zero_grad()
 
@@ -66,6 +71,10 @@ for epoch in range(epochs):
         acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += imrec_loss.data.cpu()
 
+        if epoch % 10 == 0:
+            # all_labels.extend(label.data.cpu().numpy())
+            all_latent_representations.append(z.data.cpu().numpy())
+
     loss = loss / len(traindataloader)
     acc_featrec_loss = acc_featrec_loss / len(traindataloader)
     acc_imrec_loss = acc_imrec_loss / len(traindataloader)
@@ -77,14 +86,15 @@ for epoch in range(epochs):
 
     if epoch % 10 == 0:
 
-        z_cpu = z.data.cpu().numpy()
+        z_cpu = np.concatenate(all_latent_representations, axis=0)
         z_latent = z_cpu.reshape(-1, z_cpu.shape[-1])
 
         # UMAP for latent space
         latent_data = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(z_latent)
 
         plt.figure(figsize=(12, 10), dpi=150)
-        scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1, cmap='viridis')
+        scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1)
+        # c=all_labels, cmap='viridis'
         plt.colorbar(scatter)
         plt.title('Latent Space Representation', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
@@ -95,7 +105,8 @@ for epoch in range(epochs):
         # Save the UMAP figure
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
-
+        # all_labels = []
+        all_latent_representations = []
     """
     model.eval()
     for i in range(50):
