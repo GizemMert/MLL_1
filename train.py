@@ -37,6 +37,10 @@ umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
+latent_dir = 'latent_data'
+if not os.path.exists(latent_dir):
+    os.makedirs(latent_dir)
+
 for epoch in range(epochs):
     loss = 0
     acc_imrec_loss = 0
@@ -45,7 +49,6 @@ for epoch in range(epochs):
     model.train()
 
     if epoch % 10 == 0:
-        # all_labels = []
         all_latent_representations = []
 
     for feat, scimg, label, _ in traindataloader:
@@ -72,7 +75,6 @@ for epoch in range(epochs):
         acc_imrec_loss += imrec_loss.data.cpu()
 
         if epoch % 10 == 0:
-            # all_labels.extend(label.data.cpu().numpy())
             all_latent_representations.append(z.data.cpu().numpy())
 
     loss = loss / len(traindataloader)
@@ -82,19 +84,22 @@ for epoch in range(epochs):
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f},imrec_loss = {:.6f}".format
           (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss))
 
+    if epoch % 10 == 0:
+        latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+        np.save(latent_filename, np.concatenate(all_latent_representations, axis=0))
+
     model.eval()
 
     if epoch % 10 == 0:
-
-        z_cpu = np.concatenate(all_latent_representations, axis=0)
-        z_latent = z_cpu.reshape(-1, z_cpu.shape[-1])
+        # Load all latent representations from saved files
+        latent_data = np.load(latent_filename)
 
         # UMAP for latent space
-        latent_data = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(z_latent)
+        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+            latent_data)
 
         plt.figure(figsize=(12, 10), dpi=150)
-        scatter = plt.scatter(latent_data[:, 0], latent_data[:, 1], s=1)
-        # c=all_labels, cmap='viridis'
+        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1)
         plt.colorbar(scatter)
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
@@ -105,8 +110,6 @@ for epoch in range(epochs):
         # Save the UMAP figure
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
-        # all_labels = []
-        all_latent_representations = []
     """
     model.eval()
     for i in range(50):
