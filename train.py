@@ -50,7 +50,7 @@ for epoch in range(epochs):
 
     if epoch % 10 == 0:
         all_latent_representations = []
-        all_labels = []
+        # all_labels = []
 
     for feat, scimg, label, _ in traindataloader:
         feat = feat.float()
@@ -75,13 +75,14 @@ for epoch in range(epochs):
 
         if epoch % 10 == 0:
             all_latent_representations.append(z.data.cpu().numpy())
-
+            """"
             if isinstance(label, tuple):
                 actual_label = label[0]
                 if torch.is_tensor(actual_label):
                     all_labels.extend(actual_label.data.cpu().numpy())
                 else:
                     all_labels.extend(actual_label)
+            """
 
     loss = loss / len(traindataloader)
     acc_featrec_loss = acc_featrec_loss / len(traindataloader)
@@ -101,16 +102,16 @@ for epoch in range(epochs):
         latent_data = np.load(latent_filename)
         latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
         print(latent_data_reshaped.shape)
-        all_labels_array = np.array(all_labels)
-        print("Labels array shape:", all_labels_array.shape)
-        print("Labels array dtype:", all_labels_array.dtype)
+        # all_labels_array = np.array(all_labels)
+        # print("Labels array shape:", all_labels_array.shape)
+        # print("Labels array dtype:", all_labels_array.dtype)
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
         plt.figure(figsize=(12, 10), dpi=150)
-        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1)
         plt.colorbar(scatter)
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)

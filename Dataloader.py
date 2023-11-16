@@ -116,8 +116,6 @@ class Dataloader(Dataset):
     def __getitem__(self, index):
         key = self.data[index]
         label_fold = self.samples[key]['label']
-        standardized_label = equivalent_classes[label_fold]
-        nm_label = label_map.get(standardized_label, -1)
         img = self.images[key]
         bounding_box = self.samples[key]['rois']
         if len(bounding_box) == 1:
@@ -139,4 +137,4 @@ class Dataloader(Dataset):
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        return feat, roi_cropped, nm_label, key
+        return feat, roi_cropped, label_fold, key
