@@ -93,6 +93,7 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         # Load all latent representations from saved files
         latent_data = np.load(latent_filename)
+        print(latent_data.shape)
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
