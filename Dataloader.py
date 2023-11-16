@@ -86,7 +86,7 @@ class Dataloader(Dataset):
             data = pickle.load(f)
             for d in data:
                 data[d]["dataset"] = "MLL-AML"
-                if "label" not in data[d].keys() and dataset == "AML":
+                if "label" not in data[d].keys():
                     data[d]["label"] = d.split("_")[0]
             samples = {**samples, **data}
         print("[done]")
@@ -138,3 +138,13 @@ class Dataloader(Dataset):
         feat = np.rollaxis(feat, 2, 0)
 
         return feat, roi_cropped, label_fold, key
+
+    def get_all_labels(self):
+        all_labels = set()
+
+        for key, sample in self.samples.items():
+            label = sample.get('label', key.split("_")[0])
+            all_labels.add(label)
+
+        return list(all_labels)
+
