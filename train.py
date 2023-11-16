@@ -100,7 +100,7 @@ for epoch in range(epochs):
         # Load all latent representations from saved files
         latent_data = np.load(latent_filename)
         latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-        print(latent_data.shape)
+        print(latent_data_reshaped.shape)
         all_labels_array = np.array(all_labels)
 
         # UMAP for latent space
