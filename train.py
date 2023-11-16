@@ -75,9 +75,7 @@ for epoch in range(epochs):
         acc_imrec_loss += imrec_loss.data.cpu()
 
         if epoch % 10 == 0:
-            z_cpu = z.data.cpu().numpy()
-            z_latent = z_cpu.reshape(-1, z_cpu.shape[-1])
-            all_latent_representations.append(z_latent)
+            all_latent_representations.append(z.data.cpu().numpy())
 
     loss = loss / len(traindataloader)
     acc_featrec_loss = acc_featrec_loss / len(traindataloader)
@@ -95,7 +93,6 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         # Load all latent representations from saved files
         latent_data = np.load(latent_filename)
-        print(latent_data.shape)
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
