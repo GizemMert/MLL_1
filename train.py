@@ -56,9 +56,7 @@ for epoch in range(epochs):
         feat = feat.float()
         scimg = scimg.float()
 
-        feat, scimg = feat.to(device), scimg.to(device)
-        # add label value above
-        label.to(device)
+        feat, scimg, label = feat.to(device), scimg.to(device), label.to(device)
 
         optimizer.zero_grad()
 
