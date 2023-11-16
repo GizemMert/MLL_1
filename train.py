@@ -56,7 +56,7 @@ for epoch in range(epochs):
         feat = feat.float()
         scimg = scimg.float()
 
-        feat, scimg, label = feat.to(device), scimg.to(device), label.to(device)
+        feat, scimg = feat.to(device), scimg.to(device)
 
         optimizer.zero_grad()
 
@@ -75,7 +75,13 @@ for epoch in range(epochs):
 
         if epoch % 10 == 0:
             all_latent_representations.append(z.data.cpu().numpy())
-            all_labels.extend(label.data.cpu().numpy())
+
+            if isinstance(label, tuple):
+                actual_label = label[0]
+                if torch.is_tensor(actual_label):
+                    all_labels.extend(actual_label.data.cpu().numpy())
+                else:
+                    all_labels.extend(actual_label)
 
     loss = loss / len(traindataloader)
     acc_featrec_loss = acc_featrec_loss / len(traindataloader)
