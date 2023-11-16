@@ -102,6 +102,8 @@ for epoch in range(epochs):
         latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
         print(latent_data_reshaped.shape)
         all_labels_array = np.array(all_labels)
+        print("Labels array shape:", all_labels_array.shape)
+        print("Labels array dtype:", all_labels_array.dtype)
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
