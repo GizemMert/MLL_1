@@ -108,7 +108,7 @@ for epoch in range(epochs):
         original_labels = label_encoder.inverse_transform(all_labels_array)
 
         # UMAP for latent space
-        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.05, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
         plt.figure(figsize=(12, 10), dpi=150)
