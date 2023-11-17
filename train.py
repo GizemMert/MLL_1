@@ -105,12 +105,18 @@ for epoch in range(epochs):
         # print("Labels array shape:", all_labels_array.shape)
         # print("Labels array dtype:", all_labels_array.dtype)
 
+        original_labels = label_encoder.inverse_transform(all_labels_array)
+
         # UMAP for latent space
-        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.05, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
         plt.figure(figsize=(12, 10), dpi=150)
         scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+
+        for i, txt in enumerate(original_labels):
+            plt.annotate(txt, (latent_data_umap[i, 0], latent_data_umap[i, 1]), fontsize=8, ha='right', va='bottom')
+
         plt.colorbar(scatter)
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
