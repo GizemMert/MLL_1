@@ -109,7 +109,7 @@ for epoch in range(epochs):
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-            latent_data_reshaped, y=all_labels_array)
+            latent_data_reshaped)
 
         plt.figure(figsize=(12, 10), dpi=150)
         scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
