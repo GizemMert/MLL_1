@@ -108,16 +108,19 @@ for epoch in range(epochs):
         original_labels = label_encoder.inverse_transform(all_labels_array)
 
         # UMAP for latent space
-        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.05, n_components=2, metric='euclidean').fit_transform(
+        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped, y=all_labels_array)
 
         plt.figure(figsize=(12, 10), dpi=150)
         scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
 
-        for i, txt in enumerate(original_labels):
-            plt.annotate(txt, (latent_data_umap[i, 0], latent_data_umap[i, 1]), fontsize=8, ha='right', va='bottom')
+        color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
+        class_names = label_encoder.classes_
 
-        plt.colorbar(scatter)
+        legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
+                                     markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+        plt.legend(handles=legend_handles, loc='lower right', title='Classes')
+
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
         plt.ylabel('UMAP Dimension 2', fontsize=14)
