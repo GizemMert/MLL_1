@@ -56,8 +56,7 @@ class Autoencodermodel(nn.Module):
             nn.Flatten(),
             nn.Linear(50, 128),
             nn.ReLU(),
-            nn.Linear(128, num_classes),
-            nn.Softmax(dim=1)
+            nn.Linear(128, num_classes)
         )
 
     def forward(self, x):
