@@ -3,8 +3,8 @@ from Dataloader import Dataloader, label_map
 from model import Autoencodermodel
 from sklearn.metrics import f1_score, accuracy_score
 import os
+import torch.nn as nn
 
-from train import class_criterion
 
 batch_size = 128
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -16,16 +16,17 @@ model_save_path = os.path.join(script_dir, 'trained_model.pth')
 model = Autoencodermodel(num_classes=len(label_map))
 model.load_state_dict(torch.load(model_save_path))
 model = model.to(device)
+class_criterion = nn.CrossEntropyLoss()
 model.eval()
 
 test_dataset = Dataloader(split='test')
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
 
-# Define a function for evaluation
 def evaluate_model(model, dataloader):
     y_true = []
     y_pred = []
+    total_loss = 0.0
 
     with torch.no_grad():
         for feat, _, label, _ in dataloader:
@@ -33,15 +34,16 @@ def evaluate_model(model, dataloader):
             label = label.long().to(device)
 
             _, class_pred = model(feat)
+            loss = class_criterion(class_pred, label)
+            total_loss += loss.item()
+
             _, predicted = torch.max(class_pred.data, 1)
 
-            # Collect true and predicted labels for accuracy and F1 score calculation
             y_true.extend(label.cpu().numpy())
             y_pred.extend(predicted.cpu().numpy())
 
-    # Calculate accuracy and F1 score using library functions
+    average_test_loss = total_loss / len(dataloader)
     accuracy = accuracy_score(y_true, y_pred)
-    average_test_loss = class_criterion(class_pred, label)
     f1 = f1_score(y_true, y_pred, average='weighted')
 
     return accuracy * 100, average_test_loss, f1
@@ -51,8 +53,9 @@ test_accuracy, test_loss, test_f1 = evaluate_model(model, test_dataloader)
 
 results_file = os.path.join(script_dir, 'test_results.txt')
 with open(results_file, 'w') as f:
-    f.write(f"Test Accuracy: {test_accuracy:.2f}%\n")
-    f.write(f"Test Loss: {test_loss:.6f}\n")
-    f.write(f"F1 Score: {test_f1:.6f}\n")
+    result_str = f"Test Accuracy: {test_accuracy:.2f}%\nTest Loss: {test_loss:.6f}\nF1 Score: {test_f1:.6f}\n"
+    f.write(result_str)
+
+    print(result_str)
 
 print(f"Test results saved to {results_file}")
