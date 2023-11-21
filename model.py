@@ -4,7 +4,7 @@ import torch
 
 
 class Autoencodermodel(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes):
         super(Autoencodermodel, self).__init__()
 
         self.encoder = nn.Sequential(
@@ -52,15 +52,25 @@ class Autoencodermodel(nn.Module):
             nn.Sigmoid(),
         )
 
-    def forward(self, x):
-        ## learns the data representation from input
-        z = self.encoder(x) # z represents latent space
-        ## reconstruct the data based on the learned data representation
-        y = self.decoder(z)
-        # # reconstruct the images based on the learned data representation
-        img = self.img_decoder(y)
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(50, 128),
+            nn.ReLU(),
+            nn.Linear(128, num_classes),
+            nn.Softmax(dim=1)
+        )
 
-        return z,y,img
+    def forward(self, x):
+        # learns the data representation from input
+        z = self.encoder(x) # z represents latent space
+        # get predictions
+        class_pred = self.classifier(z)
+        # reconstruct the data based on the learned data representation
+        # y = self.decoder(z)
+        # # reconstruct the images based on the learned data representation
+        # img = self.img_decoder(y)
+
+        return z, class_pred  # y,img
 
 
 class GroupNorm(nn.Module):

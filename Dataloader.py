@@ -7,36 +7,6 @@ from torch.utils.data import Dataset
 
 equivalent_classes = {
 
-    # Acevedo-20 dataset
-    'basophil': 'basophil',
-    'eosinophil': 'eosinophil',
-    'erythroblast': 'erythroblast',
-    'IG': "unknown",  # immature granulocytes,
-    'PMY': 'promyelocyte',  # immature granulocytes,
-    'MY': 'myelocyte',  # immature granulocytes,
-    'MMY': 'metamyelocyte',  # immature granulocytes,
-    'lymphocyte': 'lymphocyte_typical',
-    'monocyte': 'monocyte',
-    'NEUTROPHIL': "unknown",
-    'BNE': 'neutrophil_banded',
-    'SNE': 'neutrophil_segmented',
-    'platelet': "unknown",
-    # Matek-19 dataset
-    'BAS': 'basophil',
-    'EBO': 'erythroblast',
-    'EOS': 'eosinophil',
-    'KSC': 'smudge_cell',
-    'LYA': 'lymphocyte_atypical',
-    'LYT': 'lymphocyte_typical',
-    'MMZ': 'metamyelocyte',
-    'MOB': 'monocyte',  # monoblast
-    'MON': 'monocyte',
-    'MYB': 'myelocyte',
-    'MYO': 'myeloblast',
-    'NGB': 'neutrophil_banded',
-    'NGS': 'neutrophil_segmented',
-    'PMB': "unknown",
-    'PMO': 'promyelocyte',
     #  INT-20 dataset
     '01-NORMO': 'erythroblast',
     '04-LGL': "unknown",  # atypical
@@ -116,6 +86,8 @@ class Dataloader(Dataset):
     def __getitem__(self, index):
         key = self.data[index]
         label_fold = self.samples[key]['label']
+        label_fold = equivalent_classes.get(label_fold, label_fold)
+        label_fold = label_map.get(label_fold, -1)
         img = self.images[key]
         bounding_box = self.samples[key]['rois']
         if len(bounding_box) == 1:
@@ -139,6 +111,8 @@ class Dataloader(Dataset):
 
         return feat, roi_cropped, label_fold, key
 
+
+"""
     def get_all_labels(self):
         all_labels = set()
 
@@ -147,4 +121,4 @@ class Dataloader(Dataset):
             all_labels.add(label)
 
         return list(all_labels)
-
+"""
