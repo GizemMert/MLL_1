@@ -54,9 +54,7 @@ class Autoencodermodel(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(50, 128),
-            nn.ReLU(),
-            nn.Linear(128, num_classes)
+            nn.Linear(50, num_classes)
         )
 
     def forward(self, x):
