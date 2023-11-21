@@ -4,6 +4,7 @@ import pickle
 import os
 import cv2
 from torch.utils.data import Dataset
+import random
 
 equivalent_classes = {
 
@@ -46,7 +47,8 @@ label_map = {
 
 
 class Dataloader(Dataset):
-    def __init__(self):
+    def __init__(self, split='train'):
+        self.split = split
 
         features_mll_path = (
             "/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz")
@@ -78,12 +80,22 @@ class Dataloader(Dataset):
         self.samples = samples
         self.images = images
 
+        data_keys = list(set(samples.keys()) & set(self.images.keys()))
+        random.shuffle(data_keys)
         self.data = list(set(self.samples.keys()) & set(self.images.keys()))
 
     def __len__(self):
-        return len(self.data)
+        if self.split == 'train':
+            return int(len(self.data) * 0.8)  # 80% for training
+        elif self.split == 'test':
+            return len(self.data) - int(len(self.data) * 0.8)  # 20% for testing
 
     def __getitem__(self, index):
+        if self.split == 'train':
+            index = index % int(len(self.data) * 0.8)
+        elif self.split == 'test':
+            index = int(len(self.data) * 0.8) + index
+
         key = self.data[index]
         label_fold = self.samples[key]['label']
         label_fold = equivalent_classes.get(label_fold, label_fold)
