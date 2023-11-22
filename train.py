@@ -90,7 +90,7 @@ for epoch in range(epochs):
 
         if epoch % 10 == 0:
            all_latent_representations.append(z.data.cpu().numpy())
-           all_labels.extend(label)
+           all_labels.extend(label.cpu().numpy())
 
         y_true.extend(label.cpu().numpy())
         _, predicted = torch.max(class_pred.data, 1)
