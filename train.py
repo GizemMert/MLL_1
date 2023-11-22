@@ -36,9 +36,9 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-cff_feat_rec = 0.34  # Coefficient for feature reconstruction loss
-cff_im_rec = 0.33   # Coefficient for image reconstruction loss
-cff_class = 0.33
+cff_feat_rec = 0.40
+cff_im_rec = 0.45
+cff_class = 0.15
 
 umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
