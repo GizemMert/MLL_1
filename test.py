@@ -33,7 +33,7 @@ def evaluate_model(model, dataloader):
             feat = feat.float().to(device)
             label = label.long().to(device)
 
-            _, class_pred = model(feat)
+            _, _, _, class_pred = model(feat)
             loss = class_criterion(class_pred, label)
             total_loss += loss.item()
 
