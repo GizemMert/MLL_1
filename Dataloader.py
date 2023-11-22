@@ -86,15 +86,15 @@ class Dataloader(Dataset):
 
     def __len__(self):
         if self.split == 'train':
-            return int(len(self.data) * 0.8)  # 80% for training
+            return int(len(self.data) * 0.9)  # 90% for training
         elif self.split == 'test':
-            return len(self.data) - int(len(self.data) * 0.8)  # 20% for testing
+            return len(self.data) - int(len(self.data) * 0.9)  # 10% for testing
 
     def __getitem__(self, index):
         if self.split == 'train':
-            index = index % int(len(self.data) * 0.8)
+            index = index % int(len(self.data) * 0.9)
         elif self.split == 'test':
-            index = int(len(self.data) * 0.8) + index
+            index = int(len(self.data) * 0.9) + index
 
         key = self.data[index]
         label_fold = self.samples[key]['label']
