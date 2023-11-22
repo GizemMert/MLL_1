@@ -59,15 +59,15 @@ class Autoencodermodel(nn.Module):
 
     def forward(self, x):
         # learns the data representation from input
-        z = self.encoder(x) # z represents latent space
+        z = self.encoder(x)  # z represents latent space
         # get predictions
         class_pred = self.classifier(z)
         # reconstruct the data based on the learned data representation
-        # y = self.decoder(z)
+        y = self.decoder(z)
         # # reconstruct the images based on the learned data representation
-        # img = self.img_decoder(y)
+        img = self.img_decoder(y)
 
-        return z, class_pred  # y,img
+        return z, y, img, class_pred
 
 
 class GroupNorm(nn.Module):
