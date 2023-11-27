@@ -1,11 +1,10 @@
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
-
-
-class Autoencodermodel(nn.Module):
-    def __init__(self, num_classes):
-        super(Autoencodermodel, self).__init__()
+class VariationalAutoencodermodel(nn.Module):
+    def __init__(self, latent_dim=50):
+        super(VariationalAutoencodermodel, self).__init__()
 
         self.encoder = nn.Sequential(
             nn.Conv2d(256, 200, kernel_size=3),
@@ -28,8 +27,12 @@ class Autoencodermodel(nn.Module):
 
         )
 
-        self.decoder = nn.Sequential(
+        self.fc_mu= nn.Linear(50, latent_dim)
+        self.fc_logvar = nn.Linear(50, latent_dim)
 
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_dim, 50),
+            nn.Unflatten(1, (50, 1, 1)),
             nn.ConvTranspose2d(50, 150, kernel_size=5),
             nn.ReLU(),
             nn.ConvTranspose2d(150, 200, kernel_size=4, stride=2),
@@ -52,22 +55,23 @@ class Autoencodermodel(nn.Module):
             nn.Sigmoid(),
         )
 
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(50, num_classes)
-        )
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5*logvar)
+        eps = torch.randn_like(std)
+        return mu + eps*std
 
     def forward(self, x):
         # learns the data representation from input
-        z = self.encoder(x)  # z represents latent space
-        # get predictions
-        class_pred = self.classifier(z)
+        z = self.encoder(x).view(x.size(0), -1)  # z represents latent space
+        mu = self.fc_mu(z)
+        logvar = self.fc_logvar(z)
+        z_dist = self.reparameterize(mu, logvar)
         # reconstruct the data based on the learned data representation
-        y = self.decoder(z)
+        y = self.decoder(z_dist)
         # # reconstruct the images based on the learned data representation
         img = self.img_decoder(y)
 
-        return z, y, img, class_pred
+        return z_dist, y, img, mu, logvar
 
 
 class GroupNorm(nn.Module):

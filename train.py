@@ -10,7 +10,7 @@ from umap import UMAP
 from sklearn.metrics import f1_score
 from Dataloader import Dataloader, label_map
 from SSIM import SSIM
-from model import Autoencodermodel
+from model import VariationalAutoencodermodel
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
@@ -19,7 +19,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = Autoencodermodel(num_classes=num_classes)
+model = VariationalAutoencodermodel(latent_dim=50)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -36,9 +36,9 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-cff_feat_rec = 0.30
-cff_im_rec = 0.60
-cff_class = 0.10
+# cff_feat_rec = 0.30
+# cff_im_rec = 0.60
+# cff_class = 0.10
 
 umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
@@ -56,14 +56,15 @@ for epoch in range(epochs):
     loss = 0
     acc_imrec_loss = 0
     acc_featrec_loss = 0
-    y_true = []
-    y_pred = []
+    # y_true = []
+    # y_pred = []
 
     model.train()
 
     if epoch % 10 == 0:
-        all_latent_representations = []
+        # all_latent_representations = []
         all_labels = []
+        all_means = [] # for UMAP
 
     for feat, scimg, label, _ in train_dataloader:
         feat = feat.float()
@@ -74,12 +75,15 @@ for epoch in range(epochs):
 
         optimizer.zero_grad()
 
-        z, output, im_out, class_pred = model(feat)
+        z_dist, output, im_out, mu, logvar = model(feat)
 
         feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
-        classification_loss = class_criterion(class_pred, label)
-        train_loss = (cff_feat_rec*feat_rec_loss) + (cff_im_rec*imrec_loss) + (cff_class*classification_loss)
+        #KL Divergence
+        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        # classification_loss = class_criterion(class_pred, label)
+        train_loss = (feat_rec_loss) + (imrec_loss) + kl_div
+        # (cff_class*classification_loss)
 
         train_loss.backward()
         optimizer.step()
@@ -89,28 +93,28 @@ for epoch in range(epochs):
         acc_imrec_loss += imrec_loss.data.cpu()
 
         if epoch % 10 == 0:
-           all_latent_representations.append(z.data.cpu().numpy())
+           all_means.append(mu.data.cpu().numpy())
            all_labels.extend(label.cpu().numpy())
 
-        y_true.extend(label.cpu().numpy())
-        _, predicted = torch.max(class_pred.data, 1)
-        y_pred.extend(predicted.cpu().numpy())
+        # y_true.extend(label.cpu().numpy())
+        # _, predicted = torch.max(class_pred.data, 1)
+        # y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
     acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
-    f1 = f1_score(y_true, y_pred, average='weighted')
+    # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, Cls_F1_Score = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, f1))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
-                f"Img_Rec_Loss = {acc_imrec_loss:.6f}, Cls_F1_Score = {f1:.6f} \n")
+                f"Img_Rec_Loss = {acc_imrec_loss:.6f} \n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-        np.save(latent_filename, np.concatenate(all_latent_representations, axis=0))
+        np.save(latent_filename, np.concatenate(all_means, axis=0))
 
     model.eval()
 
@@ -154,7 +158,7 @@ for epoch in range(epochs):
         ft = torch.tensor(ft)
         ft = ft.to(device)
 
-        _, _, im_out, _ = model(ft)
+        _, _, im_out, _, _ = model(ft)
         im_out = im_out.data.cpu().numpy()
         im_out = np.squeeze(im_out)
         im_out = np.moveaxis(im_out, 0, 2)
