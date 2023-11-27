@@ -15,6 +15,7 @@ from model import VariationalAutoencodermodel
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
 batch_size = 128
+beta = 0.5
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -82,7 +83,7 @@ for epoch in range(epochs):
         #KL Divergence
         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         # classification_loss = class_criterion(class_pred, label)
-        train_loss = (feat_rec_loss) + (imrec_loss) + kl_div
+        train_loss = (feat_rec_loss) + (imrec_loss) + (beta*kl_div)
         # (cff_class*classification_loss)
 
         train_loss.backward()
