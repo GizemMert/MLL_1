@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
-
 class VariationalAutoencodermodel(nn.Module):
     def __init__(self, latent_dim=50):
         super(VariationalAutoencodermodel, self).__init__()
