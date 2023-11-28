@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
+
 class VariationalAutoencodermodel(nn.Module):
     def __init__(self, latent_dim=50):
         super(VariationalAutoencodermodel, self).__init__()
@@ -23,7 +24,7 @@ class VariationalAutoencodermodel(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            nn.Tanh()
+
 
         )
 
@@ -65,6 +66,7 @@ class VariationalAutoencodermodel(nn.Module):
         z = self.encoder(x).view(x.size(0), -1)  # z represents latent space
         mu = self.fc_mu(z)
         logvar = self.fc_logvar(z)
+        logvar = F.softplus(logvar)
         z_dist = self.reparameterize(mu, logvar)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z_dist)

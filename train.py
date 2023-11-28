@@ -56,6 +56,7 @@ for epoch in range(epochs):
     loss = 0
     acc_imrec_loss = 0
     acc_featrec_loss = 0
+    kl_div_loss = 0
     # y_true = []
     # y_pred = []
 
@@ -82,7 +83,7 @@ for epoch in range(epochs):
         #KL Divergence
         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         # classification_loss = class_criterion(class_pred, label)
-        train_loss = (cff_feat_rec*feat_rec_loss) + (cff_im_rec*imrec_loss) + (cff_kl*kl_div)
+        train_loss = feat_rec_loss + imrec_loss + kl_div
         # (cff_class*classification_loss)
 
         train_loss.backward()
@@ -91,6 +92,7 @@ for epoch in range(epochs):
         loss += train_loss.data.cpu()
         acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += imrec_loss.data.cpu()
+        kl_div_loss += kl_div.data.cpu()
 
         if epoch % 10 == 0:
            all_means.append(mu.data.cpu().numpy())
@@ -103,14 +105,15 @@ for epoch in range(epochs):
     loss = loss / len(train_dataloader)
     acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
+    kl_div_loss = kl_div_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
-                f"Img_Rec_Loss = {acc_imrec_loss:.6f} \n")
+                f"Img_Rec_Loss = {acc_imrec_loss:.6f}, KL_DIV = {kl_div_loss:.6f} \n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
