@@ -23,7 +23,7 @@ class VariationalAutoencodermodel(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            nn.Tanh()
+            # nn.Tanh()
 
         )
 
@@ -65,6 +65,7 @@ class VariationalAutoencodermodel(nn.Module):
         z = self.encoder(x).view(x.size(0), -1)  # z represents latent space
         mu = self.fc_mu(z)
         logvar = self.fc_logvar(z)
+        logvar = F.softplus(logvar)
         z_dist = self.reparameterize(mu, logvar)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z_dist)
