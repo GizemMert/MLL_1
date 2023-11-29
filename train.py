@@ -170,7 +170,7 @@ for epoch in range(epochs):
         ft = torch.tensor(ft)
         ft = ft.to(device)
 
-        _, _, im_out, _, _ = model(ft)
+        _, _, im_out, _, _, _ = model(ft)
         im_out = im_out.data.cpu().numpy()
         im_out = np.squeeze(im_out)
         im_out = np.moveaxis(im_out, 0, 2)
