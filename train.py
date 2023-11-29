@@ -39,6 +39,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 cff_feat_rec = 0.30
 cff_im_rec = 0.40
 cff_kl = 0.3
+beta = 0.01
+final_beta = 1.0
+beta_increment_epoch = 150
+beta_increment = (final_beta - beta) / beta_increment_epoch
 
 umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
@@ -83,7 +87,7 @@ for epoch in range(epochs):
         #KL Divergence
         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         # classification_loss = class_criterion(class_pred, label)
-        train_loss = feat_rec_loss + imrec_loss + (cff_kl * kl_div)
+        train_loss = feat_rec_loss + imrec_loss + (beta * kl_div)
         # (cff_class*classification_loss)
 
         train_loss.backward()
@@ -97,6 +101,11 @@ for epoch in range(epochs):
         if epoch % 10 == 0:
            all_means.append(mu.data.cpu().numpy())
            all_labels.extend(label.cpu().numpy())
+
+        if epoch < beta_increment_epoch:
+            beta += beta_increment
+        else:
+            beta = final_beta
 
         # y_true.extend(label.cpu().numpy())
         # _, predicted = torch.max(class_pred.data, 1)
