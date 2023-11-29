@@ -44,13 +44,13 @@ umap_dir = 'umap_figures2'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data1'
+latent_dir = 'latent_data2'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results1"
+result_dir = "training_results2"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results1.txt")
+result_file = os.path.join(result_dir, "training_results2.txt")
 
 for epoch in range(epochs):
     loss = 0
@@ -176,7 +176,7 @@ for epoch in range(epochs):
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model1.pth')
+model_save_path = os.path.join(script_dir, 'trained_model2.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
