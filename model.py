@@ -56,9 +56,9 @@ class VariationalAutoencodermodel(nn.Module):
         )
 
     def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
-        eps = torch.randn_like(std)
-        return mu + eps*std
+        # std = torch.exp(0.5*logvar)
+        eps = torch.randn_like(logvar)
+        return mu + eps*logvar
 
     def forward(self, x):
         # learns the data representation from input
