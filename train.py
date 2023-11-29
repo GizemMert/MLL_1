@@ -81,7 +81,7 @@ for epoch in range(epochs):
         feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
         #KL Divergence
-        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        kl_div = torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()))
         # classification_loss = class_criterion(class_pred, label)
         train_loss = feat_rec_loss + imrec_loss + kl_div
         # (cff_class*classification_loss)
