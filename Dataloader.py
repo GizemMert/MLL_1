@@ -61,7 +61,7 @@ class Dataloader(Dataset):
                 if "label" not in data[d].keys():
                     data[d]["label"] = d.split("_")[0]
             samples = {**samples, **data}
-        print("[done_v2]")
+        print("[done]")
 
         samples2 = samples.copy()
         for s in samples2:
@@ -75,7 +75,7 @@ class Dataloader(Dataset):
         with gzip.open(os.path.join(images_path), "rb") as f:
             file_images = pickle.load(f)
         images = {**images, **file_images}
-        print("[done_v2]")
+        print("[done]")
 
         self.samples = samples
         self.images = images

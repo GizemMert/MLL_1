@@ -38,19 +38,19 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.30
 cff_im_rec = 0.40
-cff_kl = 0.30
+cff_kl = 0.3
 
-umap_dir = 'umap_figures2'
+umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data2'
+latent_dir = 'latent_data'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results2"
+result_dir = "training_results"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results2.txt")
+result_file = os.path.join(result_dir, "training_results.txt")
 
 for epoch in range(epochs):
     loss = 0
@@ -83,7 +83,7 @@ for epoch in range(epochs):
         #KL Divergence
         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         # classification_loss = class_criterion(class_pred, label)
-        train_loss = feat_rec_loss + imrec_loss + kl_div
+        train_loss = feat_rec_loss + imrec_loss + (cff_kl * kl_div)
         # (cff_class*classification_loss)
 
         train_loss.backward()
@@ -169,14 +169,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images2/"
+            file_name = "reconsructed-images/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model2.pth')
+model_save_path = os.path.join(script_dir, 'trained_model.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
