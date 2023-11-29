@@ -61,8 +61,8 @@ for epoch in range(epochs):
     acc_imrec_loss = 0
     acc_featrec_loss = 0
     kl_div_loss = 0
-    # y_true = []
-    # y_pred = []
+    y_true = []
+    y_pred = []
 
     model.train()
 
@@ -80,14 +80,14 @@ for epoch in range(epochs):
 
         optimizer.zero_grad()
 
-        z_dist, output, im_out, mu, logvar = model(feat)
+        z_dist, output, im_out, mu, logvar, logits = model(feat)
 
         feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
         #KL Divergence
         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        # classification_loss = class_criterion(class_pred, label)
-        train_loss = feat_rec_loss + imrec_loss + (beta * kl_div)
+        classification_loss = class_criterion(logits, label)
+        train_loss = feat_rec_loss + imrec_loss + kl_div + classification_loss
         # (cff_class*classification_loss)
 
         train_loss.backward()
@@ -102,23 +102,23 @@ for epoch in range(epochs):
            all_means.append(mu.data.cpu().numpy())
            all_labels.extend(label.cpu().numpy())
 
-        if epoch < beta_increment_epoch:
-            beta += beta_increment
-        else:
-            beta = final_beta
+        # if epoch < beta_increment_epoch:
+            #beta += beta_increment
+        # else:
+        #    beta = final_beta
 
-        # y_true.extend(label.cpu().numpy())
-        # _, predicted = torch.max(class_pred.data, 1)
-        # y_pred.extend(predicted.cpu().numpy())
+        y_true.extend(label.cpu().numpy())
+        _, predicted = torch.max(logits.data, 1)
+        y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
     acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
-    # f1 = f1_score(y_true, y_pred, average='weighted')
+    f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, f1 = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss, f1))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
@@ -152,7 +152,7 @@ for epoch in range(epochs):
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
                                      markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
-        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
+        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types', fontsize=14, title_fontsize=16)
 
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
