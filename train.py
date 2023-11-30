@@ -34,12 +34,12 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_s
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.30
 cff_im_rec = 0.40
 cff_kl = 0.3
-beta = 0.5
+beta = 0.25
 final_beta = 1.0
 beta_increment_epoch = 150
 beta_increment = (final_beta - beta) / beta_increment_epoch
@@ -80,21 +80,21 @@ for epoch in range(epochs):
 
         optimizer.zero_grad()
 
-        z_dist, output, im_out, mu, logvar = model(feat)
+        z_dist, output, im_out, mu, log_var = model(feat)
 
-        feat_rec_loss = criterion(output, feat)
+        # feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
         #KL Divergence
-        kl_div = torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()))
+        kl_div = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
         # classification_loss = class_criterion(logits, label)
-        train_loss = imrec_loss + beta*kl_div + feat_rec_loss
+        train_loss = imrec_loss + beta*kl_div
         # (cff_class*classification_loss)
 
         train_loss.backward()
         optimizer.step()
 
         loss += train_loss.data.cpu()
-        acc_featrec_loss += feat_rec_loss.data.cpu()
+        # acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += imrec_loss.data.cpu()
         kl_div_loss += kl_div.data.cpu()
 
@@ -112,13 +112,13 @@ for epoch in range(epochs):
         # y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
-    acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
+    # acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f},f_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
+    print("epoch : {}/{}, loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_imrec_loss, kl_div_loss))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
