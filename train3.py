@@ -10,7 +10,7 @@ from umap import UMAP
 from sklearn.metrics import f1_score
 from Dataloader import Dataloader, label_map
 from SSIM import SSIM
-from model import VariationalAutoencodermodel
+from model2 import VariationalAutoencodermodel1
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
@@ -19,7 +19,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel(latent_dim=50)
+model = VariationalAutoencodermodel1(latent_dim=10)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -34,7 +34,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_s
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.30
 cff_im_rec = 0.40
