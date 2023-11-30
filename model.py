@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 class VariationalAutoencodermodel(nn.Module):
-    def __init__(self, latent_dim=50, num_classes=13):
+    def __init__(self, latent_dim=50):
         super(VariationalAutoencodermodel, self).__init__()
 
         self.encoder = nn.Sequential(
@@ -23,13 +23,13 @@ class VariationalAutoencodermodel(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            # nn.Tanh()
+            nn.Tanh()
 
         )
 
         self.fc_mu= nn.Linear(50, latent_dim)
         self.fc_logvar = nn.Linear(50, latent_dim)
-        self.classifier = nn.Linear(50, num_classes)
+        # self.classifier = nn.Linear(50, num_classes)
 
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 50),
@@ -63,19 +63,16 @@ class VariationalAutoencodermodel(nn.Module):
 
     def forward(self, x):
         # learns the data representation from input
-        z = self.encoder(x).view(x.size(0), -1)  # z represents latent space
+        z = self.encoder(x).view(x.size(0), -1)
         mu = self.fc_mu(z)
         logvar = self.fc_logvar(z)
-        logvar = F.softplus(logvar)
-        logits = self.classifier(z)
-
         z_dist = self.reparameterize(mu, logvar)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z_dist)
         # # reconstruct the images based on the learned data representation
         img = self.img_decoder(y)
 
-        return z_dist, y, img, mu, logvar, logits
+        return z_dist, y, img, mu, logvar
 
 
 class GroupNorm(nn.Module):

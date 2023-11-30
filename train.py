@@ -39,7 +39,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 cff_feat_rec = 0.30
 cff_im_rec = 0.40
 cff_kl = 0.3
-beta = 0.01
+beta = 1
 final_beta = 1.0
 beta_increment_epoch = 150
 beta_increment = (final_beta - beta) / beta_increment_epoch
@@ -80,14 +80,14 @@ for epoch in range(epochs):
 
         optimizer.zero_grad()
 
-        z_dist, output, im_out, mu, logvar, logits = model(feat)
+        z_dist, output, im_out, mu, logvar = model(feat)
 
         feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
         #KL Divergence
-        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        classification_loss = class_criterion(logits, label)
-        train_loss = feat_rec_loss + imrec_loss + kl_div + classification_loss
+        kl_div = torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()))
+        # classification_loss = class_criterion(logits, label)
+        train_loss = imrec_loss + beta*kl_div + feat_rec_loss
         # (cff_class*classification_loss)
 
         train_loss.backward()
@@ -107,18 +107,18 @@ for epoch in range(epochs):
         # else:
         #    beta = final_beta
 
-        y_true.extend(label.cpu().numpy())
-        _, predicted = torch.max(logits.data, 1)
-        y_pred.extend(predicted.cpu().numpy())
+        # y_true.extend(label.cpu().numpy())
+        # _, predicted = torch.max(logits.data, 1)
+        # y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
     acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
-    f1 = f1_score(y_true, y_pred, average='weighted')
+    # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, f1 = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss, f1))
+    print("epoch : {}/{}, loss = {:.6f},f_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
@@ -164,7 +164,7 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
 
-    for i in range(50):
+    for i in range(30):
         ft, img, lbl, _ = train_dataset[i]
         ft = np.expand_dims(ft, axis=0)
         ft = torch.tensor(ft)
