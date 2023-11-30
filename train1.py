@@ -44,17 +44,17 @@ final_beta = 1.0
 beta_increment_epoch = 150
 beta_increment = (final_beta - beta) / beta_increment_epoch
 
-umap_dir = 'umap_figures'
+umap_dir = 'umap_figures1'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data'
+latent_dir = 'latent_data1'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results"
+result_dir = "training_results1"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results.txt")
+result_file = os.path.join(result_dir, "training_results1.txt")
 
 for epoch in range(epochs):
     loss = 0
@@ -82,19 +82,19 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        feat_rec_loss = criterion(output, feat)
+        # feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
         #KL Divergence
         kl_div = torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()))
         # classification_loss = class_criterion(logits, label)
-        train_loss = imrec_loss + beta*kl_div + feat_rec_loss
+        train_loss = imrec_loss + beta*kl_div # + feat_rec_loss
         # (cff_class*classification_loss)
 
         train_loss.backward()
         optimizer.step()
 
         loss += train_loss.data.cpu()
-        acc_featrec_loss += feat_rec_loss.data.cpu()
+        # acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += imrec_loss.data.cpu()
         kl_div_loss += kl_div.data.cpu()
 
@@ -112,16 +112,16 @@ for epoch in range(epochs):
         # y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
-    acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
+    # acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f},f_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
+    print("epoch : {}/{}, loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_imrec_loss, kl_div_loss))
 
     with open(result_file, "a") as f:
-        f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
+        f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss:.6f}, KL_DIV = {kl_div_loss:.6f} \n")
 
     if epoch % 10 == 0:
@@ -178,14 +178,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images/"
+            file_name = "reconsructed-images1/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model.pth')
+model_save_path = os.path.join(script_dir, 'trained_model1.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
