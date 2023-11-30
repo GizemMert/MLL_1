@@ -39,7 +39,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 cff_feat_rec = 0.30
 cff_im_rec = 0.40
 cff_kl = 0.3
-beta = 0.5
+beta = 0.25
 final_beta = 1.0
 beta_increment_epoch = 150
 beta_increment = (final_beta - beta) / beta_increment_epoch
@@ -87,7 +87,7 @@ for epoch in range(epochs):
         #KL Divergence
         kl_div = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
         # classification_loss = class_criterion(logits, label)
-        train_loss = imrec_loss + beta*kl_div # + feat_rec_loss
+        train_loss = imrec_loss + (beta * kl_div) # + feat_rec_loss
         # (cff_class*classification_loss)
 
         train_loss.backward()
