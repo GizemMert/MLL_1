@@ -39,7 +39,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 cff_feat_rec = 0.30
 cff_im_rec = 0.40
 cff_kl = 0.3
-beta = 1
+beta = 0.5
 final_beta = 1.0
 beta_increment_epoch = 150
 beta_increment = (final_beta - beta) / beta_increment_epoch
