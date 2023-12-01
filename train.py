@@ -80,7 +80,7 @@ for epoch in range(epochs):
         z_dist, output, im_out, mu, log_var = model(feat)
 
         feat_rec_loss = criterion(output, feat)
-        imrec_loss = 1 - criterion_1(im_out, scimg)
+        imrec_loss = criterion(im_out, scimg)
         kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
         train_loss = feat_rec_loss + imrec_loss + (beta * kld_loss)
 
