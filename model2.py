@@ -66,6 +66,7 @@ class VariationalAutoencodermodel1(nn.Module):
         mu = self.fc_mu(z)
         log_var = self.fc_logvar(z)
         z_dist = self.reparameterize(mu, log_var)
+        z_dist = z_dist.view(-1, 50, 1, 1)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z_dist)
         # # reconstruct the images based on the learned data representation
