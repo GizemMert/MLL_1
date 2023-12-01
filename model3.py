@@ -30,7 +30,7 @@ class VariationalAutoencodermodel2(nn.Module):
 
         self.decoder = nn.Sequential(
 
-            nn.ConvTranspose2d(50, 150, kernel_size=5),
+            nn.ConvTranspose2d(10, 150, kernel_size=5),
             nn.ReLU(),
             nn.ConvTranspose2d(150, 200, kernel_size=4, stride=2),
             nn.ReLU(),
@@ -66,7 +66,7 @@ class VariationalAutoencodermodel2(nn.Module):
         mu = self.fc_mu(z)
         log_var = self.fc_logvar(z)
         z_dist = self.reparameterize(mu, log_var)
-        z_dist = z_dist.view(-1, 50, 1, 1)
+        z_dist = z_dist.view(-1, 10, 1, 1)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z_dist)
         # # reconstruct the images based on the learned data representation
