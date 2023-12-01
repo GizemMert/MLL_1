@@ -34,7 +34,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_s
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
 
 cff_feat_rec = 0.30
 cff_im_rec = 0.60
