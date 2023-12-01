@@ -1,10 +1,11 @@
 import torch.nn as nn
 import torch
-import torch.nn.functional as F
+from torch import Tensor
 
-class VariationalAutoencodermodel3(nn.Module):
-    def __init__(self, latent_dim=50):
-        super(VariationalAutoencodermodel3, self).__init__()
+
+class VariationalAutoencodermodel2(nn.Module):
+    def __init__(self, latent_dim=10):
+        super(VariationalAutoencodermodel2, self).__init__()
 
         self.encoder = nn.Sequential(
             nn.Conv2d(256, 200, kernel_size=3),
@@ -27,13 +28,8 @@ class VariationalAutoencodermodel3(nn.Module):
 
         )
 
-        self.fc_mu= nn.Linear(50, latent_dim)
-        self.fc_logvar = nn.Linear(50, latent_dim)
-        # self.classifier = nn.Linear(50, num_classes)
-
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 50),
-            nn.Unflatten(1, (50, 1, 1)),
+
             nn.ConvTranspose2d(50, 150, kernel_size=5),
             nn.ReLU(),
             nn.ConvTranspose2d(150, 200, kernel_size=4, stride=2),
@@ -53,26 +49,30 @@ class VariationalAutoencodermodel3(nn.Module):
             nn.ConvTranspose2d(150, 128, kernel_size=2),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 3, kernel_size=1),
-
+            nn.Sigmoid(),
         )
 
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5 * logvar)
+        self.fc_mu = nn.Linear(50, latent_dim)
+        self.fc_logvar = nn.Linear(50, latent_dim)
+
+    def reparameterize(self, mu: Tensor, log_var: Tensor) -> Tensor:
+        std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
         return eps * std + mu
 
     def forward(self, x):
-        # learns the data representation from input
-        z = self.encoder(x).view(x.size(0), -1)
+        z = self.encoder(x)
+        z = torch.flatten(z, start_dim=1)
         mu = self.fc_mu(z)
-        logvar = self.fc_logvar(z)
-        z_dist = self.reparameterize(mu, logvar)
+        log_var = self.fc_logvar(z)
+        z_dist = self.reparameterize(mu, log_var)
+        z_dist = z_dist.view(-1, 50, 1, 1)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z_dist)
         # # reconstruct the images based on the learned data representation
-        img_logits = self.img_decoder(y)
+        img = self.img_decoder(y)
 
-        return z_dist, y, img_logits, mu, logvar
+        return z_dist, y, img, mu, log_var
 
 
 class GroupNorm(nn.Module):
@@ -93,4 +93,3 @@ class GroupNorm(nn.Module):
         x = (x-mean) / (var+self.eps).sqrt()
         x = x.view(N,C,H,W)
         return x * self.gamma + self.beta
-
