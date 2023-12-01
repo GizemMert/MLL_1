@@ -34,15 +34,13 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_s
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.30
-cff_im_rec = 0.40
-cff_kl = 0.3
-beta = 0.25
-final_beta = 1.0
-beta_increment_epoch = 150
-beta_increment = (final_beta - beta) / beta_increment_epoch
+cff_im_rec = 0.60
+cff_class = 0.10
+
+beta = 200
 
 umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
@@ -67,9 +65,8 @@ for epoch in range(epochs):
     model.train()
 
     if epoch % 10 == 0:
-        # all_latent_representations = []
+        all_means = []
         all_labels = []
-        all_means = [] # for UMAP
 
     for feat, scimg, label, _ in train_dataloader:
         feat = feat.float()
@@ -82,43 +79,35 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, log_var = model(feat)
 
-        # feat_rec_loss = criterion(output, feat)
+        feat_rec_loss = criterion(output, feat)
         imrec_loss = 1 - criterion_1(im_out, scimg)
-        #KL Divergence
-        kl_div = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
-        # classification_loss = class_criterion(logits, label)
-        train_loss = imrec_loss + beta*kl_div
-        # (cff_class*classification_loss)
+        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
+        train_loss = feat_rec_loss + imrec_loss + (beta * kld_loss)
 
         train_loss.backward()
         optimizer.step()
 
         loss += train_loss.data.cpu()
-        # acc_featrec_loss += feat_rec_loss.data.cpu()
+        acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += imrec_loss.data.cpu()
-        kl_div_loss += kl_div.data.cpu()
+        kl_div_loss += kld_loss.data.cpu()
 
         if epoch % 10 == 0:
            all_means.append(mu.data.cpu().numpy())
            all_labels.extend(label.cpu().numpy())
 
-        # if epoch < beta_increment_epoch:
-            #beta += beta_increment
-        # else:
-        #    beta = final_beta
-
         # y_true.extend(label.cpu().numpy())
-        # _, predicted = torch.max(logits.data, 1)
+        # _, predicted = torch.max(class_pred.data, 1)
         # y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
-    # acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
+    acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_imrec_loss, kl_div_loss))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
@@ -152,7 +141,7 @@ for epoch in range(epochs):
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
                                      markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
-        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types', fontsize=14, title_fontsize=16)
+        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
 
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
@@ -196,4 +185,5 @@ with open(result_file, "a") as f:
 if os.path.exists(os.path.join('Model/')) is False:
     os.makedirs(os.path.join('Model/'))
 torch.save(model, "Model/" + model_name + time.strftime("%Y%m%d-%H%M%S") + ".mdl")
+
 """
