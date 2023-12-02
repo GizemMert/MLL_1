@@ -34,7 +34,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_s
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.30
 cff_im_rec = 0.60
@@ -57,7 +57,7 @@ result_file = os.path.join(result_dir, "training_results1.txt")
 for epoch in range(epochs):
     loss = 0
     acc_imrec_loss = 0
-    acc_featrec_loss = 0
+    # acc_featrec_loss = 0
     kl_div_loss = 0
     y_true = []
     y_pred = []
@@ -79,16 +79,16 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, log_var = model(feat)
 
-        feat_rec_loss = criterion(output, feat)
+        # feat_rec_loss = criterion(output, feat)
         imrec_loss = criterion(im_out, scimg)
         kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
-        train_loss = feat_rec_loss + imrec_loss + (beta * kld_loss)
+        train_loss = imrec_loss + (beta * kld_loss)
 
         train_loss.backward()
         optimizer.step()
 
         loss += train_loss.data.cpu()
-        acc_featrec_loss += feat_rec_loss.data.cpu()
+        # acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += imrec_loss.data.cpu()
         kl_div_loss += kld_loss.data.cpu()
 
@@ -101,16 +101,16 @@ for epoch in range(epochs):
         # y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
-    acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
+    # acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
+    print("epoch : {}/{}, loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
+          (epoch + 1, epochs, loss, acc_imrec_loss, kl_div_loss))
 
     with open(result_file, "a") as f:
-        f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
+        f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss:.6f}, KL_DIV = {kl_div_loss:.6f} \n")
 
     if epoch % 10 == 0:
@@ -119,6 +119,7 @@ for epoch in range(epochs):
 
     model.eval()
 
+    """"
     if epoch % 10 == 0:
         # Load all latent representations
         latent_data = np.load(latent_filename)
@@ -129,6 +130,7 @@ for epoch in range(epochs):
 
         original_labels = [inverse_label_map[label] for label in all_labels_array]
 
+        
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
@@ -152,6 +154,8 @@ for epoch in range(epochs):
         # Save the UMAP figure
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
+        
+    """
 
     for i in range(30):
         ft, img, lbl, _ = train_dataset[i]
