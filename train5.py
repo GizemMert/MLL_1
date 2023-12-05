@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score
 from Dataloader import Dataloader, label_map
 from SSIM import SSIM
-from model4 import VariationalAutoencodermodel4
+from model5 import VariationalAutoencodermodel5
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
@@ -20,7 +20,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel4(latent_dim=10)
+model = VariationalAutoencodermodel5(latent_dim=10)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -43,17 +43,17 @@ cff_class = 0.10
 
 beta = 4
 
-umap_dir = 'umap_figures4'
+umap_dir = 'umap_figures5'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4'
+latent_dir = 'latent_data5'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results4"
+result_dir = "training_results5"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4.txt")
+result_file = os.path.join(result_dir, "training_results5.txt")
 
 
 def kl_divergence(mu, logvar):
@@ -200,14 +200,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images4/"
+            file_name = "reconsructed-images5/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4.pth')
+model_save_path = os.path.join(script_dir, 'trained_model5.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
