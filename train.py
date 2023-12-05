@@ -124,7 +124,7 @@ for epoch in range(epochs):
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
+          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
