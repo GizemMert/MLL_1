@@ -97,7 +97,7 @@ for epoch in range(epochs):
         z_dist, output, im_out, mu, logvar = model(feat)
 
         feat_rec_loss = criterion(output, feat)
-        imrec_loss = criterion(im_out, scimg)
+        imrec_loss = 1 - criterion_1(im_out, scimg)
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = feat_rec_loss + imrec_loss + (beta * kld_loss)
 
