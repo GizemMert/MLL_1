@@ -127,8 +127,8 @@ for epoch in range(epochs):
           (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item()))
 
     with open(result_file, "a") as f:
-        f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
-                f"Img_Rec_Loss = {acc_imrec_loss:.6f}, KL_DIV = {kl_div_loss:.6f} \n")
+        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
+                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
