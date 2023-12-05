@@ -7,10 +7,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from umap import UMAP
+import torch.nn.functional as F
 from sklearn.metrics import f1_score
 from Dataloader import Dataloader, label_map
 from SSIM import SSIM
-from model3 import VariationalAutoencodermodel2
+from model2 import VariationalAutoencodermodel2
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
@@ -19,7 +20,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel2(latent_dim=10)
+model = VariationalAutoencodermodel2(latent_dim=50)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -40,7 +41,7 @@ cff_feat_rec = 0.30
 cff_im_rec = 0.60
 cff_class = 0.10
 
-beta = 200
+beta = 4
 
 umap_dir = 'umap_figures2'
 if not os.path.exists(umap_dir):
@@ -53,6 +54,38 @@ if not os.path.exists(latent_dir):
 result_dir = "training_results2"
 os.makedirs(result_dir, exist_ok=True)
 result_file = os.path.join(result_dir, "training_results2.txt")
+
+
+def kl_divergence(mu, logvar):
+    batch_s = mu.size(0)
+    assert batch_s != 0
+    if mu.data.ndimension() == 4:
+        mu = mu.view(mu.size(0), mu.size(1))
+    if logvar.data.ndimension() == 4:
+        logvar = logvar.view(logvar.size(0), logvar.size(1))
+
+    klds = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())
+    total_kld = klds.sum(1).mean(0, True)
+    dimension_wise_kld = klds.mean(0)
+    mean_kld = klds.mean(1).mean(0, True)
+
+    return total_kld, dimension_wise_kld, mean_kld
+
+
+def reconstruction_loss(scimg, im_out, distribution):
+    batch_s = scimg.size(0)
+    assert batch_s != 0
+
+    if distribution == 'bernoulli':
+        recon_loss = F.binary_cross_entropy_with_logits(im_out, scimg, size_average=False).div(batch_s)
+    elif distribution == 'gaussian':
+        recon_loss = F.mse_loss(im_out, scimg, size_average=False).div(batch_s)
+    else:
+        recon_loss = None
+
+    return recon_loss
+
+
 
 for epoch in range(epochs):
     loss = 0
@@ -77,24 +110,24 @@ for epoch in range(epochs):
 
         optimizer.zero_grad()
 
-        z_dist, output, im_out, mu, log_var = model(feat)
+        z_dist, output, im_out, mu, logvar = model(feat)
 
         feat_rec_loss = criterion(output, feat)
-        imrec_loss = criterion(im_out, scimg)
-        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
-        train_loss = feat_rec_loss + imrec_loss + (beta * kld_loss)
+        recon_loss = reconstruction_loss(scimg, im_out, distribution='bernoulli')
+        kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
+        train_loss = feat_rec_loss + recon_loss + (beta * kld_loss)
 
         train_loss.backward()
         optimizer.step()
 
         loss += train_loss.data.cpu()
         acc_featrec_loss += feat_rec_loss.data.cpu()
-        acc_imrec_loss += imrec_loss.data.cpu()
+        acc_imrec_loss += recon_loss.data.cpu()
         kl_div_loss += kld_loss.data.cpu()
 
         if epoch % 10 == 0:
-           all_means.append(mu.data.cpu().numpy())
-           all_labels.extend(label.cpu().numpy())
+            all_means.append(mu.data.cpu().numpy())
+            all_labels.extend(label.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
         # _, predicted = torch.max(class_pred.data, 1)
@@ -107,11 +140,11 @@ for epoch in range(epochs):
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_featrec_loss, acc_imrec_loss, kl_div_loss))
+          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item()))
 
     with open(result_file, "a") as f:
-        f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, Feat_Loss = {acc_featrec_loss:.6f}, "
-                f"Img_Rec_Loss = {acc_imrec_loss:.6f}, KL_DIV = {kl_div_loss:.6f} \n")
+        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
+                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
@@ -185,5 +218,4 @@ with open(result_file, "a") as f:
 if os.path.exists(os.path.join('Model/')) is False:
     os.makedirs(os.path.join('Model/'))
 torch.save(model, "Model/" + model_name + time.strftime("%Y%m%d-%H%M%S") + ".mdl")
-
 """
