@@ -7,11 +7,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from umap import UMAP
+import torch.nn.functional as F
 from sklearn.metrics import f1_score
 from Dataloader import Dataloader, label_map
 from SSIM import SSIM
 from model3 import VariationalAutoencodermodel3
-sigmoid = torch.nn.Sigmoid()
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
@@ -20,7 +20,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel3(latent_dim=50)
+model = VariationalAutoencodermodel3(latent_dim=10)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -32,18 +32,16 @@ model = model.to(device)
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
-criterion = nn.BCEWithLogitsLoss()
+criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.30
-cff_im_rec = 0.40
-cff_kl = 0.3
-beta = 0.5
-final_beta = 1.0
-beta_increment_epoch = 150
-beta_increment = (final_beta - beta) / beta_increment_epoch
+cff_im_rec = 0.60
+cff_class = 0.10
+
+beta = 4
 
 umap_dir = 'umap_figures4'
 if not os.path.exists(umap_dir):
@@ -57,6 +55,38 @@ result_dir = "training_results4"
 os.makedirs(result_dir, exist_ok=True)
 result_file = os.path.join(result_dir, "training_results4.txt")
 
+
+def kl_divergence(mu, logvar):
+    batch_s = mu.size(0)
+    assert batch_s != 0
+    if mu.data.ndimension() == 4:
+        mu = mu.view(mu.size(0), mu.size(1))
+    if logvar.data.ndimension() == 4:
+        logvar = logvar.view(logvar.size(0), logvar.size(1))
+
+    klds = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())
+    total_kld = klds.sum(1).mean(0, True)
+    dimension_wise_kld = klds.mean(0)
+    mean_kld = klds.mean(1).mean(0, True)
+
+    return total_kld, dimension_wise_kld, mean_kld
+
+
+def reconstruction_loss(scimg, im_out, distribution="gaussian"):
+    batch_s = scimg.size(0)
+    assert batch_s != 0
+
+    if distribution == 'bernoulli':
+        recon_loss = F.binary_cross_entropy_with_logits(im_out, scimg, reduction="sum").div(batch_s)
+    elif distribution == 'gaussian':
+        recon_loss = F.mse_loss(im_out, scimg, size_average=False).div(batch_size)
+    else:
+        recon_loss = None
+
+    return recon_loss
+
+
+
 for epoch in range(epochs):
     loss = 0
     acc_imrec_loss = 0
@@ -68,9 +98,8 @@ for epoch in range(epochs):
     model.train()
 
     if epoch % 10 == 0:
-        # all_latent_representations = []
+        all_means = []
         all_labels = []
-        all_means = [] # for UMAP
 
     for feat, scimg, label, _ in train_dataloader:
         feat = feat.float()
@@ -83,47 +112,39 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        # feat_rec_loss = criterion(output, feat)
-        imrec_loss = criterion(im_out, scimg)
-        #KL Divergence
-        kl_div = torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()))
-        # classification_loss = class_criterion(logits, label)
-        train_loss = imrec_loss + beta*kl_div # + feat_rec_loss
-        # (cff_class*classification_loss)
+        feat_rec_loss = criterion(output, feat)
+        recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
+        kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
+        train_loss = feat_rec_loss + recon_loss + (beta * kld_loss)
 
         train_loss.backward()
         optimizer.step()
 
         loss += train_loss.data.cpu()
-        # acc_featrec_loss += feat_rec_loss.data.cpu()
-        acc_imrec_loss += imrec_loss.data.cpu()
-        kl_div_loss += kl_div.data.cpu()
+        acc_featrec_loss += feat_rec_loss.data.cpu()
+        acc_imrec_loss += recon_loss.data.cpu()
+        kl_div_loss += kld_loss.data.cpu()
 
         if epoch % 10 == 0:
-           all_means.append(mu.data.cpu().numpy())
-           all_labels.extend(label.cpu().numpy())
-
-        # if epoch < beta_increment_epoch:
-            #beta += beta_increment
-        # else:
-        #    beta = final_beta
+            all_means.append(mu.data.cpu().numpy())
+            all_labels.extend(label.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
-        # _, predicted = torch.max(logits.data, 1)
+        # _, predicted = torch.max(class_pred.data, 1)
         # y_pred.extend(predicted.cpu().numpy())
 
     loss = loss / len(train_dataloader)
-    # acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
+    acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss, acc_imrec_loss, kl_div_loss))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
+          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item()))
 
     with open(result_file, "a") as f:
-        f.write(f"Epoch {epoch + 1}: Loss = {loss:.6f}, "
-                f"Img_Rec_Loss = {acc_imrec_loss:.6f}, KL_DIV = {kl_div_loss:.6f} \n")
+        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
+                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
@@ -153,7 +174,7 @@ for epoch in range(epochs):
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
                                      markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
-        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types', fontsize=14, title_fontsize=16)
+        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
 
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
@@ -171,10 +192,9 @@ for epoch in range(epochs):
         ft = torch.tensor(ft)
         ft = ft.to(device)
 
-        _, _, im_log, _, _ = model(ft)
-        img_probs = sigmoid(im_log)  # Apply sigmoid to convert logits to probabilities
-        img_probs = img_probs.detach().cpu().numpy()
-        im_out = np.squeeze(img_probs)
+        _, _, im_out, _, _ = model(ft)
+        im_out = im_out.data.cpu().numpy()
+        im_out = np.squeeze(im_out)
         im_out = np.moveaxis(im_out, 0, 2)
         img = np.moveaxis(img, 0, 2)
         im = np.concatenate([img, im_out], axis=1)
