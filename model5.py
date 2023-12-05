@@ -7,7 +7,7 @@ from torch.nn import init
 
 
 class VariationalAutoencodermodel5(nn.Module):
-    def __init__(self, latent_dim=10):
+    def __init__(self, latent_dim=50):
         super(VariationalAutoencodermodel5, self).__init__()
         self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
