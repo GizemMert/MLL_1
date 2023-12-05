@@ -1,12 +1,14 @@
 import torch.nn as nn
 import torch
 from torch import Tensor
+from torch._inductor.ir import View
+from torch.autograd import Variable
 
 
 class VariationalAutoencodermodel(nn.Module):
-    def __init__(self, latent_dim=50):
+    def __init__(self, latent_dim=10):
         super(VariationalAutoencodermodel, self).__init__()
-
+        self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
             nn.Conv2d(256, 200, kernel_size=3),
             nn.ReLU(),
@@ -24,12 +26,15 @@ class VariationalAutoencodermodel(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            nn.Tanh()
+            nn.ReLU(True),
+            View((-1, 50 * 1 * 1)),
+            nn.Linear(50, latent_dim * 2),
 
         )
 
         self.decoder = nn.Sequential(
-
+            nn.Linear(latent_dim, 50),
+            View((-1, 50, 1, 1)),
             nn.ConvTranspose2d(50, 150, kernel_size=5),
             nn.ReLU(),
             nn.ConvTranspose2d(150, 200, kernel_size=4, stride=2),
@@ -52,28 +57,31 @@ class VariationalAutoencodermodel(nn.Module):
             nn.Sigmoid(),
         )
 
-        self.fc_mu = nn.Linear(50, latent_dim)
-        self.fc_logvar = nn.Linear(50, latent_dim)
-
-    def reparameterize(self, mu: Tensor, log_var: Tensor) -> Tensor:
-        std = torch.exp(0.5 * log_var)
-        eps = torch.randn_like(std)
-        return eps * std + mu
-
     def forward(self, x):
-        z = self.encoder(x)
-        z = torch.flatten(z, start_dim=1)
-        mu = self.fc_mu(z)
-        log_var = self.fc_logvar(z)
-        z_dist = self.reparameterize(mu, log_var)
-        z_dist = z_dist.view(-1, 50, 1, 1)
+        distributions = self.encoder(x)
+        mu = distributions[:, :self.latent_dim]
+        logvar = distributions[:, self.latent_dim:]
+        z = reparametrize(mu, logvar)
         # reconstruct the data based on the learned data representation
-        y = self.decoder(z_dist)
+        y = self.decoder(z)
         # # reconstruct the images based on the learned data representation
         img = self.img_decoder(y)
 
-        return z_dist, y, img, mu, log_var
+        return z, y, img, mu, logvar
 
+
+class View(nn.Module):
+    def __init__(self, size):
+        super(View, self).__init__()
+        self.size = size
+
+    def forward(self, tensor):
+        return tensor.view(self.size)
+
+def reparametrize(mu, log_var):
+    std = log_var.div(2).exp()
+    eps = Variable(std.data.new(std.size()).normal_())
+    return mu + std * eps
 
 class GroupNorm(nn.Module):
     def __init__(self, num_features, num_groups=32, eps=1e-5):

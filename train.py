@@ -40,7 +40,7 @@ cff_feat_rec = 0.30
 cff_im_rec = 0.60
 cff_class = 0.10
 
-beta = 200
+beta = 4
 
 umap_dir = 'umap_figures'
 if not os.path.exists(umap_dir):
@@ -53,6 +53,23 @@ if not os.path.exists(latent_dir):
 result_dir = "training_results"
 os.makedirs(result_dir, exist_ok=True)
 result_file = os.path.join(result_dir, "training_results.txt")
+
+
+def kl_divergence(mu, logvar):
+    batch_s = mu.size(0)
+    assert batch_s != 0
+    if mu.data.ndimension() == 4:
+        mu = mu.view(mu.size(0), mu.size(1))
+    if logvar.data.ndimension() == 4:
+        logvar = logvar.view(logvar.size(0), logvar.size(1))
+
+    klds = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())
+    total_kld = klds.sum(1).mean(0, True)
+    dimension_wise_kld = klds.mean(0)
+    mean_kld = klds.mean(1).mean(0, True)
+
+    return total_kld, dimension_wise_kld, mean_kld
+
 
 for epoch in range(epochs):
     loss = 0
@@ -77,11 +94,11 @@ for epoch in range(epochs):
 
         optimizer.zero_grad()
 
-        z_dist, output, im_out, mu, log_var = model(feat)
+        z_dist, output, im_out, mu, logvar = model(feat)
 
         feat_rec_loss = criterion(output, feat)
         imrec_loss = criterion(im_out, scimg)
-        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
+        kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = feat_rec_loss + imrec_loss + (beta * kld_loss)
 
         train_loss.backward()
@@ -93,8 +110,8 @@ for epoch in range(epochs):
         kl_div_loss += kld_loss.data.cpu()
 
         if epoch % 10 == 0:
-           all_means.append(mu.data.cpu().numpy())
-           all_labels.extend(label.cpu().numpy())
+            all_means.append(mu.data.cpu().numpy())
+            all_labels.extend(label.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
         # _, predicted = torch.max(class_pred.data, 1)
