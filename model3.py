@@ -94,13 +94,14 @@ def reparametrize(mu, log_var):
 
 def kaiming_init(m):
     if isinstance(m, (nn.Linear, nn.Conv2d)):
-        init.kaiming_normal(m.weight)
+        nn.init.kaiming_normal_(m.weight)  # Updated to kaiming_normal_
         if m.bias is not None:
             m.bias.data.fill_(0)
     elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
         m.weight.data.fill_(1)
         if m.bias is not None:
             m.bias.data.fill_(0)
+
 
 class GroupNorm(nn.Module):
     def __init__(self, num_features, num_groups=32, eps=1e-5):
