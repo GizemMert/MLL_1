@@ -72,14 +72,14 @@ def kl_divergence(mu, logvar):
     return total_kld, dimension_wise_kld, mean_kld
 
 
-def reconstruction_loss(scimg, im_out, distribution):
+def reconstruction_loss(scimg, im_out, distribution="bernoulli"):
     batch_s = scimg.size(0)
     assert batch_s != 0
 
     if distribution == 'bernoulli':
-        recon_loss = F.binary_cross_entropy_with_logits(im_out, scimg, size_average=False).div(batch_s)
+        recon_loss = F.binary_cross_entropy_with_logits(im_out, scimg, reduction="sum").div(batch_s)
     elif distribution == 'gaussian':
-        recon_loss = F.mse_loss(im_out, scimg, size_average=False).div(batch_s)
+        recon_loss = F.mse_loss(im_out * 255, scimg * 255, reduction="sum") / 255.div(batch_s)
     else:
         recon_loss = None
 
@@ -113,7 +113,7 @@ for epoch in range(epochs):
         z_dist, output, im_out, mu, logvar = model(feat)
 
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(scimg, im_out, distribution='bernoulli')
+        recon_loss = reconstruction_loss(scimg, im_out, distribution="bernoulli")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = feat_rec_loss + recon_loss + (beta * kld_loss)
 
