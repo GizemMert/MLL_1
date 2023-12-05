@@ -55,7 +55,6 @@ class VariationalAutoencodermodel3(nn.Module):
             nn.ConvTranspose2d(150, 128, kernel_size=2),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 3, kernel_size=1),
-            nn.Sigmoid(),
         )
 
         self.weight_init()
