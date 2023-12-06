@@ -87,14 +87,14 @@ def reconstruction_loss(scimg, im_out, distribution="gaussian"):
     return recon_loss
 
 
-def calculate_psnr(kornia_psnr, im_out, scimg,  max_pixel=1.0):
-    # Assuming original and reconstructed are torch Tensors with pixel values in [0, 1]
-    psnr_value = kornia_psnr(im_out, scimg, max_val=max_pixel)
+def calculate_psnr(kornia_psnr, im_out, scimg):
+    # Assuming im_out (reconstructed) and scimg (original) are torch Tensors with pixel values in [0, 1]
+    psnr_value = kornia_psnr(im_out, scimg)
     return psnr_value
-
 
 # Create PSNR metric
 kornia_psnr = kornia.losses.PSNRLoss(max_val=1.0)
+
 
 
 
