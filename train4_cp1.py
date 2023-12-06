@@ -41,7 +41,7 @@ cff_feat_rec = 0.30
 cff_im_rec = 0.60
 cff_class = 0.10
 
-beta = 2
+beta = 4
 
 umap_dir = 'umap_figures4cp1'
 if not os.path.exists(umap_dir):
