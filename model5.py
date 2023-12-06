@@ -27,7 +27,7 @@ class VariationalAutoencodermodel5(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            nn.Tanh(),
+            nn.ReLU(),
             View((-1, 50 * 1 * 1)),
             nn.Linear(50, latent_dim * 2),
 
