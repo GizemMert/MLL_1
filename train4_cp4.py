@@ -14,7 +14,7 @@ from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 225
+epochs = 600
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
