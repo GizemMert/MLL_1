@@ -14,13 +14,13 @@ from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 150
+epochs = 600
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel4(latent_dim=10)
+model = VariationalAutoencodermodel4(latent_dim=30)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -37,9 +37,9 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-cff_feat_rec = 2
-cff_im_rec = 2
-cff_kld = 0.25
+cff_feat_rec = 0.05
+cff_im_rec = 0.50
+cff_kld = 0.45
 
 beta = 4
 
@@ -115,7 +115,7 @@ for epoch in range(epochs):
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (beta * kld_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
 
         train_loss.backward()
         optimizer.step()

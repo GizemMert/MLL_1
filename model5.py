@@ -7,7 +7,7 @@ from torch.nn import init
 
 
 class VariationalAutoencodermodel5(nn.Module):
-    def __init__(self, latent_dim=10):
+    def __init__(self, latent_dim=30):
         super(VariationalAutoencodermodel5, self).__init__()
         self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
@@ -58,6 +58,13 @@ class VariationalAutoencodermodel5(nn.Module):
             nn.Sigmoid()
         )
 
+        self.weight_init()
+
+    def weight_init(self):
+        for block in self._modules:
+            for m in self._modules[block]:
+                kaiming_init(m)
+
     def forward(self, x):
         distributions = self.encoder(x)
         mu = distributions[:, :self.latent_dim]
@@ -69,16 +76,6 @@ class VariationalAutoencodermodel5(nn.Module):
         img = self.img_decoder(y)
 
         return z, y, img, mu, logvar
-
-
-"""
-        self.weight_init()
-
-    def weight_init(self):
-        for block in self._modules:
-            for m in self._modules[block]:
-                kaiming_init(m)
-"""
 
 
 class View(nn.Module):
@@ -95,8 +92,6 @@ def reparametrize(mu, log_var):
     eps = Variable(std.data.new(std.size()).normal_())
     return mu + std * eps
 
-
-"""
 def kaiming_init(m):
     if isinstance(m, (nn.Linear, nn.Conv2d)):
         nn.init.kaiming_normal_(m.weight)  # Updated to kaiming_normal_
@@ -107,7 +102,7 @@ def kaiming_init(m):
         if m.bias is not None:
             m.bias.data.fill_(0)
 
-"""
+
 
 class GroupNorm(nn.Module):
     def __init__(self, num_features, num_groups=32, eps=1e-5):
