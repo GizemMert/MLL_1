@@ -14,7 +14,7 @@ from SSIM import SSIM
 from model5 import VariationalAutoencodermodel5
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 150
+epochs = 225
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,9 +37,9 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-cff_feat_rec = 0.10
-cff_im_rec = 0.55
-cff_kld = 0.35
+cff_feat_rec = 0.30
+cff_im_rec = 0.45
+cff_kld = 0.25
 
 beta = 4
 
