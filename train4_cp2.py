@@ -20,7 +20,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel2(latent_dim=10)
+model = VariationalAutoencodermodel2(latent_dim=30)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
