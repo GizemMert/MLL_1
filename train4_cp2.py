@@ -11,16 +11,16 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score
 from Dataloader import Dataloader, label_map
 from SSIM import SSIM
-from model4 import VariationalAutoencodermodel4
+from model2 import VariationalAutoencodermodel2
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 150
+epochs = 300
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel4(latent_dim=10)
+model = VariationalAutoencodermodel2(latent_dim=30)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -38,8 +38,8 @@ class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.30
-cff_im_rec = 0.60
-cff_class = 0.10
+cff_im_rec = 0.45
+cff_kld = 0.25
 
 beta = 4
 
@@ -112,10 +112,10 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        feat_rec_loss = torch.mean(torch.abs(output - feat))
+        feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = feat_rec_loss + recon_loss + (beta * kld_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
 
         train_loss.backward()
         optimizer.step()

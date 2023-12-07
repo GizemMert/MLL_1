@@ -3,10 +3,11 @@ import torch
 from torch import Tensor
 from torch._inductor.ir import View
 from torch.autograd import Variable
+from torch.nn import init
 
 
 class VariationalAutoencodermodel(nn.Module):
-    def __init__(self, latent_dim=10):
+    def __init__(self, latent_dim=30):
         super(VariationalAutoencodermodel, self).__init__()
         self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
@@ -26,7 +27,7 @@ class VariationalAutoencodermodel(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            nn.ReLU(True),
+            nn.ReLU(),
             View((-1, 50 * 1 * 1)),
             nn.Linear(50, latent_dim * 2),
 
@@ -54,7 +55,7 @@ class VariationalAutoencodermodel(nn.Module):
             nn.ConvTranspose2d(150, 128, kernel_size=2),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 3, kernel_size=1),
-            nn.Sigmoid(),
+            nn.Sigmoid()
         )
 
     def forward(self, x):
@@ -70,6 +71,16 @@ class VariationalAutoencodermodel(nn.Module):
         return z, y, img, mu, logvar
 
 
+"""
+        self.weight_init()
+
+    def weight_init(self):
+        for block in self._modules:
+            for m in self._modules[block]:
+                kaiming_init(m)
+"""
+
+
 class View(nn.Module):
     def __init__(self, size):
         super(View, self).__init__()
@@ -78,10 +89,25 @@ class View(nn.Module):
     def forward(self, tensor):
         return tensor.view(self.size)
 
+
 def reparametrize(mu, log_var):
     std = log_var.div(2).exp()
     eps = Variable(std.data.new(std.size()).normal_())
     return mu + std * eps
+
+
+"""
+def kaiming_init(m):
+    if isinstance(m, (nn.Linear, nn.Conv2d)):
+        nn.init.kaiming_normal_(m.weight)  # Updated to kaiming_normal_
+        if m.bias is not None:
+            m.bias.data.fill_(0)
+    elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
+        m.weight.data.fill_(1)
+        if m.bias is not None:
+            m.bias.data.fill_(0)
+
+"""
 
 class GroupNorm(nn.Module):
     def __init__(self, num_features, num_groups=32, eps=1e-5):

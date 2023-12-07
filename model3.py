@@ -27,15 +27,25 @@ class VariationalAutoencodermodel3(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            nn.ReLU(True),
-            View((-1, 50 * 1 * 1)),
-            nn.Linear(50, latent_dim * 2),
+            nn.ReLU(),
+            GroupNorm(50, num_groups=10),
+            nn.Conv2d(50, 40, kernel_size=1),
+            nn.ReLU(),
+            GroupNorm(40, num_groups=10),
+            nn.Conv2d(40, 30, kernel_size=1),
+            nn.ReLU(),
+            View((-1, 30 * 1 * 1)),
+            nn.Linear(30, latent_dim * 2),
 
         )
 
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 50),
-            View((-1, 50, 1, 1)),
+            nn.Linear(latent_dim, 30),
+            View((-1, 30, 1, 1)),
+            nn.ConvTranspose2d(30, 40, kernel_size=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(40, 50, kernel_size=1),
+            nn.ReLU(),
             nn.ConvTranspose2d(50, 150, kernel_size=5),
             nn.ReLU(),
             nn.ConvTranspose2d(150, 200, kernel_size=4, stride=2),
@@ -55,6 +65,7 @@ class VariationalAutoencodermodel3(nn.Module):
             nn.ConvTranspose2d(150, 128, kernel_size=2),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 3, kernel_size=1),
+            nn.Sigmoid()
         )
 
         self.weight_init()
@@ -91,7 +102,6 @@ def reparametrize(mu, log_var):
     eps = Variable(std.data.new(std.size()).normal_())
     return mu + std * eps
 
-
 def kaiming_init(m):
     if isinstance(m, (nn.Linear, nn.Conv2d)):
         nn.init.kaiming_normal_(m.weight)  # Updated to kaiming_normal_
@@ -101,6 +111,7 @@ def kaiming_init(m):
         m.weight.data.fill_(1)
         if m.bias is not None:
             m.bias.data.fill_(0)
+
 
 
 class GroupNorm(nn.Module):
