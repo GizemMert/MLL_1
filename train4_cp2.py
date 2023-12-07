@@ -95,9 +95,12 @@ class SobelFilter(nn.Module):
         self.weight_y = nn.Parameter(data=sobel_kernel_y, requires_grad=False)
 
     def forward(self, x):
-        edge_x = F.conv2d(x, self.weight_x, padding=1)
-        edge_y = F.conv2d(x, self.weight_y, padding=1)
-        return torch.sqrt(edge_x ** 2 + edge_y ** 2)
+        x_gray = torch.mean(x, dim=1, keepdim=True)
+        edge_x = F.conv2d(x_gray, self.weight_x, padding=1)
+        edge_y = F.conv2d(x_gray, self.weight_y, padding=1)
+        edge = torch.sqrt(edge_x ** 2 + edge_y ** 2 + 1e-6)
+
+        return edge
 
 edge_loss_fn = SobelFilter().to(device)
 
