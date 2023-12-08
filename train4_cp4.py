@@ -1,7 +1,3 @@
-import os
-import time
-import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -20,7 +16,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel4(latent_dim=20)
+model = VariationalAutoencodermodel4(latent_dim=30)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -37,23 +33,24 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-cff_feat_rec = 0.30
+cff_feat_rec = 0.15
 cff_im_rec = 0.45
-cff_kld = 0.25
+cff_kld = 0.15
+cff_edge = 0.25
 
 beta = 4
 
-umap_dir = 'umap_figures4cp4'
+umap_dir = 'umap_figures4cp2'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp4'
+latent_dir = 'latent_data4cp2'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results4cp4"
+result_dir = "training_results4cp2"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp4.txt")
+result_file = os.path.join(result_dir, "training_results4cp2.txt")
 
 
 def kl_divergence(mu, logvar):
@@ -85,6 +82,23 @@ def reconstruction_loss(scimg, im_out, distribution="gaussian"):
 
     return recon_loss
 
+class SobelFilter(nn.Module):
+    def __init__(self):
+        super(SobelFilter, self).__init__()
+        sobel_kernel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+        sobel_kernel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+        self.weight_x = nn.Parameter(data=sobel_kernel_x, requires_grad=False)
+        self.weight_y = nn.Parameter(data=sobel_kernel_y, requires_grad=False)
+
+    def forward(self, x):
+        x_gray = torch.mean(x, dim=1, keepdim=True)
+        edge_x = F.conv2d(x_gray, self.weight_x, padding=1)
+        edge_y = F.conv2d(x_gray, self.weight_y, padding=1)
+        edge = torch.sqrt(edge_x ** 2 + edge_y ** 2 + 1e-6)
+
+        return edge
+
+edge_loss_fn = SobelFilter().to(device)
 
 
 for epoch in range(epochs):
@@ -112,10 +126,14 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
+        imgs_edges = edge_loss_fn(scimg)
+        recon_edges = edge_loss_fn(im_out)
+
+        edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
         train_loss.backward()
         optimizer.step()
@@ -200,14 +218,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images4_cp4/"
+            file_name = "reconsructed-images4_cp2/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp4.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
