@@ -20,7 +20,7 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel2(latent_dim=30)
+model = VariationalAutoencodermodel2(latent_dim=10)
 model_name = 'AE-CFE-'
 
 if ngpu > 1:
@@ -37,10 +37,10 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-cff_feat_rec = 0.20
+cff_feat_rec = 0.15
 cff_im_rec = 0.45
 cff_kld = 0.15
-cff_edge = 0.20
+cff_edge = 0.25
 
 beta = 4
 
