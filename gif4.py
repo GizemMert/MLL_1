@@ -25,7 +25,7 @@ def sample_latent_points(latent_dim, num_samples=100):
 
 def generate_images(model, latent_points):
     with torch.no_grad():
-        _, _, images, _, _ = model(latent_points)
+        _, y, images, _, _ = model(latent_points)
     return images
 
 
