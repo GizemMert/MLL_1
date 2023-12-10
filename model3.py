@@ -7,7 +7,7 @@ from torch.nn import init
 
 
 class VariationalAutoencodermodel3(nn.Module):
-    def __init__(self, latent_dim=10):
+    def __init__(self, latent_dim=30):
         super(VariationalAutoencodermodel3, self).__init__()
         self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
@@ -27,25 +27,15 @@ class VariationalAutoencodermodel3(nn.Module):
             nn.ReLU(),
             GroupNorm(60,num_groups=20),
             nn.Conv2d(60, 50, kernel_size=1),
-            nn.ReLU(),
-            GroupNorm(50, num_groups=10),
-            nn.Conv2d(50, 40, kernel_size=1),
-            nn.ReLU(),
-            GroupNorm(40, num_groups=10),
-            nn.Conv2d(40, 30, kernel_size=1),
-            nn.ReLU(),
-            View((-1, 30 * 1 * 1)),
-            nn.Linear(30, latent_dim * 2),
+            nn.Tanh(),
+            View((-1, 50 * 1 * 1)),
+            nn.Linear(50, latent_dim * 2),
 
         )
 
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 30),
-            View((-1, 30, 1, 1)),
-            nn.ConvTranspose2d(30, 40, kernel_size=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(40, 50, kernel_size=1),
-            nn.ReLU(),
+            nn.Linear(latent_dim, 50),
+            View((-1, 50, 1, 1)),
             nn.ConvTranspose2d(50, 150, kernel_size=5),
             nn.ReLU(),
             nn.ConvTranspose2d(150, 200, kernel_size=4, stride=2),
