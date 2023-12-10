@@ -66,7 +66,7 @@ train_dataset = Dataloader(split='train')
 train_dataloader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
 
-def get_images_from_different_classes(dataloader, num_classes=4):
+def get_images_from_different_classes(dataloader, num_classes=13):
     features_from_classes = {}
     for feature, _, labels, _ in dataloader:
         for i, label in enumerate(labels):
@@ -96,4 +96,4 @@ selected_features = get_images_from_different_classes(train_dataloader)
 selected_images = [feature.float().to(device) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif(model, "vae_interpolation_4", selected_images)
+interpolate_gif(model, "vae_interpolation_13", selected_images)
