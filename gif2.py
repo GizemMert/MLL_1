@@ -8,7 +8,7 @@ from Dataloader import Dataloader, label_map
 from torch.utils.data import DataLoader
 
 
-def interpolate_gif(model, filename, imgs, n=100, latent_dim=30):
+def interpolate_gif(model, filename, features, n=100, latent_dim=30):
     model.eval()
 
     # Function to extract the latent vector from the model output
@@ -19,7 +19,7 @@ def interpolate_gif(model, filename, imgs, n=100, latent_dim=30):
         z = reparametrize(mu, logvar)
         return z
 
-    latents = [get_latent_vector(img.to(device)) for img in imgs]
+    latents = [get_latent_vector(feature.to(device)) for feature in features]
 
     all_interpolations = []
     for i in range(len(latents) - 1):
@@ -54,23 +54,21 @@ model.load_state_dict(torch.load(model_save_path, map_location='cuda' if torch.c
 model.to('cuda' if torch.cuda.is_available() else 'cpu')
 model.eval()
 
-# Extract two sample images from your dataloader
-train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-# Get two batches of data; x_1 and x_2 will be the first image from each batch
-x_1, x_2 = None, None
-for i, (_, scimg, _, _) in enumerate(train_dataloader):
+train_dataset = Dataloader(split='train')
+train_dataloader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
+
+# Assuming the dataloader returns features and images
+f_1, f_2 = None, None
+for i, (features, _, _, _) in enumerate(train_dataloader):
     if i == 0:
-        x_1 = scimg.float().to('cuda' if torch.cuda.is_available() else 'cpu')[0].unsqueeze(0)
+        f_1 = features.float().to(device)[0].unsqueeze(0)  # Get the first feature tensor
     elif i == 1:
-        x_2 = scimg.float().to('cuda' if torch.cuda.is_available() else 'cpu')[0].unsqueeze(0)
+        f_2 = features.float().to(device)[0].unsqueeze(0)  # Get the second feature tensor
         break
 
-if x_1 is not None and x_2 is not None:
-    # Call the interpolate_gif function with a list of images
-    interpolate_gif(model, "vae_interpolation_2", [x_1, x_2])
-
+if f_1 is not None and f_2 is not None:
+    interpolate_gif(model, "vae_interpolation_2", [f_1, f_2])
 else:
-    print("Error: Could not extract two images from the dataloader.")
+    print("Error: Could not extract two feature sets from the dataloader.")
 
