@@ -8,7 +8,7 @@ from Dataloader import Dataloader, label_map
 from torch.utils.data import DataLoader
 
 
-def interpolate_gif(model, filename, imgs, n=100, latent_dim=30):
+def interpolate_gif(model, filename, features, n=100, latent_dim=30):
     model.eval()
 
     # Function to extract the latent vector from the model output
@@ -19,7 +19,7 @@ def interpolate_gif(model, filename, imgs, n=100, latent_dim=30):
         z = reparametrize(mu, logvar)
         return z
 
-    latents = [get_latent_vector(img.to(device)) for img in imgs]
+    latents = [get_latent_vector(feature.to(device)) for feature in features]
 
     all_interpolations = []
     for i in range(len(latents) - 1):
@@ -46,7 +46,6 @@ def interpolate_gif(model, filename, imgs, n=100, latent_dim=30):
         loop=1)
 
 
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load your model
 model = VariationalAutoencodermodel4(latent_dim=30)
@@ -57,25 +56,25 @@ model.eval()
 
 
 def get_images_from_different_classes(dataloader, num_classes=4):
-    images_from_classes = {}
-    for _, image, label, _ in dataloader:
-        if label.item() not in images_from_classes and len(images_from_classes) < num_classes:
-            images_from_classes[label.item()] = image
+    features_from_classes = {}
+    for feature, _, label, _ in dataloader:
+        if label.item() not in features_from_classes and len(features_from_classes) < num_classes:
+            features_from_classes[label.item()] = feature
 
-        if len(images_from_classes) == num_classes:
+        if len(features_from_classes) == num_classes:
             break
 
-    return list(images_from_classes.values())
+    return list(features_from_classes.values())
 
 
 # Extract two sample images from your dataloader
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_images = get_images_from_different_classes(train_dataloader)
+selected_features = get_images_from_different_classes(train_dataloader)
 
 # Convert to appropriate format and device
-selected_images = [img.float().to(device) for img in selected_images]
+selected_images = [feature.float().to(device) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
 interpolate_gif(model, "vae_interpolation_4", selected_images)
