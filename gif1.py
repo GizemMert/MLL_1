@@ -7,7 +7,7 @@ from model4 import VariationalAutoencodermodel4
 plt.rcParams['figure.dpi'] = 200
 
 
-def plot_reconstructed(vae_model, dim1=0, dim2=1, r0=(-3, 3), r1=(-3, 3), n=12, latent_dim=30):
+def plot_reconstructed(vae_model, dim1=2, dim2=3, r0=(-3, 3), r1=(-3, 3), n=12, latent_dim=30):
     w = 128
     img = np.zeros((n*w, n*w, 3))
     for i, y in enumerate(np.linspace(*r1, n)):
