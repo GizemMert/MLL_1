@@ -57,14 +57,22 @@ model.eval()
 
 def get_images_from_different_classes(dataloader, num_classes=4):
     features_from_classes = {}
-    for feature, _, label, _ in dataloader:
-        if label.item() not in features_from_classes and len(features_from_classes) < num_classes:
-            features_from_classes[label.item()] = feature
+    for feature, _, labels, _ in dataloader:
+        for i, label in enumerate(labels):
+            label_item = label.item()
+            if label_item not in features_from_classes and len(features_from_classes) < num_classes:
+                # Select the feature corresponding to the label
+                selected_feature = feature[i].unsqueeze(0)
+                features_from_classes[label_item] = selected_feature
+
+            if len(features_from_classes) == num_classes:
+                break
 
         if len(features_from_classes) == num_classes:
             break
 
     return list(features_from_classes.values())
+
 
 
 # Extract two sample images from your dataloader
