@@ -9,7 +9,7 @@ plt.rcParams['figure.dpi'] = 200
 
 def plot_reconstructed(vae_model, dim1=0, dim2=1, r0=(-3, 3), r1=(-3, 3), n=12, latent_dim=30):
     w = 128
-    img = np.zeros((n*w, n*w))
+    img = np.zeros((n*w, n*w, 3))
     for i, y in enumerate(np.linspace(*r1, n)):
         for j, x in enumerate(np.linspace(*r0, n)):
             z = torch.zeros((1, latent_dim)).to(device)
@@ -17,8 +17,8 @@ def plot_reconstructed(vae_model, dim1=0, dim2=1, r0=(-3, 3), r1=(-3, 3), n=12, 
             z[0, dim2] = y
             x_hat = vae_model.decoder(z)
             x_hat = vae_model.img_decoder(x_hat)
-            x_hat = x_hat.reshape(w, w).to('cpu').detach().numpy()
-            img[(n-1-i)*w:(n-1-i+1)*w, j*w:(j+1)*w] = x_hat
+            x_hat = x_hat.reshape(3, w, w).permute(1, 2, 0).to('cpu').detach().numpy()  # Reshape and transpose
+            img[(n - 1 - i) * w:(n - 1 - i + 1) * w, j * w:(j + 1) * w, :] = x_hat  # Place the image in the grid
     plt.imshow(img, extent=[*r0, *r1])
     plt.axis('off')
     plt.savefig('reconstructed_images.png', bbox_inches='tight', pad_inches=0)
