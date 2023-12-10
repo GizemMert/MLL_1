@@ -3,33 +3,36 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from model4 import VariationalAutoencodermodel4
+from model4 import VariationalAutoencodermodel4, reparametrize
 from Dataloader import Dataloader, label_map
 from torch.utils.data import DataLoader
 
 
 def interpolate_gif(model, filename, imgs, n=100, latent_dim=30):
     model.eval()
-    latents = []
 
-    # Encode the images to latent vectors
-    for img in imgs:
-        z, _ = model.encode(img.to(device))
-        latents.append(z)
+    # Function to extract the latent vector from the model output
+    def get_latent_vector(x):
+        distributions = model.encoder(x)
+        mu = distributions[:, :latent_dim]
+        logvar = distributions[:, latent_dim:]
+        z = reparametrize(mu, logvar)
+        return z
 
-    # Interpolate in the latent space between each pair of images
+    latents = [get_latent_vector(img.to(device)) for img in imgs]
+
     all_interpolations = []
     for i in range(len(latents) - 1):
-        z1 = latents[i]
-        z2 = latents[i + 1]
-        interpolations = [z1 + (z2 - z1) * t for t in np.linspace(0, 1, n)]
-        all_interpolations.extend(interpolations)
+        z1, z2 = latents[i], latents[i + 1]
+        # Generate interpolated latent vectors
+        for t in np.linspace(0, 1, n):
+            z_interp = z1 * (1 - t) + z2 * t
+            all_interpolations.append(z_interp)
 
-    # Decode the latent vectors
-    z = torch.stack(all_interpolations)
-    interpolate_list = model.decoder(z)
-    interpolate_list = model.img_decoder(interpolate_list)
-    interpolate_list = interpolate_list.permute(0, 2, 3, 1).to('cpu').detach().numpy() * 255
+    # Decode the interpolated latent vectors
+    interpolate_list = [model.decoder(z).squeeze(0) for z in all_interpolations]
+    interpolate_list = [model.img_decoder(z).squeeze(0) for z in interpolate_list]
+    interpolate_list = [z.permute(1, 2, 0).to('cpu').detach().numpy() * 255 for z in interpolate_list]
 
     # Convert to PIL images and resize
     images_list = [Image.fromarray(img.astype(np.uint8)).resize((256, 256)) for img in interpolate_list]
@@ -41,6 +44,7 @@ def interpolate_gif(model, filename, imgs, n=100, latent_dim=30):
         save_all=True,
         append_images=images_list[1:],
         loop=1)
+
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
