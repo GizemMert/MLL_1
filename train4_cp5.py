@@ -1,7 +1,3 @@
-import os
-import time
-import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,9 +8,13 @@ from sklearn.metrics import f1_score
 from Dataloader import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
+import os
+import time
+import cv2
+import matplotlib.pyplot as plt
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 600
+epochs = 300
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,9 +37,10 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-cff_feat_rec = 0.05
-cff_im_rec = 0.50
-cff_kld = 0.45
+cff_feat_rec = 0.20
+cff_im_rec = 0.45
+cff_kld = 0.15
+cff_edge = 0.20
 
 beta = 4
 
@@ -85,6 +86,23 @@ def reconstruction_loss(scimg, im_out, distribution="gaussian"):
 
     return recon_loss
 
+class SobelFilter(nn.Module):
+    def __init__(self):
+        super(SobelFilter, self).__init__()
+        sobel_kernel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+        sobel_kernel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+        self.weight_x = nn.Parameter(data=sobel_kernel_x, requires_grad=False)
+        self.weight_y = nn.Parameter(data=sobel_kernel_y, requires_grad=False)
+
+    def forward(self, x):
+        x_gray = torch.mean(x, dim=1, keepdim=True)
+        edge_x = F.conv2d(x_gray, self.weight_x, padding=1)
+        edge_y = F.conv2d(x_gray, self.weight_y, padding=1)
+        edge = torch.sqrt(edge_x ** 2 + edge_y ** 2 + 1e-6)
+
+        return edge
+
+edge_loss_fn = SobelFilter().to(device)
 
 
 for epoch in range(epochs):
@@ -112,10 +130,14 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
+        imgs_edges = edge_loss_fn(scimg)
+        recon_edges = edge_loss_fn(im_out)
+
+        edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
         train_loss.backward()
         optimizer.step()

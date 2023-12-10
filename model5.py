@@ -30,6 +30,7 @@ class VariationalAutoencodermodel5(nn.Module):
             nn.ReLU(),
             View((-1, 50 * 1 * 1)),
             nn.Linear(50, latent_dim * 2),
+            nn.Tanh()
 
         )
 
