@@ -75,7 +75,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, sh
 selected_images = get_images_from_different_classes(train_dataloader)
 
 # Convert to appropriate format and device
-selected_images = [img.to(device) for img in selected_images]
+selected_images = [img.float().to(device) for img in selected_images]
 
 # Now, you can use these images for your interpolation GIF
 interpolate_gif(model, "vae_interpolation_4", selected_images)

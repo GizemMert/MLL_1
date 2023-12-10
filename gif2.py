@@ -62,14 +62,15 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, sh
 x_1, x_2 = None, None
 for i, (_, scimg, _, _) in enumerate(train_dataloader):
     if i == 0:
-        x_1 = scimg.to('cuda' if torch.cuda.is_available() else 'cpu')[0].unsqueeze(0)
+        x_1 = scimg.float().to('cuda' if torch.cuda.is_available() else 'cpu')[0].unsqueeze(0)
     elif i == 1:
-        x_2 = scimg.to('cuda' if torch.cuda.is_available() else 'cpu')[0].unsqueeze(0)
+        x_2 = scimg.float().to('cuda' if torch.cuda.is_available() else 'cpu')[0].unsqueeze(0)
         break
 
 if x_1 is not None and x_2 is not None:
     # Call the interpolate_gif function with a list of images
     interpolate_gif(model, "vae_interpolation_2", [x_1, x_2])
+
 else:
     print("Error: Could not extract two images from the dataloader.")
 
