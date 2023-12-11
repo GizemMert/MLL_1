@@ -11,6 +11,7 @@ from model4 import VariationalAutoencodermodel4
 import os
 import time
 import cv2
+from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
@@ -188,30 +189,34 @@ for epoch in range(epochs):
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
-        plt.figure(figsize=(15, 12), dpi=150)
-        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+        fig = plt.figure(figsize=(12, 10), dpi=150)  # Adjusted figure size
+        gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)  # 4:1 ratio for plot to legend width
+
+        ax = fig.add_subplot(gs[0])
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+        ax.set_aspect('equal')  # Ensure the UMAP plot is square in shape
+        ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+        ax.set_xlabel('UMAP Dimension 1', fontsize=14)
+        ax.set_ylabel('UMAP Dimension 2', fontsize=14)
+
+        # Second subplot for the legend
+        ax_legend = fig.add_subplot(gs[1])
+        ax_legend.axis('off')  # Turn off the axis for the legend subplot
 
         color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
         class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
 
-        plt.axis('equal')
-
+        # Create legend handles
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
-                                     markerfacecolor=color_map[i], markersize=50) for i in range(len(class_names))]
-        plt.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(1.05, 1), fontsize= 20,
-                   title='Cell Types')
+                                     markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+        # Place the legend on the legend subplot
+        ax_legend.legend(handles=legend_handles, loc='center', fontsize=20, title='Cell Types')
 
-        plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
-        plt.xlabel('UMAP Dimension 1', fontsize=14)
-        plt.ylabel('UMAP Dimension 2', fontsize=14)
-
-        plt.tight_layout(rect=[0, 0, 0.85, 1])
-
+        # Adjust the layout and save the figure
+        plt.tight_layout()
         umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
-
-        # Save the UMAP figure
         plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
-        plt.close()
+        plt.close(fig)
 
     for i in range(30):
         ft, img, lbl, _ = train_dataset[i]
