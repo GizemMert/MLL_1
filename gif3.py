@@ -96,4 +96,4 @@ selected_features = get_images_from_different_classes(train_dataloader)
 selected_images = [feature.float().to(device) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif(model, "vae_interpolation_13", selected_images)
+interpolate_gif(model, "vae_interpolation_new", selected_images)
