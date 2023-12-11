@@ -188,7 +188,7 @@ for epoch in range(epochs):
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
-        plt.figure(figsize=(12, 10), dpi=150)
+        plt.figure(figsize=(15, 12), dpi=150)
         scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
 
         color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
@@ -196,16 +196,19 @@ for epoch in range(epochs):
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
                                      markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
-        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
+        plt.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(1.05, 1), fontsize='large',
+                   title='Cell Types')
 
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         plt.xlabel('UMAP Dimension 1', fontsize=14)
         plt.ylabel('UMAP Dimension 2', fontsize=14)
 
+        plt.tight_layout(rect=[0, 0, 0.75, 1])  # Adjust layout to accommodate legend
+
         umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
 
         # Save the UMAP figure
-        plt.savefig(umap_figure_filename, dpi=300)
+        plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
         plt.close()
 
     for i in range(30):
