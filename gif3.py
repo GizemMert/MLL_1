@@ -95,7 +95,5 @@ selected_features = get_images_from_different_classes(train_dataloader)
 # Convert to appropriate format and device
 selected_images = [feature.float().to(device) for feature in selected_features]
 
-# Main loop to generate multiple GIFs
-for i in range(10):
-    filename = f"vae_interpolation_13_{i}"  # Unique filename for each iteration
-    interpolate_gif(model, filename, selected_images)
+# Now, you can use these images for your interpolation GIF
+interpolate_gif(model, "vae_interpolation_13", selected_images)
