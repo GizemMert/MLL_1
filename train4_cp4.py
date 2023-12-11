@@ -194,16 +194,18 @@ for epoch in range(epochs):
         color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
         class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
 
+        plt.axis('equal')
+
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
-                                     markerfacecolor=color_map[i], markersize=20) for i in range(len(class_names))]
-        plt.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(1.05, 1), fontsize='large',
+                                     markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+        plt.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(1.05, 1), fontsize= 20,
                    title='Cell Types')
 
         plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
-        plt.xlabel('UMAP Dimension 1', fontsize=14)
-        plt.ylabel('UMAP Dimension 2', fontsize=14)
+        plt.xlabel('UMAP Dimension 1', fontsize=20)
+        plt.ylabel('UMAP Dimension 2', fontsize=20)
 
-        plt.tight_layout(rect=[0, 0, 0.75, 1])  # Adjust layout to accommodate legend
+        plt.tight_layout(rect=[0, 0, 0.75, 1])
 
         umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
 
