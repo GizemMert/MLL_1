@@ -188,14 +188,14 @@ for epoch in range(epochs):
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
-        plt.figure(figsize=(15, 12), dpi=150)
+        plt.figure(figsize=(15, 15), dpi=150)
         scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
 
         color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
         class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
-                                     markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+                                     markerfacecolor=color_map[i], markersize=20) for i in range(len(class_names))]
         plt.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(1.05, 1), fontsize='large',
                    title='Cell Types')
 
