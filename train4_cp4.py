@@ -196,8 +196,8 @@ for epoch in range(epochs):
         scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
         ax.set_aspect('equal')  # Ensure the UMAP plot is square in shape
         ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
-        ax.set_xlabel('UMAP Dimension 1', fontsize=14)
-        ax.set_ylabel('UMAP Dimension 2', fontsize=14)
+        ax.set_xlabel('UMAP Dimension 1', fontsize=16)
+        ax.set_ylabel('UMAP Dimension 2', fontsize=16)
 
         # Second subplot for the legend
         ax_legend = fig.add_subplot(gs[1])
@@ -208,9 +208,9 @@ for epoch in range(epochs):
 
         # Create legend handles
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
-                                     markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+                                     markerfacecolor=color_map[i], markersize=18) for i in range(len(class_names))]
         # Place the legend on the legend subplot
-        ax_legend.legend(handles=legend_handles, loc='center', fontsize=20, title='Cell Types')
+        ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
         # Adjust the layout and save the figure
         plt.tight_layout()
