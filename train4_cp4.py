@@ -188,7 +188,7 @@ for epoch in range(epochs):
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
-        plt.figure(figsize=(15, 15), dpi=150)
+        plt.figure(figsize=(12, 10), dpi=150)
         scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
 
         color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
@@ -205,7 +205,7 @@ for epoch in range(epochs):
         plt.xlabel('UMAP Dimension 1', fontsize=20)
         plt.ylabel('UMAP Dimension 2', fontsize=20)
 
-        plt.tight_layout(rect=[0, 0, 0.75, 1])
+        plt.tight_layout(rect=[0, 0, 0.85, 1])
 
         umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
 
