@@ -22,7 +22,7 @@ label_map = {
 }
 
 
-def interpolate_gif(model, filename, features, n=200, latent_dim=30):
+def interpolate_gif(model, filename, features, n=100, latent_dim=30):
     model.eval()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -96,7 +96,7 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['monocyte'])
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
 
 # Convert to appropriate format and device
 selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
