@@ -197,15 +197,15 @@ for epoch in range(epochs):
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=20, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.3))
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=20, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.5))
         ax.set_aspect('equal')
 
-        center_x = (np.min(latent_data_umap[:, 0]) + np.max(latent_data_umap[:, 0])) / 2
-        center_y = (np.min(latent_data_umap[:, 1]) + np.max(latent_data_umap[:, 1])) / 2
-        zoom_range_x = (center_x - 5, center_x + 5)
-        zoom_range_y = (center_y - 5, center_y + 5)
-        ax.set_xlim(zoom_range_x)
-        ax.set_ylim(zoom_range_y)
+        x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
+        y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
+
+        padding = 1
+        ax.set_xlim(x_min - padding, x_max + padding)
+        ax.set_ylim(y_min - padding, y_max + padding)
 
         ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         ax.set_xlabel('UMAP Dimension 1', fontsize=16)
