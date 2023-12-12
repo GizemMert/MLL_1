@@ -45,17 +45,17 @@ cff_edge = 0.20
 
 beta = 4
 
-umap_dir = 'umap_figures4cp2'
+umap_dir = 'umap_figures4cp2_new'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp2'
+latent_dir = 'latent_data4cp2_new'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results4cp2"
+result_dir = "training_results4cp2_new"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp2.txt")
+result_file = os.path.join(result_dir, "training_results4cp2_new.txt")
 
 
 def kl_divergence(mu, logvar):
@@ -249,7 +249,7 @@ for epoch in range(epochs):
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp2.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
