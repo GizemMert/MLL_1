@@ -38,11 +38,12 @@ def interpolate_gif(model, filename, features, n=100, latent_dim=30):
     latents = [get_latent_vector(feature.to(device)) for feature in features]
 
     def slerp(val, low, high):
-        omega = np.arccos(np.clip(torch.dot(low / torch.norm(low), high / torch.norm(high)), -1, 1))
-        so = np.sin(omega)
-        if so == 0:
-            return low
-        return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+        low_norm = low / torch.norm(low, dim=1, keepdim=True)
+        high_norm = high / torch.norm(high, dim=1, keepdim=True)
+        omega = torch.acos((low_norm * high_norm).sum(dim=1, keepdim=True).clamp(-1, 1))
+        so = torch.sin(omega)
+        res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
+        return res.where(so != 0, low)
 
     # Interpolate between the latent vectors
     all_interpolations = []
@@ -103,7 +104,7 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['eosinophil'])
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['monocyte'])
 
 # Convert to appropriate format and device
 selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
