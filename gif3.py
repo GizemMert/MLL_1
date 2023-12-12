@@ -22,7 +22,7 @@ label_map = {
 }
 
 
-def interpolate_gif(model, filename, features, n=100, latent_dim=30):
+def interpolate_gif(model, filename, features, n=200, latent_dim=30):
     model.eval()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
