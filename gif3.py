@@ -37,11 +37,18 @@ def interpolate_gif(model, filename, features, n=100, latent_dim=30):
     # Generate the latent representations
     latents = [get_latent_vector(feature.to(device)) for feature in features]
 
+    def slerp(val, low, high):
+        omega = np.arccos(np.clip(torch.dot(low / torch.norm(low), high / torch.norm(high)), -1, 1))
+        so = np.sin(omega)
+        if so == 0:
+            return low
+        return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+
     # Interpolate between the latent vectors
     all_interpolations = []
     for i in range(len(latents) - 1):
         for t in np.linspace(0, 1, n):
-            z_interp = latents[i] * (1 - t) + latents[i + 1] * t
+            z_interp = slerp(t, latents[i], latents[i + 1])
             all_interpolations.append(z_interp)
 
 
