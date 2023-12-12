@@ -4,6 +4,9 @@ import numpy as np
 from model4 import VariationalAutoencodermodel4, reparametrize
 from Dataloader import Dataloader
 from torch.utils.data import DataLoader
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+import numpy as np
 
 label_map = {
     'basophil': 0,
@@ -104,7 +107,7 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_segmented'])
 
 # Convert to appropriate format and device
 selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
