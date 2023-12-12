@@ -203,9 +203,26 @@ for epoch in range(epochs):
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
         y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
 
-        padding = 1
-        ax.set_xlim(x_min - padding, x_max + padding)
-        ax.set_ylim(y_min - padding, y_max + padding)
+        zoom_factor = 0.5  # Smaller values mean more zoom
+        padding_factor = 0.1  # Adjust padding around the zoomed area
+
+        # Calculate the range for zooming in based on the zoom factor
+        x_range = (x_max - x_min) * zoom_factor
+        y_range = (y_max - y_min) * zoom_factor
+
+        # Calculate the center of the data
+        center_x = (x_max + x_min) / 2
+        center_y = (y_max + y_min) / 2
+
+        # Calculate new limits around the center of the data
+        new_x_min = center_x - (x_range * (1 + padding_factor))
+        new_x_max = center_x + (x_range * (1 + padding_factor))
+        new_y_min = center_y - (y_range * (1 + padding_factor))
+        new_y_max = center_y + (y_range * (1 + padding_factor))
+
+        # Apply the new limits to zoom in on the plot
+        ax.set_xlim(new_x_min, new_x_max)
+        ax.set_ylim(new_y_min, new_y_max)
 
         ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         ax.set_xlabel('UMAP Dimension 1', fontsize=16)
