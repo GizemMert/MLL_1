@@ -64,7 +64,7 @@ def interpolate_gif(model, filename, features, n=200, latent_dim=30):
         save_all=True,
         append_images=images_list[1:],
         loop=0,
-        duration=200
+        duration=100
     )
 
 # Load the model

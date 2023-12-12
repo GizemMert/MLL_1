@@ -184,7 +184,7 @@ for epoch in range(epochs):
         # print("Labels array shape:", all_labels_array.shape)
 
         # Filter out the 'erythroblast' class
-        erythroblast_class_index = inverse_label_map['erythroblast']
+        erythroblast_class_index = label_map['erythroblast']
         mask = all_labels_array != erythroblast_class_index
         filtered_latent_data = latent_data_reshaped[mask]
         filtered_labels = all_labels_array[mask]
@@ -193,12 +193,12 @@ for epoch in range(epochs):
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             filtered_latent_data)
 
-        fig = plt.figure(figsize=(12, 10), dpi=150)  # Adjusted figure size
-        gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)  # 4:1 ratio for plot to legend width
+        fig = plt.figure(figsize=(12, 10), dpi=150)
+        gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
         scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=10, c=filtered_labels, cmap='Spectral')
-        ax.set_aspect('equal')  # Ensure the UMAP plot is square in shape
+        ax.set_aspect('equal')
 
         # to zoom on the plot, can be adjusted through needs
         ax.set_xlim([np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])])
@@ -212,17 +212,15 @@ for epoch in range(epochs):
         ax_legend = fig.add_subplot(gs[1])
         ax_legend.axis('off')  # Turn off the axis for the legend subplot
 
-        unique_labels = np.unique(filtered_labels)
-        color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
-        filtered_class_names = [inverse_label_map[i] for i in unique_labels]
+        unique_filtered_labels = np.unique(filtered_labels)
+        filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+        color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
 
-        # Create legend handles
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
                                      markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
-        # Place the legend on the legend subplot
+
         ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
-        # Adjust the layout and save the figure
         plt.tight_layout()
         umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
         plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
