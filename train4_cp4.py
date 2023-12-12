@@ -197,7 +197,7 @@ for epoch in range(epochs):
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=20, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.5))
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=40, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.5))
         ax.set_aspect('equal')
 
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
