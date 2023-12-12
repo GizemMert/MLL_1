@@ -183,18 +183,27 @@ for epoch in range(epochs):
         all_labels_array = np.array(all_labels)
         # print("Labels array shape:", all_labels_array.shape)
 
-        original_labels = [inverse_label_map[label] for label in all_labels_array]
+        # Filter out the 'erythroblast' class
+        erythroblast_class_index = inverse_label_map['erythroblast']
+        mask = all_labels_array != erythroblast_class_index
+        filtered_latent_data = latent_data_reshaped[mask]
+        filtered_labels = all_labels_array[mask]
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-            latent_data_reshaped)
+            filtered_latent_data)
 
         fig = plt.figure(figsize=(12, 10), dpi=150)  # Adjusted figure size
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)  # 4:1 ratio for plot to legend width
 
         ax = fig.add_subplot(gs[0])
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=10, c=filtered_labels, cmap='Spectral')
         ax.set_aspect('equal')  # Ensure the UMAP plot is square in shape
+
+        # to zoom on the plot, can be adjusted through needs
+        ax.set_xlim([np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])])
+        ax.set_ylim([np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])])
+
         ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
         ax.set_xlabel('UMAP Dimension 1', fontsize=16)
         ax.set_ylabel('UMAP Dimension 2', fontsize=16)
@@ -203,12 +212,13 @@ for epoch in range(epochs):
         ax_legend = fig.add_subplot(gs[1])
         ax_legend.axis('off')  # Turn off the axis for the legend subplot
 
-        color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
-        class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
+        unique_labels = np.unique(filtered_labels)
+        color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
+        filtered_class_names = [inverse_label_map[i] for i in unique_labels]
 
         # Create legend handles
-        legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
-                                     markerfacecolor=color_map[i], markersize=18) for i in range(len(class_names))]
+        legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                                     markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
         # Place the legend on the legend subplot
         ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
