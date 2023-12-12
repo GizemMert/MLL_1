@@ -197,7 +197,7 @@ for epoch in range(epochs):
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=10, c=filtered_labels, cmap='Spectral')
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=20, c=filtered_labels, cmap='Spectral')
         ax.set_aspect('equal')
 
         # to zoom on the plot, can be adjusted through needs
