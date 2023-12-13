@@ -203,8 +203,8 @@ for epoch in range(epochs):
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
         y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
 
-        zoom_factor = 0.50  # Smaller values mean more zoom
-        padding_factor = 0.1  # Adjust padding around the zoomed area
+        zoom_factor = 0.25  # Smaller values mean more zoom
+        padding_factor = 0.3  # Adjust padding around the zoomed area
 
         # Calculate the range for zooming in based on the zoom factor
         x_range = (x_max - x_min) * zoom_factor
