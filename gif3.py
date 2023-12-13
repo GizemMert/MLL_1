@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import numpy as np
+from sklearn.gaussian_process.kernels import WhiteKernel
 
 label_map = {
     'basophil': 0,
@@ -45,7 +46,7 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
     Y_train = np.array([latent_vector.squeeze(0).cpu().detach().numpy() for latent_vector in latents])  # Latent vectors
 
     # Define a kernel for GPR
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-3, 1e2)) + WhiteKernel(noise_level=1, noise_level_bounds=(1e-3, 1e3))
 
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
     gp.fit(X_train, Y_train)
