@@ -197,13 +197,13 @@ for epoch in range(epochs):
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=200, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.7))
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.7))
         ax.set_aspect('equal')
 
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
         y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
 
-        zoom_factor = 0.25  # Smaller values mean more zoom
+        zoom_factor = 0.40  # Smaller values mean more zoom
         padding_factor = 0.3  # Adjust padding around the zoomed area
 
         # Calculate the range for zooming in based on the zoom factor
