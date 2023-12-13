@@ -42,7 +42,7 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
 
     # Prepare data for GPR
     X_train = np.arange(len(latents)).reshape(-1, 1)  # Indices
-    Y_train = np.array([latent.cpu().detach().numpy() for latent in latents])  # Latent vectors
+    Y_train = np.array([latent_vector.squeeze(0).cpu().detach().numpy() for latent_vector in latents])  # Latent vectors
 
     # Define a kernel for GPR
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
