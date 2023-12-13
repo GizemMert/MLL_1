@@ -45,9 +45,9 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
     Y_train = np.array([latent_vector.squeeze(0).cpu().detach().numpy() for latent_vector in latents])  # Latent vectors
 
     # Define a kernel for GPR
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-3, 1e2))
 
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=15)
     gp.fit(X_train, Y_train)
 
     # predictions (interpolation)
