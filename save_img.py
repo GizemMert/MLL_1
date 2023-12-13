@@ -12,8 +12,8 @@ def save_class_images(dataloader, classes_of_interest, save_directory):
     for _, roi_cropped, label_tensor, _ in dataloader:
         label = label_tensor.item()  # Convert label tensor to Python integer
         if label in classes_of_interest and not saved_classes[label]:
-            # Convert from CHW to HWC format
-            roi_cropped_hwc = np.transpose(roi_cropped, (1, 2, 0))
+            # Remove the batch dimension and convert from CHW to HWC format
+            roi_cropped_hwc = np.transpose(roi_cropped.squeeze(0).numpy(), (1, 2, 0))
 
             # Constructing the filename with label information
             label_name = [name for name, number in label_map.items() if number == label][0]
