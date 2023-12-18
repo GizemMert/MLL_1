@@ -46,15 +46,15 @@ class VariationalAutoencodermodel4(nn.Module):
         )
 
         self.img_decoder = nn.Sequential(
-            nn.ConvTranspose2d(256, 200, kernel_size=5, stride=2),
+            nn.ConvTranspose2d(256, 128, kernel_size=5, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(200, 180, kernel_size=3, stride=2),
+            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(180, 150, kernel_size=3, stride=2),
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(150, 128, kernel_size=2),
+            nn.ConvTranspose2d(32, 16, kernel_size=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 3, kernel_size=1),
+            nn.ConvTranspose2d(16, 3, kernel_size=1),
             nn.Sigmoid()
         )
 
