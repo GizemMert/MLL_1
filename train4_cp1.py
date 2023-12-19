@@ -11,6 +11,7 @@ from model import VariationalAutoencodermodel
 import os
 import time
 import cv2
+from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
@@ -40,21 +41,21 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 cff_feat_rec = 0.20
 cff_im_rec = 0.45
 cff_kld = 0.15
-cff_edge = 0.20
+# cff_edge = 0.20
 
 beta = 4
 
-umap_dir = 'umap_figures4cp1'
+umap_dir = 'umap_figures4cp2_new_1'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp1'
+latent_dir = 'latent_data4cp2_new_1'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results4cp1"
+result_dir = "training_results4cp2_new_1"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp1.txt")
+result_file = os.path.join(result_dir, "training_results4cp2_new_1.txt")
 
 
 def kl_divergence(mu, logvar):
@@ -80,7 +81,7 @@ def reconstruction_loss(scimg, im_out, distribution="gaussian"):
     if distribution == 'bernoulli':
         recon_loss = F.binary_cross_entropy_with_logits(im_out, scimg, reduction="sum").div(batch_s)
     elif distribution == 'gaussian':
-        recon_loss = F.mse_loss(im_out, scimg, reduction='mean')
+        recon_loss = F.mse_loss(im_out, scimg, reduction='sum').div(batch_size)
     else:
         recon_loss = None
 
@@ -130,14 +131,14 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        imgs_edges = edge_loss_fn(scimg)
-        recon_edges = edge_loss_fn(im_out)
+        # imgs_edges = edge_loss_fn(scimg)
+        # recon_edges = edge_loss_fn(im_out)
 
-        edge_loss = F.mse_loss(recon_edges, imgs_edges)
+        # edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
 
         train_loss.backward()
         optimizer.step()
@@ -182,31 +183,68 @@ for epoch in range(epochs):
         all_labels_array = np.array(all_labels)
         # print("Labels array shape:", all_labels_array.shape)
 
-        original_labels = [inverse_label_map[label] for label in all_labels_array]
+        # Filter out the 'erythroblast' class
+        erythroblast_class_index = label_map['erythroblast']
+        mask = all_labels_array != erythroblast_class_index
+        filtered_latent_data = latent_data_reshaped[mask]
+        filtered_labels = all_labels_array[mask]
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-            latent_data_reshaped)
+            filtered_latent_data)
 
-        plt.figure(figsize=(12, 10), dpi=150)
-        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+        fig = plt.figure(figsize=(12, 10), dpi=150)
+        gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
-        color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
-        class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
+        ax = fig.add_subplot(gs[0])
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.7))
+        ax.set_aspect('equal')
 
-        legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
-                                     markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
-        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
+        x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
+        y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
 
-        plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
-        plt.xlabel('UMAP Dimension 1', fontsize=14)
-        plt.ylabel('UMAP Dimension 2', fontsize=14)
+        zoom_factor = 0.40  # Smaller values mean more zoom
+        padding_factor = 0.3  # Adjust padding around the zoomed area
 
+        # Calculate the range for zooming in based on the zoom factor
+        x_range = (x_max - x_min) * zoom_factor
+        y_range = (y_max - y_min) * zoom_factor
+
+        # Calculate the center of the data
+        center_x = (x_max + x_min) / 2
+        center_y = (y_max + y_min) / 2
+
+        # Calculate new limits around the center of the data
+        new_x_min = center_x - (x_range * (1 + padding_factor))
+        new_x_max = center_x + (x_range * (1 + padding_factor))
+        new_y_min = center_y - (y_range * (1 + padding_factor))
+        new_y_max = center_y + (y_range * (1 + padding_factor))
+
+        # Apply the new limits to zoom in on the plot
+        ax.set_xlim(new_x_min, new_x_max)
+        ax.set_ylim(new_y_min, new_y_max)
+
+        ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+        ax.set_xlabel('UMAP Dimension 1', fontsize=16)
+        ax.set_ylabel('UMAP Dimension 2', fontsize=16)
+
+        # Second subplot for the legend
+        ax_legend = fig.add_subplot(gs[1])
+        ax_legend.axis('off')  # Turn off the axis for the legend subplot
+
+        unique_filtered_labels = np.unique(filtered_labels)
+        filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+        color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+
+        legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                                     markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
+
+        ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
+
+        plt.tight_layout()
         umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
-
-        # Save the UMAP figure
-        plt.savefig(umap_figure_filename, dpi=300)
-        plt.close()
+        plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
+        plt.close(fig)
 
     for i in range(30):
         ft, img, lbl, _ = train_dataset[i]
@@ -222,14 +260,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images4_cp1/"
+            file_name = "reconsructed-images4_cp2_new_1/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp1.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new_1.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
