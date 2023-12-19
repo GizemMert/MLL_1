@@ -136,8 +136,7 @@ for epoch in range(epochs):
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = 1 - criterion_1(im_out, scimg)
-        # recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
+        recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
