@@ -41,7 +41,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 cff_feat_rec = 0.20
 cff_im_rec = 0.45
 cff_kld = 0.15
-# cff_edge = 0.20
+cff_edge = 0.20
 
 beta = 4
 
@@ -131,14 +131,14 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        # imgs_edges = edge_loss_fn(scimg)
-        # recon_edges = edge_loss_fn(im_out)
+        imgs_edges = edge_loss_fn(scimg)
+        recon_edges = edge_loss_fn(im_out)
 
-        # edge_loss = F.mse_loss(recon_edges, imgs_edges)
+        edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
         train_loss.backward()
         optimizer.step()
