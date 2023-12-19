@@ -41,33 +41,37 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
     # Generate the latent representations
     latents = [get_latent_vector(feature.to(device)) for feature in features]
 
-    # Prepare data for GPR
-    X_train = np.arange(len(latents)).reshape(-1, 1)  # Indices
-    Y_train = np.array([latent_vector.squeeze(0).cpu().detach().numpy() for latent_vector in latents])  # Latent vectors
 
-    # Define a kernel for GPR
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-3, 1e2)) + WhiteKernel(noise_level=1e-5)
+    def slerp(val, low, high):
+        low_norm = low / torch.norm(low, dim=1, keepdim=True)
+        high_norm = high / torch.norm(high, dim=1, keepdim=True)
+        omega = torch.acos((low_norm * high_norm).sum(dim=1, keepdim=True).clamp(-1, 1))
+        so = torch.sin(omega)
+        res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
+        return res.where(so != 0, low)
 
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
-    gp.fit(X_train, Y_train)
+    # Interpolate between the latent vectors
+    all_interpolations = []
+    for i in range(len(latents) - 1):
+        for t in np.linspace(0, 1, n):
+            z_interp = slerp(t, latents[i], latents[i + 1])
+            all_interpolations.append(z_interp)
 
-    # predictions (interpolation)
-    X_to_predict = np.linspace(0, len(latents) - 1, n).reshape(-1, 1)
-    Y_pred = gp.predict(X_to_predict)
 
-    # Decode interpolated latent vectors to images
     interpolate_list = []
-    for z in Y_pred:
-        z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
-        y = model.decoder(z_tensor)
+    for z in all_interpolations:
+        y = model.decoder(z)
         img = model.img_decoder(y)
         img = img.permute(0, 2, 3, 1)
         interpolate_list.append(img.squeeze(0).to('cpu').detach().numpy())
 
-    # Normalize and convert to PIL images, and save GIF
+
     interpolate_list = [np.clip(img * 255, 0, 255).astype(np.uint8) for img in interpolate_list]
+
     images_list = [Image.fromarray(img) for img in interpolate_list]
     images_list = images_list + images_list[::-1]
+
+
     images_list[0].save(
         f'{filename}.gif',
         save_all=True,
@@ -79,7 +83,7 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
 # Load the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2.pth'
+model_save_path = 'trained_model4cp2_new.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
