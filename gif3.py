@@ -69,7 +69,6 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
     interpolate_list = [np.clip(img * 255, 0, 255).astype(np.uint8) for img in interpolate_list]
 
     images_list = [Image.fromarray(img) for img in interpolate_list]
-    images_list = images_list + images_list[::-1]
 
 
     images_list[0].save(
