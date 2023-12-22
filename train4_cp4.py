@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import mrcnn.config
 import mrcnn.model_feat_extract
 
+"""
 class SimpleConfig(mrcnn.config.Config):
     NAME = "march_mrcnn"
     GPU_COUNT = 1
@@ -28,6 +29,7 @@ mask_rcnn_model = mrcnn.model_feat_extract.MaskRCNN(mode="inference",
                                                     config=SimpleConfig(),
                                                     model_dir=os.getcwd())
 mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5', by_name=True)
+"""
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 300
