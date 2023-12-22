@@ -13,6 +13,21 @@ import time
 import cv2
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
+import mrcnn.config
+import mrcnn.model_feat_extract
+
+class SimpleConfig(mrcnn.config.Config):
+    NAME = "march_mrcnn"
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+    NUM_CLASSES = 2  # Adjust based on your dataset
+
+
+
+mask_rcnn_model = mrcnn.model_feat_extract.MaskRCNN(mode="inference",
+                                                    config=SimpleConfig(),
+                                                    model_dir=os.getcwd())
+mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5', by_name=True)
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 300
@@ -125,18 +140,31 @@ for epoch in range(epochs):
         scimg = scimg.float()
         label = label.long().to(device)
 
+        np_scimg = scimg.permute(0, 2, 3, 1).cpu().numpy()
+        batch_masks = []
+        sub_batch_size = 16  # Adjust as per your GPU capability
+        for i in range(0, len(np_scimg), sub_batch_size):
+            sub_images = np_scimg[i:i + sub_batch_size]
+            results = mask_rcnn_model.detect(sub_images)
+            sub_masks = [r['masks'] for r in results if r]
+            batch_masks.extend(sub_masks)
+
+        np_masks = np.concatenate(batch_masks, axis=0) if batch_masks else np.zeros_like(np_scimg)
+        masks = torch.from_numpy(np_masks).float().to(device)
+
         feat, scimg = feat.to(device), scimg.to(device)
 
         optimizer.zero_grad()
 
         z_dist, output, im_out, mu, logvar = model(feat)
+        masked_scimg = scimg * masks.unsqueeze(1)
 
-        imgs_edges = edge_loss_fn(scimg)
+        imgs_edges = edge_loss_fn(masked_scimg)
         recon_edges = edge_loss_fn(im_out)
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
+        recon_loss = reconstruction_loss(masked_scimg, im_out, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
