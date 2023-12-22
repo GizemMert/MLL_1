@@ -3,8 +3,10 @@ import numpy as np
 import pickle
 import os
 import cv2
+import torch
 from torch.utils.data import Dataset
 import random
+
 
 equivalent_classes = {
 
