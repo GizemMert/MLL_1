@@ -197,16 +197,16 @@ for epoch in range(epochs):
         gaussian_mask_batch = gaussian_mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
 
         # Apply the mask to the output and the target image
-        # im_out_masked = im_out * gaussian_mask_batch
+        im_out_masked = im_out * gaussian_mask_batch
         masked_scimg = scimg * gaussian_mask_batch
 
         imgs_edges = edge_loss_fn(masked_scimg)
-        recon_edges = edge_loss_fn(im_out)
+        recon_edges = edge_loss_fn(im_out_masked)
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(masked_scimg, im_out, distribution="gaussian")
-        recon_loss = (recon_loss * gaussian_mask_batch).sum() / gaussian_mask_batch.sum()
+        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
+        # recon_loss = (recon_loss * gaussian_mask_batch).sum() / gaussian_mask_batch.sum()
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
