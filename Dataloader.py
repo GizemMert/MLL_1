@@ -115,13 +115,6 @@ class Dataloader(Dataset):
 
         roi_cropped = img[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20)]
         roi_cropped = cv2.resize(roi_cropped, (128, 128))
-
-        hsv_roi = cv2.cvtColor(roi_cropped, cv2.COLOR_BGR2HSV)
-        lower_purple = np.array([120, 50, 50])  # Lower bound of purple in HSV
-        upper_purple = np.array([140, 255, 255])
-        mask = cv2.inRange(hsv_roi, lower_purple, upper_purple)
-        mask = mask / 255.
-        mask = torch.from_numpy(mask)
         roi_cropped = roi_cropped / 255.
 
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
@@ -130,7 +123,7 @@ class Dataloader(Dataset):
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        return feat, roi_cropped, label_fold, mask, key
+        return feat, roi_cropped, label_fold, key
 
 
 """

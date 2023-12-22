@@ -16,6 +16,36 @@ import matplotlib.pyplot as plt
 # import mrcnn.config
 # import mrcnn.model_feat_extract
 
+import torch
+
+
+def create_weighted_mask(image_shape, central_fraction=0.866, peripheral_weight=0.0):
+    """
+    Create a weighted mask with a central square region set to 1 and the periphery set to a lower weight.
+
+    :param image_shape: Shape of the image (C, H, W).
+    :param central_fraction: Fraction of the image size to be considered as central (0 to 1).
+    :param peripheral_weight: Weight for the peripheral regions, set to 0 to ignore in loss calculation.
+    :return: Weighted mask tensor.
+    """
+    C, H, W = image_shape
+    mask = torch.full((C, H, W), peripheral_weight)  # Set the entire mask to the peripheral weight initially
+
+    # Calculate the central region dimensions
+    central_height = int(H * central_fraction)
+    central_width = int(W * central_fraction)
+
+    # Calculate the starting and ending indices of the central region
+    start_height = (H - central_height) // 2
+    end_height = start_height + central_height
+    start_width = (W - central_width) // 2
+    end_width = start_width + central_width
+
+    # Set the central region to 1
+    mask[:, start_height:end_height, start_width:end_width] = 1
+    return mask
+
+
 """
 class SimpleConfig(mrcnn.config.Config):
     NAME = "march_mrcnn"
@@ -137,11 +167,10 @@ for epoch in range(epochs):
         all_means = []
         all_labels = []
 
-    for feat, scimg, label, mask, _ in train_dataloader:
+    for feat, scimg, label, _ in train_dataloader:
         feat = feat.float()
         scimg = scimg.float()
         label = label.long().to(device)
-        mask = mask.float().to(device)
 
         """
         np_scimg = scimg.permute(0, 2, 3, 1).cpu().numpy()
@@ -162,14 +191,24 @@ for epoch in range(epochs):
         optimizer.zero_grad()
 
         z_dist, output, im_out, mu, logvar = model(feat)
-        masked_scimg = scimg * mask.unsqueeze(1)
+        weight_mask = create_weighted_mask(scimg.shape[1:], central_fraction=np.sqrt(0.75))
+        weight_mask = weight_mask.to(device)  # Move mask to the correct device
+
+        # Expand the mask for the entire batch if needed
+        if len(weight_mask.shape) == 3:  # If the mask is (C, H, W)
+            weight_mask = weight_mask.unsqueeze(0)  # Add a batch dimension
+            weight_mask = weight_mask.expand(scimg.size(0), -1, -1, -1)  # Expand to the batch size
+
+        # Apply the weight mask to both the output and the target image
+        im_out_masked = im_out * weight_mask
+        masked_scimg = scimg * weight_mask
 
         imgs_edges = edge_loss_fn(masked_scimg)
-        recon_edges = edge_loss_fn(im_out)
+        recon_edges = edge_loss_fn(im_out_masked)
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(masked_scimg, im_out, distribution="gaussian")
+        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
@@ -280,7 +319,7 @@ for epoch in range(epochs):
         plt.close(fig)
 
     for i in range(30):
-        ft, img, lbl, _, _ = train_dataset[i]
+        ft, img, lbl, _ = train_dataset[i]
         ft = np.expand_dims(ft, axis=0)
         ft = torch.tensor(ft)
         ft = ft.to(device)
