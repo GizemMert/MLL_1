@@ -130,7 +130,7 @@ class Dataloader(Dataset):
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        return feat, roi_cropped, label_fold, mask, key
+        return feat, roi_cropped, label_fold, key
 
 
 """
