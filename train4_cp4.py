@@ -21,29 +21,38 @@ import scipy.ndimage
 import torch
 
 
-def create_gaussian_mask(image_shape, sigma=0.5):
+def create_gaussian_weighted_mask(image_shape, central_fraction=np.sqrt(0.75), peripheral_weight=0.0, sigma=None):
     """
-    Create a 3D Gaussian mask for a batch of RGB images.
+    Create a weighted mask with a Gaussian peak in the center and a smooth transition to the periphery.
 
-    Args:
-    - image_shape (tuple): the shape of the images (channels, height, width).
-    - sigma (float): the sigma of the Gaussian, determining the spread of the weight.
-
-    Returns:
-    - torch.Tensor: a 3D tensor representing the Gaussian mask.
+    :param image_shape: Shape of the image (C, H, W).
+    :param central_fraction: Fraction of the image size to be considered as central (0 to 1).
+    :param peripheral_weight: Weight for the peripheral regions, set to 0 to ignore in loss calculation.
+    :param sigma: Standard deviation for the Gaussian function.
+    :return: Weighted mask tensor.
     """
     C, H, W = image_shape
-    # Create a 2D Gaussian
-    y, x = np.ogrid[-(H // 2):(H // 2) + H % 2, -(W // 2):(W // 2) + W % 2]
-    mask = np.exp(-(x ** 2 + y ** 2) / (2. * sigma ** 2))
-    mask = mask / mask.max()  # Normalize the mask to peak at 1
-    # Repeat mask for each channel
-    mask = np.repeat(mask[None, :, :], C, axis=0)
-    return torch.from_numpy(mask).float()
+    if sigma is None:
+        sigma = 0.5 / central_fraction  # Default sigma that depends on the central_fraction
 
-sigma_for_128_image = 128 / 4
+    # Create a grid of (x,y) coordinates
+    x = torch.linspace(-W // 2, W // 2, W)
+    y = torch.linspace(-H // 2, H // 2, H)
+    x_grid, y_grid = torch.meshgrid(x, y)
 
-gaussian_mask = create_gaussian_mask((3, 128, 128), sigma=sigma_for_128_image)
+    # Calculate the Gaussian function
+    gaussian = torch.exp(-((x_grid**2 + y_grid**2) / (2 * sigma**2)))
+
+    # Normalize to have a maximum of 1
+    gaussian = gaussian / gaussian.max()
+
+    # Scale the Gaussian function to have a maximum of 1 and a minimum of peripheral_weight
+    gaussian = gaussian * (1 - peripheral_weight) + peripheral_weight
+
+    # Expand the Gaussian mask for each channel
+    mask = gaussian.expand(C, H, W)
+
+    return mask
 
 
 """
@@ -172,41 +181,25 @@ for epoch in range(epochs):
         scimg = scimg.float()
         label = label.long().to(device)
 
-        """
-        np_scimg = scimg.permute(0, 2, 3, 1).cpu().numpy()
-        batch_masks = []
-        sub_batch_size = 16  # Adjust as per your GPU capability
-        for i in range(0, len(np_scimg), sub_batch_size):
-            sub_images = np_scimg[i:i + sub_batch_size]
-            results = mask_rcnn_model.detect(sub_images)
-            sub_masks = [r['masks'] for r in results if r]
-            batch_masks.extend(sub_masks)
-
-        np_masks = np.concatenate(batch_masks, axis=0) if batch_masks else np.zeros_like(np_scimg)
-        masks = torch.from_numpy(np_masks).float().to(device)
-        """
-
         feat, scimg = feat.to(device), scimg.to(device)
 
         optimizer.zero_grad()
 
-        batch_size, C, H, W = scimg.shape
-
         z_dist, output, im_out, mu, logvar = model(feat)
-        gaussian_mask = create_gaussian_mask((C, H, W), sigma=10).to(device)
-        gaussian_mask_batch = gaussian_mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
+        weight_mask = create_gaussian_weighted_mask(scimg.shape[1:], central_fraction=np.sqrt(0.75))
+        weight_mask = weight_mask.to(device)  # Move mask to the correct device
 
-        # Apply the mask to the output and the target image
-        im_out_masked = im_out * gaussian_mask_batch
-        masked_scimg = scimg * gaussian_mask_batch
+        squared_error = (im_out - scimg) ** 2
+        weighted_squared_error = squared_error * weight_mask
+        weighted_error_sum = weighted_squared_error.sum()
 
-        imgs_edges = edge_loss_fn(masked_scimg)
-        recon_edges = edge_loss_fn(im_out_masked)
+        imgs_edges = edge_loss_fn(scimg)
+        recon_edges = edge_loss_fn(im_out)
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
-        # recon_loss = (recon_loss * gaussian_mask_batch).sum() / gaussian_mask_batch.sum()
+        recon_loss = weighted_error_sum.div(weight_mask.sum())
+        # recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
