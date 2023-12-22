@@ -135,11 +135,13 @@ for epoch in range(epochs):
         all_means = []
         all_labels = []
 
-    for feat, scimg, label, _ in train_dataloader:
+    for feat, scimg, label, mask, _ in train_dataloader:
         feat = feat.float()
         scimg = scimg.float()
         label = label.long().to(device)
+        mask = mask.float().to(device)
 
+        """
         np_scimg = scimg.permute(0, 2, 3, 1).cpu().numpy()
         batch_masks = []
         sub_batch_size = 16  # Adjust as per your GPU capability
@@ -151,13 +153,14 @@ for epoch in range(epochs):
 
         np_masks = np.concatenate(batch_masks, axis=0) if batch_masks else np.zeros_like(np_scimg)
         masks = torch.from_numpy(np_masks).float().to(device)
+        """
 
         feat, scimg = feat.to(device), scimg.to(device)
 
         optimizer.zero_grad()
 
         z_dist, output, im_out, mu, logvar = model(feat)
-        masked_scimg = scimg * masks.unsqueeze(1)
+        masked_scimg = scimg * mask.unsqueeze(1)
 
         imgs_edges = edge_loss_fn(masked_scimg)
         recon_edges = edge_loss_fn(im_out)
