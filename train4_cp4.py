@@ -280,7 +280,7 @@ for epoch in range(epochs):
         plt.close(fig)
 
     for i in range(30):
-        ft, img, lbl, _ = train_dataset[i]
+        ft, img, lbl, _, _ = train_dataset[i]
         ft = np.expand_dims(ft, axis=0)
         ft = torch.tensor(ft)
         ft = ft.to(device)
