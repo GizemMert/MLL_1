@@ -13,8 +13,8 @@ import time
 import cv2
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
-import mrcnn.config
-import mrcnn.model_feat_extract
+# import mrcnn.config
+# import mrcnn.model_feat_extract
 
 """
 class SimpleConfig(mrcnn.config.Config):
