@@ -137,7 +137,7 @@ for epoch in range(epochs):
         all_means = []
         all_labels = []
 
-    for feat, scimg, label, mask, _ in train_dataloader:
+    for feat, scimg, label, _ in train_dataloader:
         feat = feat.float()
         scimg = scimg.float()
         label = label.long().to(device)
