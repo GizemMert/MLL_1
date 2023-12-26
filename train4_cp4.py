@@ -10,6 +10,7 @@ from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 import os
 import time
+import torchvision
 import cv2
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
@@ -19,40 +20,6 @@ import numpy as np
 import scipy.ndimage
 
 import torch
-
-
-def create_gaussian_weighted_mask(image_shape, central_fraction=np.sqrt(0.75), peripheral_weight=0.0, sigma=None):
-    """
-    Create a weighted mask with a Gaussian peak in the center and a smooth transition to the periphery.
-
-    :param image_shape: Shape of the image (C, H, W).
-    :param central_fraction: Fraction of the image size to be considered as central (0 to 1).
-    :param peripheral_weight: Weight for the peripheral regions, set to 0 to ignore in loss calculation.
-    :param sigma: Standard deviation for the Gaussian function.
-    :return: Weighted mask tensor.
-    """
-    C, H, W = image_shape
-    if sigma is None:
-        sigma = 0.5 / central_fraction  # Default sigma that depends on the central_fraction
-
-    # Create a grid of (x,y) coordinates
-    x = torch.linspace(-W // 2, W // 2, W)
-    y = torch.linspace(-H // 2, H // 2, H)
-    x_grid, y_grid = torch.meshgrid(x, y)
-
-    # Calculate the Gaussian function
-    gaussian = torch.exp(-((x_grid**2 + y_grid**2) / (2 * sigma**2)))
-
-    # Normalize to have a maximum of 1
-    gaussian = gaussian / gaussian.max()
-
-    # Scale the Gaussian function to have a maximum of 1 and a minimum of peripheral_weight
-    gaussian = gaussian * (1 - peripheral_weight) + peripheral_weight
-
-    # Expand the Gaussian mask for each channel
-    mask = gaussian.expand(C, H, W)
-
-    return mask
 
 
 """
@@ -93,6 +60,10 @@ criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+mask_rcnn_model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+mask_rcnn_model = mask_rcnn_model.to(device)
+mask_rcnn_model.eval()
 
 cff_feat_rec = 0.20
 cff_im_rec = 0.45
@@ -186,20 +157,25 @@ for epoch in range(epochs):
         optimizer.zero_grad()
 
         z_dist, output, im_out, mu, logvar = model(feat)
-        weight_mask = create_gaussian_weighted_mask(scimg.shape[1:], central_fraction=np.sqrt(0.75))
-        weight_mask = weight_mask.to(device)  # Move mask to the correct device
 
-        squared_error = (im_out - scimg) ** 2
-        weighted_squared_error = squared_error * weight_mask
-        weighted_error_sum = weighted_squared_error.sum()
+        masked_scimg = torch.zeros_like(scimg)
+        im_out_masked = torch.zeros_like(im_out)
+
+
+        for i in range(scimg.shape[0]):
+            with torch.no_grad():
+                prediction = mask_rcnn_model([scimg[i]])
+                mask = prediction[0]['masks'] > 0.5
+
+            masked_scimg[i] = scimg[i] * mask
+            im_out_masked[i] = im_out[i] * mask
 
         imgs_edges = edge_loss_fn(scimg)
         recon_edges = edge_loss_fn(im_out)
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = weighted_error_sum.div(weight_mask.sum())
-        # recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
+        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
