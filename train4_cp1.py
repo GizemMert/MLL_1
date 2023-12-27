@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 300
-batch_size = 128
+batch_size = 256
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
