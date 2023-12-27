@@ -167,21 +167,20 @@ for epoch in range(epochs):
         masked_scimg = torch.zeros_like(scimg)
         im_out_masked = torch.zeros_like(im_out)
 
-        for i in range(scimg.shape[0]):
-            with torch.no_grad():
-                img = scimg[i].to(device)
-                img_list = [img]
+        with torch.no_grad():
+            # Process a batch of images
+            predictions = mask_rcnn_model([img.to('cpu') for img in scimg])
 
-                prediction = mask_rcnn_model(img_list)
-                if len(prediction[0]['masks']) > 0:
-                    mask = prediction[0]['masks'][0] > 0.5
-                    mask = mask.squeeze(0)
-                    mask = mask.expand_as(scimg[i])
-                else:
-                    mask = torch.zeros_like(scimg[i])
+            # Initialize masked images
+            masked_scimg = torch.zeros_like(scimg)
+            im_out_masked = torch.zeros_like(im_out)
 
-                masked_scimg[i] = scimg[i] * mask.to(device)
-                im_out_masked[i] = im_out[i] * mask.to(device)
+            for i, prediction in enumerate(predictions):
+                if len(prediction['masks']) > 0:
+                    mask = prediction['masks'][0] > 0.5
+                    mask = mask.squeeze(1)  # Adjust dimensions if necessary
+                    masked_scimg[i] = scimg[i] * mask
+                    im_out_masked[i] = im_out[i] * mask
 
         imgs_edges = edge_loss_fn(scimg)
         recon_edges = edge_loss_fn(im_out)
