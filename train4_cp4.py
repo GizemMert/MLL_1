@@ -64,7 +64,10 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-mask_rcnn_model = maskrcnn_resnet50_fpn(weights=MaskRCNN_ResNet50_FPN_Weights.COCO_V1)
+mask_rcnn_model = maskrcnn_resnet50_fpn(weights=None)
+custom_weights_path = "/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5"
+custom_state_dict = torch.load(custom_weights_path)
+mask_rcnn_model.load_state_dict(custom_state_dict)
 mask_rcnn_model = mask_rcnn_model.to(device)
 mask_rcnn_model.eval()
 
