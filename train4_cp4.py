@@ -166,16 +166,12 @@ for epoch in range(epochs):
 
         with torch.no_grad():
             predictions = mask_rcnn_model(scimg)
-
             all_masks = torch.zeros_like(scimg)
 
             for i, prediction in enumerate(predictions):
-                mask = torch.zeros_like(scimg[i])
                 if len(prediction['masks']) > 0:
-                    for m in prediction['masks']:
-                        mask = torch.max(mask, (m > 0.5).float())
-                mask = mask.unsqueeze(0).expand_as(scimg[i])
-                all_masks[i] = mask
+                    combined_mask = torch.max(torch.stack([(m > 0.5).float() for m in prediction['masks']]), dim=0)[0]
+                    all_masks[i] = combined_mask.expand_as(scimg[i])
 
         masked_scimg = scimg * all_masks
         im_out_masked = im_out * all_masks
