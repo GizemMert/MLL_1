@@ -164,26 +164,24 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        masked_scimg = torch.zeros_like(scimg)
-        im_out_masked = torch.zeros_like(im_out)
-
         with torch.no_grad():
-            # Directly use images on the GPU for prediction
             predictions = mask_rcnn_model(scimg)
 
-            # Initialize masked images
-            masked_scimg = torch.zeros_like(scimg)
-            im_out_masked = torch.zeros_like(im_out)
+            all_masks = torch.zeros_like(scimg)
 
             for i, prediction in enumerate(predictions):
+                mask = torch.zeros_like(scimg[i])
                 if len(prediction['masks']) > 0:
-                    mask = prediction['masks'][0] > 0.5
-                    mask = mask.squeeze(1)  # Verify this is needed
-                    masked_scimg[i] = scimg[i] * mask
-                    im_out_masked[i] = im_out[i] * mask
+                    for m in prediction['masks']:
+                        mask = torch.max(mask, (m > 0.5).float())
+                mask = mask.unsqueeze(0).expand_as(scimg[i])
+                all_masks[i] = mask
 
-        imgs_edges = edge_loss_fn(scimg)
-        recon_edges = edge_loss_fn(im_out)
+        masked_scimg = scimg * all_masks
+        im_out_masked = im_out * all_masks
+
+        imgs_edges = edge_loss_fn(masked_scimg)
+        recon_edges = edge_loss_fn(im_out_masked)
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
