@@ -166,7 +166,7 @@ for epoch in range(epochs):
 
         for i in range(scimg.shape[0]):
             with torch.no_grad():
-                img = scimg[i].to('cpu')
+                img = scimg[i].unsqueeze(0).to(device)
                 img_list = [img]
 
                 # Make predictions
