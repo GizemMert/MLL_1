@@ -168,8 +168,8 @@ for epoch in range(epochs):
         im_out_masked = torch.zeros_like(im_out)
 
         with torch.no_grad():
-            # Process a batch of images
-            predictions = mask_rcnn_model([img.to('cpu') for img in scimg])
+            # Directly use images on the GPU for prediction
+            predictions = mask_rcnn_model(scimg)
 
             # Initialize masked images
             masked_scimg = torch.zeros_like(scimg)
@@ -178,7 +178,7 @@ for epoch in range(epochs):
             for i, prediction in enumerate(predictions):
                 if len(prediction['masks']) > 0:
                     mask = prediction['masks'][0] > 0.5
-                    mask = mask.squeeze(1)  # Adjust dimensions if necessary
+                    mask = mask.squeeze(1)  # Verify this is needed
                     masked_scimg[i] = scimg[i] * mask
                     im_out_masked[i] = im_out[i] * mask
 
