@@ -19,6 +19,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.ndimage
 
+from torchvision.models.detection import maskrcnn_resnet50_fpn
+from torchvision.models.detection.mask_rcnn import MaskRCNN_ResNet50_FPN_Weights
+
 import torch
 
 
@@ -61,7 +64,7 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-mask_rcnn_model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+mask_rcnn_model = maskrcnn_resnet50_fpn(weights=MaskRCNN_ResNet50_FPN_Weights.COCO_V1)
 mask_rcnn_model = mask_rcnn_model.to(device)
 mask_rcnn_model.eval()
 
