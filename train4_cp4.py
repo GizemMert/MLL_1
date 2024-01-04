@@ -172,7 +172,7 @@ for epoch in range(epochs):
 
             for i, prediction in enumerate(predictions):
                 if len(prediction['masks']) > 0:
-                    combined_mask = torch.max(torch.stack([(m > 0.7).float() for m in prediction['masks']]), dim=0)[0]
+                    combined_mask = torch.max(torch.stack([(m > 0.5).float() for m in prediction['masks']]), dim=0)[0]
                     all_masks[i] = combined_mask.expand_as(scimg[i])
 
         masked_scimg = scimg * all_masks
