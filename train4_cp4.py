@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 # import mrcnn.model_feat_extract
 import numpy as np
 import scipy.ndimage
+from torch.cuda.amp import GradScaler, autocast
 
 from torchvision.models.detection import maskrcnn_resnet50_fpn
 from torchvision.models.detection.mask_rcnn import MaskRCNN_ResNet50_FPN_Weights
@@ -39,7 +40,7 @@ mask_rcnn_model = mrcnn.model_feat_extract.MaskRCNN(mode="inference",
                                                     model_dir=os.getcwd())
 mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5', by_name=True)
 """
-
+scaler = GradScaler()
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 300
 batch_size = 128
@@ -164,31 +165,33 @@ for epoch in range(epochs):
 
         optimizer.zero_grad()
 
-        z_dist, output, im_out, mu, logvar = model(feat)
+        with autocast():
+            z_dist, output, im_out, mu, logvar = model(feat)
 
-        with torch.no_grad():
-            predictions = mask_rcnn_model(scimg)
-            all_masks = torch.zeros_like(scimg)
+            with torch.no_grad():
+                predictions = mask_rcnn_model(scimg)
+                all_masks = torch.zeros_like(scimg)
 
-            for i, prediction in enumerate(predictions):
-                if len(prediction['masks']) > 0:
-                    combined_mask = torch.max(torch.stack([(m > 0.5).float() for m in prediction['masks']]), dim=0)[0]
-                    all_masks[i] = combined_mask.expand_as(scimg[i])
+                for i, prediction in enumerate(predictions):
+                    if len(prediction['masks']) > 0:
+                        combined_mask = torch.max(torch.stack([(m > 0.7).float() for m in prediction['masks']]), dim=0)[0]
+                        all_masks[i] = combined_mask.expand_as(scimg[i])
 
-        masked_scimg = scimg * all_masks
-        im_out_masked = im_out * all_masks
+            masked_scimg = scimg * all_masks
+            im_out_masked = im_out * all_masks
 
-        imgs_edges = edge_loss_fn(masked_scimg)
-        recon_edges = edge_loss_fn(im_out_masked)
+            imgs_edges = edge_loss_fn(masked_scimg)
+            recon_edges = edge_loss_fn(im_out_masked)
 
-        edge_loss = F.mse_loss(recon_edges, imgs_edges)
-        feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
-        kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
+            edge_loss = F.mse_loss(recon_edges, imgs_edges)
+            feat_rec_loss = criterion(output, feat)
+            recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
+            kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
+            train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
-        train_loss.backward()
-        optimizer.step()
+        scaler.scale(train_loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         loss += train_loss.data.cpu()
         acc_featrec_loss += feat_rec_loss.data.cpu()
