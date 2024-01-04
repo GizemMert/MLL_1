@@ -42,7 +42,7 @@ mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 300
-batch_size = 128
+batch_size = 64
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -65,11 +65,13 @@ class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 mask_rcnn_model = maskrcnn_resnet50_fpn(weights=MaskRCNN_ResNet50_FPN_Weights.COCO_V1)
+mask_rcnn_model = mask_rcnn_model.to(device)
+mask_rcnn_model.eval()
+
+
 # custom_weights_path = "/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5"
 # custom_state_dict = torch.load(custom_weights_path)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
-mask_rcnn_model = mask_rcnn_model.to(device)
-mask_rcnn_model.eval()
 
 cff_feat_rec = 0.20
 cff_im_rec = 0.45
