@@ -88,6 +88,10 @@ latent_dir = 'latent_data4cp2_new2'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
+label_dir = 'label_data4cp2_new2'
+if not os.path.exists(label_dir):
+    os.makedirs(label_dir)
+
 result_dir = "training_results4cp2_new2"
 os.makedirs(result_dir, exist_ok=True)
 result_file = os.path.join(result_dir, "training_results4cp2_new2.txt")
@@ -219,6 +223,9 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, np.concatenate(all_means, axis=0))
+
+        label_filename = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
+        np.save(label_filename, np.array(all_labels))
 
     model.eval()
 
