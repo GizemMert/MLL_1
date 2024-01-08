@@ -173,7 +173,7 @@ for epoch in range(epochs):
             for i, prediction in enumerate(predictions):
                 # Filter out masks with low confidence
                 high_conf_masks = [m for m, c in zip(prediction['masks'], prediction['scores']) if
-                                   c > 0.9]
+                                   c > 0.7]
 
                 # Combine high-confidence masks for current image
                 if len(high_conf_masks) > 0:
