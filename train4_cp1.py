@@ -10,13 +10,39 @@ from SSIM import SSIM
 from model import VariationalAutoencodermodel
 import os
 import time
+import torchvision
 import cv2
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
+# import mrcnn.config
+# import mrcnn.model_feat_extract
+import numpy as np
+import scipy.ndimage
+
+from torchvision.models.detection import maskrcnn_resnet50_fpn
+from torchvision.models.detection.mask_rcnn import MaskRCNN_ResNet50_FPN_Weights
+
+import torch
+
+
+"""
+class SimpleConfig(mrcnn.config.Config):
+    NAME = "march_mrcnn"
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 1
+    NUM_CLASSES = 2  # Adjust based on your dataset
+
+
+
+mask_rcnn_model = mrcnn.model_feat_extract.MaskRCNN(mode="inference",
+                                                    config=SimpleConfig(),
+                                                    model_dir=os.getcwd())
+mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5', by_name=True)
+"""
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 300
-batch_size = 256
+batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -38,6 +64,15 @@ criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
+mask_rcnn_model = maskrcnn_resnet50_fpn(weights=MaskRCNN_ResNet50_FPN_Weights.COCO_V1)
+mask_rcnn_model = mask_rcnn_model.to(device)
+mask_rcnn_model.eval()
+
+
+# custom_weights_path = "/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5"
+# custom_state_dict = torch.load(custom_weights_path)
+# mask_rcnn_model.load_state_dict(custom_state_dict)
+
 cff_feat_rec = 0.20
 cff_im_rec = 0.45
 cff_kld = 0.15
@@ -45,17 +80,21 @@ cff_edge = 0.20
 
 beta = 4
 
-umap_dir = 'umap_figures4cp2_new_1'
+umap_dir = 'umap_figures4cp2_new5'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp2_new_1'
+latent_dir = 'latent_data4cp2_new5'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-result_dir = "training_results4cp2_new_1"
+label_dir = 'label_data4cp2_new5'
+if not os.path.exists(label_dir):
+    os.makedirs(label_dir)
+
+result_dir = "training_results4cp2_new5"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp2_new_1.txt")
+result_file = os.path.join(result_dir, "training_results4cp2_new5.txt")
 
 
 def kl_divergence(mu, logvar):
@@ -131,17 +170,30 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        imgs_edges = edge_loss_fn(scimg)
-        recon_edges = edge_loss_fn(im_out)
+        with torch.no_grad():
+            predictions = mask_rcnn_model(scimg)
+            all_masks = torch.zeros_like(scimg)
+
+            for i, prediction in enumerate(predictions):
+                if len(prediction['masks']) > 0:
+                    combined_mask = torch.max(torch.stack([(m > 0.7).float() for m in prediction['masks']]), dim=0)[0]
+                    all_masks[i] = combined_mask.expand_as(scimg[i])
+
+        masked_scimg = scimg * all_masks
+        im_out_masked = im_out * all_masks
+
+        imgs_edges = edge_loss_fn(masked_scimg)
+        recon_edges = edge_loss_fn(im_out_masked)
 
         edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(scimg, im_out, distribution="gaussian")
+        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
 
         train_loss.backward()
         optimizer.step()
+
         loss += train_loss.data.cpu()
         acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += recon_loss.data.cpu()
@@ -171,6 +223,9 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, np.concatenate(all_means, axis=0))
+
+        label_filename = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
+        np.save(label_filename, np.array(all_labels))
 
     model.eval()
 
@@ -259,14 +314,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images4_cp2_new_1/"
+            file_name = "reconsructed-images4_cp2_new5/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp2_new_1.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new5.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
