@@ -80,21 +80,21 @@ cff_edge = 0.20
 
 beta = 4
 
-umap_dir = 'umap_figures4cp2_new2'
+umap_dir = 'umap_figures4cp2_new3'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp2_new2'
+latent_dir = 'latent_data4cp2_new3'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-label_dir = 'label_data4cp2_new2'
+label_dir = 'label_data4cp2_new3'
 if not os.path.exists(label_dir):
     os.makedirs(label_dir)
 
-result_dir = "training_results4cp2_new2"
+result_dir = "training_results4cp2_new3"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp2_new2.txt")
+result_file = os.path.join(result_dir, "training_results4cp2_new3.txt")
 
 
 def kl_divergence(mu, logvar):
@@ -314,14 +314,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images4_cp2_new2/"
+            file_name = "reconsructed-images4_cp2_new3/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp2_new2.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new3.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
