@@ -171,13 +171,8 @@ for epoch in range(epochs):
             all_masks = torch.zeros_like(scimg)
 
             for i, prediction in enumerate(predictions):
-                # Filter out masks with low confidence
-                high_conf_masks = [m for m, c in zip(prediction['masks'], prediction['scores']) if
-                                   c > 0.7]
-
-                # Combine high-confidence masks for current image
-                if len(high_conf_masks) > 0:
-                    combined_mask = torch.max(torch.stack([(m > 0.7).float() for m in high_conf_masks]), dim=0)[0]
+                if len(prediction['masks']) > 0:
+                    combined_mask = torch.max(torch.stack([(m > 0.5).float() for m in prediction['masks']]), dim=0)[0]
                     all_masks[i] = combined_mask.expand_as(scimg[i])
 
         masked_scimg = scimg * all_masks
