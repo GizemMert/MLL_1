@@ -1,18 +1,26 @@
 import gzip
 import pickle
+import os
 
-# Path to the gzipped pickle file
-file_path = '/lustre/groups/aih/raheleh.salehi/Master-thesis/save_files/mll_images.pkl.gz'
+# Define the path to your .dat.gz file
+file_path = "/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz"
 
-# Open the gzip file and load its contents
-with gzip.open(file_path, 'rb') as f:
+# Open the gzip compressed file
+with gzip.open(os.path.join(file_path), "rb") as f:
     data = pickle.load(f)
 
-# Now, count the number of images based on the structure of `data`
+# Now `data` contains the contents of the file.
+# You can print out its type to understand if it's a list, dict, etc.
+print(type(data))
+
+# If it is a dictionary, you can check its keys
 if isinstance(data, dict):
-    # If the data is a dictionary, count the number of keys
-    num_images = len(data.keys())
-    print(f"The number of images in the file is: {num_images}")
-else:
-    # If the data is not a dictionary, adapt this part based on its structure
-    print("Data is not in expected dictionary format, please check its structure.")
+    print("Keys in the file:", data.keys())
+
+    # Optionally, you can print the type of the values associated with each key
+    for key in data.keys():
+        print(f"Type of data under key '{key}': {type(data[key])}")
+
+    # If you want to see the first few entries under each key (for example, if they are lists or dicts)
+    for key in data.keys():
+        print(f"First few entries for key '{key}': {data[key][:5]}")
