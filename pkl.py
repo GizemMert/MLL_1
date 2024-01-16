@@ -9,18 +9,22 @@ file_path = "/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datase
 with gzip.open(os.path.join(file_path), "rb") as f:
     data = pickle.load(f)
 
-# Now `data` contains the contents of the file.
-# You can print out its type to understand if it's a list, dict, etc.
+# Check the type of the loaded data
 print(type(data))
 
-# If it is a dictionary, you can check its keys
+# If it is a dictionary, iterate over its keys
 if isinstance(data, dict):
     print("Keys in the file:", data.keys())
 
-    # Optionally, you can print the type of the values associated with each key
+    # For each key, check the type of its value and print some of its contents
     for key in data.keys():
         print(f"Type of data under key '{key}': {type(data[key])}")
 
-    # If you want to see the first few entries under each key (for example, if they are lists or dicts)
-    for key in data.keys():
-        print(f"First few entries for key '{key}': {data[key][:5]}")
+        # Check if the value is also a dictionary
+        if isinstance(data[key], dict):
+            print(f"Contents of the nested dictionary for key '{key}':")
+            for nested_key, nested_value in data[key].items():
+                print(f"  {nested_key}: {nested_value}")
+                # Break after a few items to avoid too much output
+                break
+
