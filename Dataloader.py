@@ -123,7 +123,7 @@ class Dataloader(Dataset):
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
 
         mask_cropped = mask[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20), :]
-
+        print("Shape after cropping:", mask_cropped.shape)
         if mask_cropped.dtype != np.uint8:
             if mask_cropped.max() <= 1.0:
                 mask_cropped = (mask_cropped * 255).astype(np.uint8)
@@ -131,6 +131,7 @@ class Dataloader(Dataset):
                 mask_cropped = mask_cropped.astype(np.uint8)
 
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
+        print("Shape after resizing:", mask_cropped.shape)
         mask_cropped = np.rollaxis(mask_cropped, 2, 0)
 
         feat = self.samples[key]['feats']
