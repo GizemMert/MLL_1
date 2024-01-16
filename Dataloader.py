@@ -131,11 +131,10 @@ class Dataloader(Dataset):
                 mask_cropped = mask_cropped.astype(np.uint8)
 
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
+        """
         if len(mask_cropped.shape) == 2:
             mask_cropped = mask_cropped[np.newaxis, ...]
-        elif len(mask_cropped.shape) == 3:
-            mask_cropped = mask_cropped[np.newaxis, ...]  # Add batch dimension
-            mask_cropped = mask_cropped.transpose((0, 3, 1, 2))
+        """
 
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
