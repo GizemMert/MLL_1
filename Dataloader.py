@@ -110,6 +110,7 @@ class Dataloader(Dataset):
         if len(bounding_box) == 1:
             bounding_box = bounding_box[0]
         w, h, _ = img.shape
+        wm, hm, _ = mask.shape
         bounding_box = bounding_box / 400
         x0 = bounding_box[0] * w
         y0 = bounding_box[1] * h
@@ -122,6 +123,12 @@ class Dataloader(Dataset):
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
 
         mask_cropped = mask[max(0, int(x0) - 10):min(h, int(y1) + 20), max(0, int(y0) - 10):min(w, int(x1) + 20)]
+
+        if key == '15-48904.PB.PAP-B~A.1635-1635.TIF':
+            print(f"Key: {key}")
+            print(f"Bounding Box: x0={x0}, y0={y0}, x1={x1}, y1={y1}")
+            print(f"Original Mask Shape: {mask.shape}")
+            print(f"Cropped Mask Shape: {mask_cropped.shape}")
 
         if mask_cropped.size == 0:
             raise ValueError(f"Empty mask cropped for key: {key}")
