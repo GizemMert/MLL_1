@@ -105,7 +105,7 @@ class Dataloader(Dataset):
         img = self.images[key]
         mask = self.samples[key]['masks']
         if len(mask.shape) == 2:  # Add a channel dimension if missing
-            mask = mask[np.newaxis, ...]
+            mask = mask[..., np.newaxis]
         bounding_box = self.samples[key]['rois']
         if len(bounding_box) == 1:
             bounding_box = bounding_box[0]
