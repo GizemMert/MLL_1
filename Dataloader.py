@@ -133,7 +133,7 @@ class Dataloader(Dataset):
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         if len(mask_cropped.shape) == 2:
             mask_cropped = mask_cropped[np.newaxis, ...]
-        mask_cropped = np.rollaxis(mask_cropped, 2, 0)
+        mask_cropped = mask_cropped.transpose((2, 0, 1))
 
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
