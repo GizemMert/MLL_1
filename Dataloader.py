@@ -126,6 +126,8 @@ class Dataloader(Dataset):
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
+        print(f"Image shape: {roi_cropped.shape}, Mask shape: {mask.shape}")
+
         return feat, roi_cropped, mask, label_fold, key
 
 
