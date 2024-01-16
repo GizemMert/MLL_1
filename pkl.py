@@ -1,15 +1,8 @@
-import gzip
+import os
 
-# Path to your gzipped file
-file_path = '/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz'
+directory_path = '/lustre/groups/aih/raheleh.salehi/Master-thesis/MRCNN-leukocyte/data/mask_AML_MLL'
 
-# Open and read the contents of the gzipped file
-with gzip.open(file_path, 'rb') as f:
-    file_content = f.read()
+num_files = len([name for name in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, name))])
 
-# At this point, you need to know the format of the data inside the .dat file
-# If it's a text file or a pickle file, you can proceed accordingly
+print(f"The number of images in the directory is: {num_files}")
 
-# For example, if it's a pickle file, you would do:
-import pickle
-data = pickle.loads(file_content)
