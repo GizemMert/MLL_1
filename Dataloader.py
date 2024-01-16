@@ -118,7 +118,9 @@ class Dataloader(Dataset):
         y1 = bounding_box[3] * h
 
         roi_cropped = img[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20)]
+        print("Img Shape after cropping:", roi_cropped.shape)
         roi_cropped = cv2.resize(roi_cropped, (128, 128))
+        print("Img Shape after resizing:", roi_cropped.shape)
         roi_cropped = roi_cropped / 255.
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
 
@@ -132,14 +134,13 @@ class Dataloader(Dataset):
 
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         print("Shape after resizing:", mask_cropped.shape)
+
         mask_cropped = np.rollaxis(mask_cropped, 2, 0)
 
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
-
-        print(f"mask_cropped shape: {mask_cropped.shape}")
 
         return feat, roi_cropped, mask_cropped, label_fold, key
 
