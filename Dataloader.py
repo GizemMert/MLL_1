@@ -128,7 +128,10 @@ class Dataloader(Dataset):
             else:
                 mask_cropped = mask_cropped.astype(np.uint8)
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
-        mask_cropped = np.rollaxis(mask_cropped, 2, 0)
+        if len(mask_cropped.shape) == 2:
+            mask_cropped = mask_cropped[np.newaxis, ...]  # Add channel dimension (1, H, W)
+        elif len(mask_cropped.shape) == 3:
+            mask_cropped = np.rollaxis(mask_cropped, 2, 0)
 
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
