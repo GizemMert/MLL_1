@@ -106,7 +106,6 @@ class Dataloader(Dataset):
         mask = self.samples[key]['masks']
         if len(mask.shape) == 2:
             mask = mask[..., np.newaxis]
-        print(f"mask_ shape: {mask.shape}")
         bounding_box = self.samples[key]['rois']
         if len(bounding_box) == 1:
             bounding_box = bounding_box[0]
@@ -118,14 +117,11 @@ class Dataloader(Dataset):
         y1 = bounding_box[3] * h
 
         roi_cropped = img[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20)]
-        print("Img Shape after cropping:", roi_cropped.shape)
         roi_cropped = cv2.resize(roi_cropped, (128, 128))
-        print("Img Shape after resizing:", roi_cropped.shape)
         roi_cropped = roi_cropped / 255.
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
 
         mask_cropped = mask[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20), :]
-        print("Shape after cropping:", mask_cropped.shape)
         if mask_cropped.dtype != np.uint8:
             if mask_cropped.max() <= 1.0:
                 mask_cropped = (mask_cropped * 255).astype(np.uint8)
@@ -133,10 +129,8 @@ class Dataloader(Dataset):
                 mask_cropped = mask_cropped.astype(np.uint8)
 
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
-        print("Shape after resizing:", mask_cropped.shape)
         if len(mask_cropped.shape) == 2:
             mask_cropped = mask_cropped[..., np.newaxis]
-        print("Shape after new axis:", mask_cropped.shape)
 
         mask_cropped = np.rollaxis(mask_cropped, 2, 0)
 
