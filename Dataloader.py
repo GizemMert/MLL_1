@@ -103,6 +103,7 @@ class Dataloader(Dataset):
         label_fold = equivalent_classes.get(label_fold, label_fold)
         label_fold = label_map.get(label_fold, -1)
         img = self.images[key]
+        mask = self.samples[key]['masks']
         bounding_box = self.samples[key]['rois']
         if len(bounding_box) == 1:
             bounding_box = bounding_box[0]
@@ -123,7 +124,7 @@ class Dataloader(Dataset):
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        return feat, roi_cropped, label_fold, key
+        return feat, roi_cropped, mask, label_fold, key
 
 
 """
