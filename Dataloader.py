@@ -127,7 +127,7 @@ class Dataloader(Dataset):
         roi_cropped = roi_cropped / 255.
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
 
-        mask_cropped = mask[max(0, int(x2) - 10):min(h, int(y3) + 20), max(0, int(y2) - 10):min(w, int(x3) + 20)]
+        mask_cropped = mask[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20)]
 
         """
         if key == '15-48904.PB.PAP-B~A.1635-1635.TIF':
@@ -139,18 +139,20 @@ class Dataloader(Dataset):
         if mask_cropped.size == 0:
             raise ValueError(f"Empty mask cropped for key: {key}")
 
-        """
+        
 
         if mask_cropped.dtype != np.uint8:
             if mask_cropped.max() <= 1.0:
                 mask_cropped = (mask_cropped * 255).astype(np.uint8)
             else:
                 mask_cropped = mask_cropped.astype(np.uint8)
+    
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         if len(mask_cropped.shape) == 2:
             mask_cropped = mask_cropped[np.newaxis, ...]  # Add channel dimension (1, H, W)
         elif len(mask_cropped.shape) == 3:
-            mask_cropped = np.rollaxis(mask_cropped, 2, 0)
+        """
+        mask_cropped = np.rollaxis(mask_cropped, 2, 0)
 
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
