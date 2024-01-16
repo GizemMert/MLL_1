@@ -140,6 +140,8 @@ class Dataloader(Dataset):
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
+        print(f"Size of mask: {mask_cropped.size()}")
+
         return feat, roi_cropped, mask_cropped, label_fold, key
 
 
