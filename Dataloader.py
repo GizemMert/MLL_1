@@ -140,13 +140,13 @@ class Dataloader(Dataset):
             raise ValueError(f"Empty mask cropped for key: {key}")
 
         
-
+        """
         if mask_cropped.dtype != np.uint8:
             if mask_cropped.max() <= 1.0:
                 mask_cropped = (mask_cropped * 255).astype(np.uint8)
             else:
                 mask_cropped = mask_cropped.astype(np.uint8)
-    
+        """
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         if len(mask_cropped.shape) == 2:
             mask_cropped = mask_cropped[np.newaxis, ...]  # Add channel dimension (1, H, W)
