@@ -104,7 +104,7 @@ class Dataloader(Dataset):
         label_fold = label_map.get(label_fold, -1)
         img = self.images[key]
         mask = self.samples[key]['masks']
-        if len(mask.shape) == 2:  # Add a channel dimension if missing
+        if len(mask.shape) == 2:
             mask = mask[..., np.newaxis]
         bounding_box = self.samples[key]['rois']
         if len(bounding_box) == 1:
@@ -123,7 +123,7 @@ class Dataloader(Dataset):
 
         mask_cropped = mask[max(0, int(x0) - 10):min(h, int(y1) + 20), max(0, int(y0) - 10):min(w, int(x1) + 20)]
         if mask_cropped.dtype != np.uint8:
-            if mask_cropped.max() <= 1.0:  # if normalized
+            if mask_cropped.max() <= 1.0:
                 mask_cropped = (mask_cropped * 255).astype(np.uint8)
             else:
                 mask_cropped = mask_cropped.astype(np.uint8)
