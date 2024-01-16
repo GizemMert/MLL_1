@@ -1,8 +1,18 @@
-import os
+import gzip
+import pickle
 
-directory_path = '/lustre/groups/aih/raheleh.salehi/Master-thesis/MRCNN-leukocyte/data/mask_AML_MLL'
+# Path to the gzipped pickle file
+file_path = '/lustre/groups/aih/raheleh.salehi/Master-thesis/save_files/mll_images.pkl.gz'
 
-num_files = len([name for name in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, name))])
+# Open the gzip file and load its contents
+with gzip.open(file_path, 'rb') as f:
+    data = pickle.load(f)
 
-print(f"The number of images in the directory is: {num_files}")
-
+# Now, count the number of images based on the structure of `data`
+if isinstance(data, dict):
+    # If the data is a dictionary, count the number of keys
+    num_images = len(data.keys())
+    print(f"The number of images in the file is: {num_images}")
+else:
+    # If the data is not a dictionary, adapt this part based on its structure
+    print("Data is not in expected dictionary format, please check its structure.")
