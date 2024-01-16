@@ -122,6 +122,10 @@ class Dataloader(Dataset):
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
 
         mask_cropped = mask[max(0, int(x0) - 10):min(h, int(y1) + 20), max(0, int(y0) - 10):min(w, int(x1) + 20)]
+
+        if mask_cropped.size == 0:
+            raise ValueError(f"Empty mask cropped for key: {key}")
+
         if mask_cropped.dtype != np.uint8:
             if mask_cropped.max() <= 1.0:
                 mask_cropped = (mask_cropped * 255).astype(np.uint8)
