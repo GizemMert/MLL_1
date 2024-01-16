@@ -134,6 +134,9 @@ class Dataloader(Dataset):
 
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         print("Shape after resizing:", mask_cropped.shape)
+        if len(mask_cropped.shape) == 2:
+            mask_cropped = mask_cropped[..., np.newaxis]
+        print("Shape after new axis:", mask_cropped.shape)
 
         mask_cropped = np.rollaxis(mask_cropped, 2, 0)
 
