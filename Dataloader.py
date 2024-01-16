@@ -119,16 +119,18 @@ class Dataloader(Dataset):
         roi_cropped = img[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20)]
         roi_cropped = cv2.resize(roi_cropped, (128, 128))
         roi_cropped = roi_cropped / 255.
-
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
+
+        mask_cropped = mask[max(0, int(x0) - 10):min(h, int(y1) + 20), max(0, int(y0) - 10):min(w, int(x1) + 20)]
+        mask_cropped = cv2.resize(mask_cropped, (128, 128))
+        mask_cropped = np.rollaxis(mask_cropped, 2, 0)
+
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        print(f"Image shape: {roi_cropped.shape}, Mask shape: {mask.shape}")
-
-        return feat, roi_cropped, mask, label_fold, key
+        return feat, roi_cropped, mask_cropped, label_fold, key
 
 
 """

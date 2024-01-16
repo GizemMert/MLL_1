@@ -163,16 +163,14 @@ for epoch in range(epochs):
         label = label.long().to(device)
         mask = mask.float().to(device)
 
-        mask_resized = F.interpolate(mask, size=scimg.size()[2:], mode='bilinear', align_corners=False)
-
         feat, scimg = feat.to(device), scimg.to(device)
 
         optimizer.zero_grad()
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        masked_scimg = scimg * mask_resized
-        im_out_masked = im_out * mask_resized
+        masked_scimg = scimg * mask
+        im_out_masked = im_out * mask
 
         imgs_edges = edge_loss_fn(masked_scimg)
         recon_edges = edge_loss_fn(im_out_masked)
@@ -225,7 +223,7 @@ for epoch in range(epochs):
             filepath = os.path.join(save_img_dir, filename)
             cv2.imwrite(filepath, img_np * 255)
 
-            mask_np = mask_resized[i].cpu().numpy().squeeze()
+            mask_np = mask[i].cpu().numpy().squeeze()
             mask_filename = f"{i}-{epoch}_mask.jpg"
             mask_filepath = os.path.join(save_mask_dir, mask_filename)
             cv2.imwrite(mask_filepath, mask_np * 255)
