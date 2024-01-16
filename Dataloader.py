@@ -106,6 +106,7 @@ class Dataloader(Dataset):
         mask = self.samples[key]['masks']
         if len(mask.shape) == 2:
             mask = mask[..., np.newaxis]
+        print(f"mask_ shape: {mask.shape}")
         bounding_box = self.samples[key]['rois']
         if len(bounding_box) == 1:
             bounding_box = bounding_box[0]
