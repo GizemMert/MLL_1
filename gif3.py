@@ -2,7 +2,7 @@ from PIL import Image
 import torch
 import numpy as np
 from model4 import VariationalAutoencodermodel4, reparametrize
-from Dataloader import Dataloader
+from Dataloader_2 import Dataloader
 from torch.utils.data import DataLoader
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
@@ -91,7 +91,7 @@ model.eval()
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
 
-    for feature, _, labels, _ in dataloader:
+    for feature, _, _, labels, _ in dataloader:
         if feature_1 is not None and feature_2 is not None:
             break
 
