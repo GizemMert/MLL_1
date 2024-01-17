@@ -110,18 +110,24 @@ class Dataloader(Dataset):
         if len(bounding_box) == 1:
             bounding_box = bounding_box[0]
         w, h, _ = img.shape
+        wm, hm, _ = mask.shape
         bounding_box = bounding_box / 400
         x0 = bounding_box[0] * w
         y0 = bounding_box[1] * h
         x1 = bounding_box[2] * w
         y1 = bounding_box[3] * h
 
+        x2 = bounding_box[0] * wm
+        y2 = bounding_box[1] * hm
+        x3 = bounding_box[2] * wm
+        y3 = bounding_box[3] * hm
+
         roi_cropped = img[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20)]
         roi_cropped = cv2.resize(roi_cropped, (128, 128))
         roi_cropped = roi_cropped / 255.
         roi_cropped = np.rollaxis(roi_cropped, 2, 0)
 
-        mask_cropped = mask[max(0, int(x0) - 10):min(w, int(x1) + 20), max(0, int(y0) - 10):min(h, int(y1) + 20), :]
+        mask_cropped = mask[max(0, int(x2) - 10):min(wm, int(x3) + 20), max(0, int(y2) - 10):min(hm, int(y3) + 20)]
         mask_cropped = mask_cropped.astype(np.float32)
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         if len(mask_cropped.shape) == 2:
