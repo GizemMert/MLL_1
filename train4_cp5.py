@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
-from Dataloader import Dataloader, label_map
+from Dataloader_2 import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 import os
@@ -169,15 +169,16 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        mask_expanded = mask.expand_as(scimg)
-        region_of_interest = (mask.expanded > 0)
-
         imgs_edges = edge_loss_fn(scimg)
         recon_edges = edge_loss_fn(im_out)
 
         # edge_loss = F.mse_loss(recon_edges[region_of_interest], imgs_edges[region_of_interest])
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(im_out[region_of_interest], scimg[region_of_interest], distribution="gaussian")
+        full_recon_loss = reconstruction_loss(im_out, scimg, distribution="gaussian")
+        weights = torch.ones_like(mask) * 0.1  # Lower weight for the background
+        weights[mask > 0] = 1.0  # Higher weight for the region of interest
+        weighted_recon_loss = full_recon_loss * weights
+        recon_loss = weighted_recon_loss.mean()
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)  # (cff_edge * edge_loss)
 
