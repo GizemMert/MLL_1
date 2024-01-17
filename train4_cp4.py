@@ -35,7 +35,7 @@ mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE
 """
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 150
+epochs = 200
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -63,9 +63,9 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # custom_state_dict = torch.load(custom_weights_path)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
-cff_feat_rec = 0.20
-cff_im_rec = 0.45
-cff_kld = 0.15
+cff_feat_rec = 0.25
+cff_im_rec = 0.55
+cff_kld = 0.20
 cff_edge = 0.20
 
 beta = 4
@@ -175,7 +175,7 @@ for epoch in range(epochs):
         imgs_edges = edge_loss_fn(masked_scimg)
         recon_edges = edge_loss_fn(im_out_masked)
 
-        edge_loss = F.mse_loss(recon_edges, imgs_edges)
+        # edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
