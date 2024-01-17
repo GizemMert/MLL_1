@@ -179,7 +179,7 @@ for epoch in range(epochs):
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)  #(cff_edge * edge_loss)
 
         train_loss.backward()
         optimizer.step()
