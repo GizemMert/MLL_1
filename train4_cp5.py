@@ -169,7 +169,8 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        region_of_interest = (mask > 0).squeeze(1)
+        mask_expanded = mask.expand_as(scimg)
+        region_of_interest = (mask.expanded > 0)
 
         imgs_edges = edge_loss_fn(scimg)
         recon_edges = edge_loss_fn(im_out)
