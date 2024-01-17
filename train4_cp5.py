@@ -175,7 +175,7 @@ for epoch in range(epochs):
         # edge_loss = F.mse_loss(recon_edges[region_of_interest], imgs_edges[region_of_interest])
         feat_rec_loss = criterion(output, feat)
         full_recon_loss = reconstruction_loss(im_out, scimg, distribution="gaussian")
-        weights = torch.ones_like(mask) * 0.1  # Lower weight for the background
+        weights = torch.ones_like(mask) * 0.0001  # Lower weight for the background
         weights[mask > 0] = 1.0  # Higher weight for the region of interest
         weighted_recon_loss = full_recon_loss * weights
         recon_loss = weighted_recon_loss.mean()
