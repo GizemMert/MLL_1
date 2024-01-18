@@ -134,13 +134,12 @@ class Dataloader(Dataset):
             max(0, int(y2) - 10):min(hm, int(y3) + 20),  # Crop vertically (rows)
             max(0, int(x2) - 10):min(wm, int(x3) + 20)   # Crop horizontally (columns)
         ]
-        mask_cropped = mask_dilation.astype(np.float32)
+        mask_cropped = mask_cropped.astype(np.float32)
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         mask_cropped = mask_cropped.astype(np.uint8)
         kernel = np.ones((5, 5), np.uint8)
         mask_dilation = cv2.dilate(mask_cropped, kernel, iterations=1)
-        mask_cropped = mask_dilation.astype(np.float32)
-        if len(mask_cropped.shape) == 2:
+        if len(mask_dilation.shape) == 2:
             mask_cropped = mask_cropped[..., np.newaxis]
 
         mask_cropped = np.rollaxis(mask_cropped, 2, 0)
