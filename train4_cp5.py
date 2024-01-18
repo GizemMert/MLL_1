@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
-from Dataloader_2 import Dataloader, label_map
+from Dataloader import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 import os
@@ -35,7 +35,7 @@ mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE
 """
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 150
+epochs = 200
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -169,18 +169,17 @@ for epoch in range(epochs):
 
         z_dist, output, im_out, mu, logvar = model(feat)
 
-        imgs_edges = edge_loss_fn(scimg)
-        recon_edges = edge_loss_fn(im_out)
+        masked_scimg = scimg * mask
+        im_out_masked = im_out * mask
 
-        # edge_loss = F.mse_loss(recon_edges[region_of_interest], imgs_edges[region_of_interest])
+        imgs_edges = edge_loss_fn(masked_scimg)
+        recon_edges = edge_loss_fn(im_out_masked)
+
+        # edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        full_recon_loss = reconstruction_loss(im_out, scimg, distribution="gaussian")
-        weights = torch.zeros_like(mask)  # Zero weight for the background
-        weights[mask > 0] = 1.0  # Higher weight for the region of interest
-        weighted_recon_loss = full_recon_loss * weights
-        recon_loss = weighted_recon_loss.mean()
+        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)  # (cff_edge * edge_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)  #(cff_edge * edge_loss)
 
         train_loss.backward()
         optimizer.step()
@@ -218,10 +217,9 @@ for epoch in range(epochs):
         label_filename = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
         np.save(label_filename, np.array(all_labels))
 
-        for i, (img, msk) in enumerate(zip(scimg, mask)):
-            masked_img = img * msk
-            img_np = masked_img.cpu().numpy().transpose(1, 2, 0)
-            filename = f"{i}-{epoch}_maskedimg.jpg"
+        for i, img in enumerate(masked_scimg):
+            img_np = img.cpu().numpy().transpose(1, 2, 0)
+            filename = f"{i}-{epoch}.jpg"
             filepath = os.path.join(save_img_dir, filename)
             cv2.imwrite(filepath, img_np * 255)
 
