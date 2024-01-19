@@ -70,27 +70,27 @@ cff_edge = 0.20
 
 beta = 4
 
-umap_dir = 'umap_figures4cp2_new3'
+umap_dir = 'umap_figures4cp2_new2'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp2_new3'
+latent_dir = 'latent_data4cp2_new2'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-label_dir = 'label_data4cp2_new3'
+label_dir = 'label_data4cp2_new2'
 if not os.path.exists(label_dir):
     os.makedirs(label_dir)
 
-result_dir = "training_results4cp2_new3"
+result_dir = "training_results4cp2_new2"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp2_new3.txt")
+result_file = os.path.join(result_dir, "training_results4cp2_new2.txt")
 
-save_img_dir = "masked_images"
+save_img_dir = "masked_images2"
 if not os.path.exists(save_img_dir):
     os.makedirs(save_img_dir)
 
-save_mask_dir = "masks"
+save_mask_dir = "masks2"
 if not os.path.exists(save_mask_dir):
     os.makedirs(save_mask_dir)
 
@@ -170,16 +170,20 @@ for epoch in range(epochs):
         z_dist, output, im_out, mu, logvar = model(feat)
 
         masked_scimg = scimg * mask
-        im_out_masked = im_out * mask
+        # im_out_masked = im_out * mask
 
-        imgs_edges = edge_loss_fn(masked_scimg)
-        recon_edges = edge_loss_fn(im_out_masked)
+        # imgs_edges = edge_loss_fn(masked_scimg)
+        # recon_edges = edge_loss_fn(im_out_masked)
 
-        edge_loss = F.mse_loss(recon_edges, imgs_edges)
+        # edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
+        full_recon_loss = reconstruction_loss(im_out, scimg, distribution="gaussian")
+        weights = torch.zeros_like(mask)*0.5
+        weights[mask > 0] = 1.0
+        weighted_recon_loss = full_recon_loss * weights
+        recon_loss = weighted_recon_loss.mean()
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_edge * edge_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
 
         train_loss.backward()
         optimizer.step()
@@ -315,14 +319,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images4_cp2_new3/"
+            file_name = "reconsructed-images4_cp2_new2/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp2_new3.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new2.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
