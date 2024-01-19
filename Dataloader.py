@@ -138,18 +138,18 @@ class Dataloader(Dataset):
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         mask_cropped = mask_cropped.astype(np.uint8)
         kernel = np.ones((5, 5), np.uint8)
-        mask_dilation = cv2.dilate(mask_cropped, kernel, iterations=10)
+        mask_dilation = cv2.dilate(mask_cropped, kernel, iterations=2)
         if len(mask_dilation.shape) == 2:
-            mask_cropped = mask_cropped[..., np.newaxis]
+            mask_dilation = mask_dilation[..., np.newaxis]
 
-        mask_cropped = np.rollaxis(mask_cropped, 2, 0)
+        mask_dilation = np.rollaxis(mask_dilation, 2, 0)
 
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        return feat, roi_cropped, mask_cropped, label_fold, key
+        return feat, roi_cropped, mask_dilation, label_fold, key
 
 
 """

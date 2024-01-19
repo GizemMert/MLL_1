@@ -140,48 +140,43 @@ class Dataloader(Dataset):
         kernel = np.ones((5, 5), np.uint8)
         mask_dilation = cv2.dilate(mask_cropped, kernel, iterations=1)
         if len(mask_dilation.shape) == 2:
-            mask_cropped = mask_cropped[..., np.newaxis]
+            mask_dilation = mask_dilation[..., np.newaxis]
 
-        mask_cropped = np.rollaxis(mask_cropped, 2, 0)
+        mask_dilation = np.rollaxis(mask_dilation, 2, 0)
 
         feat = self.samples[key]['feats']
         feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
         feat = np.squeeze(feat)
         feat = np.rollaxis(feat, 2, 0)
 
-        return feat, roi_cropped, mask_cropped, label_fold, key
+        return feat, roi_cropped, mask_dilation, label_fold, key
 
+
+"""
 def create_subset(features_path, images_path, start_index, end_index):
-    # Determine the directory of the dataloader.py script
+   
     dataloader_dir = os.path.dirname(os.path.realpath(__file__))
 
-    # Define paths for the subset directories
     subset_features_dir = os.path.join(dataloader_dir, 'subset_features')
     subset_images_dir = os.path.join(dataloader_dir, 'subset_images')
 
-    # Check and create directories if they don't exist
     if not os.path.exists(subset_features_dir):
         os.makedirs(subset_features_dir)
     if not os.path.exists(subset_images_dir):
         os.makedirs(subset_images_dir)
 
-    # Load the entire features dataset
     with gzip.open(features_path, "rb") as f:
         features = pickle.load(f)
 
-    # Load the entire images dataset
     with gzip.open(images_path, "rb") as f:
         images = pickle.load(f)
 
-    # Slicing the data
     subset_keys = list(features.keys())[start_index:end_index]
 
-    # Extracting and saving subset of features
     subset_features = {k: features[k] for k in subset_keys}
     with gzip.open(os.path.join(subset_features_dir, 'subset_features.dat.gz'), 'wb') as f:
         pickle.dump(subset_features, f)
 
-    # Extracting and saving subset of images
     subset_images = {k: images[k] for k in subset_keys}
     with gzip.open(os.path.join(subset_images_dir, 'subset_images.pkl.gz'), 'wb') as f:
         pickle.dump(subset_images, f)
@@ -196,7 +191,7 @@ create_subset(features_mll_path, images_path, 0, 30)
 
 
 
-"""
+
     def get_all_labels(self):
         all_labels = set()
 
