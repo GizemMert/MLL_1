@@ -138,7 +138,7 @@ class Dataloader(Dataset):
         mask_cropped = cv2.resize(mask_cropped, (128, 128))
         mask_cropped = mask_cropped.astype(np.uint8)
         kernel = np.ones((5, 5), np.uint8)
-        mask_dilation = cv2.dilate(mask_cropped, kernel, iterations=4)
+        mask_dilation = cv2.dilate(mask_cropped, kernel, iterations=10)
         if len(mask_dilation.shape) == 2:
             mask_cropped = mask_cropped[..., np.newaxis]
 
