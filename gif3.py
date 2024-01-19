@@ -82,7 +82,7 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
 # Load the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new5.pth'
+model_save_path = 'trained_model4cp2_new3.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
