@@ -123,4 +123,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr("vae_interpolation_grid", [start_latent, end_latent], n=100, latent_dim=30, grid_size=(5, 6))
+interpolate_gif_with_gpr("vae_interpolation_grid", [start_latent, end_latent], latent_dim=30, grid_size=(5, 6))
