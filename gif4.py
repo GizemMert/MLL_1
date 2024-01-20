@@ -5,7 +5,7 @@ from model4 import VariationalAutoencodermodel4, reparametrize
 from Dataloader_2 import Dataloader
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
-from torchvision import transforms
+from torchvision.transforms import ToPILImage
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import numpy as np
@@ -46,7 +46,7 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif_with_gpr(model, filename, latents, latent_dim=30):
+def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6)):
     model.eval()
 
     def manhattan_interpolate_evenly(n=100):
@@ -75,23 +75,26 @@ def interpolate_gif_with_gpr(model, filename, latents, latent_dim=30):
 
     all_interpolations = manhattan_interpolate_evenly(n=100)
 
+
     interpolate_tensors = []
     for z in all_interpolations:
         with torch.no_grad():
             img = model.decoder(z.to(device)).detach().cpu()
             img = img.squeeze(0)  # Assuming the output is (1, C, H, W)
-            img = transforms.ToPILImage()(img)
             interpolate_tensors.append(img)
 
-    # After the loop, save the images as a GIF
-    interpolate_tensors[0].save(
-        f'{filename}.gif',
-        save_all=True,
-        append_images=interpolate_tensors[1:],
-        loop=0,
-        duration=100,
-        optimize=False
-    )
+    # Make sure you have the correct number of images to fill the grid
+    while len(interpolate_tensors) < grid_size[0] * grid_size[1]:
+        interpolate_tensors.append(torch.zeros_like(interpolate_tensors[0]))
+
+    # Convert list of tensors to a single tensor
+    tensor_grid = torch.stack(interpolate_tensors)
+    # Create a grid of images
+    image_grid = make_grid(tensor_grid, nrow=grid_size[1], normalize=True)
+    # Convert the grid to a PIL Image
+    grid_image = ToPILImage()(image_grid.cpu())
+    # Save the grid as an image
+    grid_image.save(f'{filename}.png')
 
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
@@ -120,4 +123,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr(model, "vae_interpolation_30", [start_latent, end_latent])
+interpolate_gif_with_gpr("vae_interpolation_grid", [start_latent, end_latent], n=100, latent_dim=30, grid_size=(5, 6))
