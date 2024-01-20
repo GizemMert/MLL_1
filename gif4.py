@@ -78,7 +78,8 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
     interpolate_tensors = []
     for z in all_interpolations:
         with torch.no_grad():
-            z_device = z.to(device)
+            z = z.to(device)
+            img = model.decoder(z)
             img = model.img_decoder(img)
             img = img.squeeze(0)  # Assuming the output is (1, C, H, W)
             img_pil = ToPILImage()(img.cpu())
