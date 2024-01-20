@@ -4,9 +4,14 @@ import numpy as np
 from model4 import VariationalAutoencodermodel4, reparametrize
 from Dataloader_2 import Dataloader
 from torch.utils.data import DataLoader
+from torchvision.utils import make_grid
+from torchvision import transforms
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import numpy as np
+import torch
+import numpy as np
+from PIL import Image
 from sklearn.gaussian_process.kernels import WhiteKernel
 
 label_map = {
@@ -25,67 +30,69 @@ label_map = {
     'smudge_cell': 12,
 }
 
-
-def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
-    model.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-    def get_latent_vector(x):
-        distributions = model.encoder(x)
-        mu = distributions[:, :latent_dim]
-        logvar = distributions[:, latent_dim:]
-        z = reparametrize(mu, logvar)
-        return z
-
-    # Generate the latent representations
-    latents = [get_latent_vector(feature.to(device)) for feature in features]
-
-
-    def slerp(val, low, high):
-        low_norm = low / torch.norm(low, dim=1, keepdim=True)
-        high_norm = high / torch.norm(high, dim=1, keepdim=True)
-        omega = torch.acos((low_norm * high_norm).sum(dim=1, keepdim=True).clamp(-1, 1))
-        so = torch.sin(omega)
-        res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
-        return res.where(so != 0, low)
-
-    # Interpolate between the latent vectors
-    all_interpolations = []
-    for i in range(len(latents) - 1):
-        for t in np.linspace(0, 1, n):
-            z_interp = slerp(t, latents[i], latents[i + 1])
-            all_interpolations.append(z_interp)
-
-
-    interpolate_list = []
-    for z in all_interpolations:
-        y = model.decoder(z)
-        img = model.img_decoder(y)
-        img = img.permute(0, 2, 3, 1)
-        interpolate_list.append(img.squeeze(0).to('cpu').detach().numpy())
-
-
-    interpolate_list = [np.clip(img * 255, 0, 255).astype(np.uint8) for img in interpolate_list]
-
-    images_list = [Image.fromarray(img) for img in interpolate_list]
-
-
-    images_list[0].save(
-        f'{filename}.gif',
-        save_all=True,
-        append_images=images_list[1:],
-        loop=0,
-        duration=100
-    )
-
-# Load the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new4.pth'
+model_save_path = 'trained_model4cp2_new3.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
+
+
+def get_latent_vector(x, latent_dim=30):
+    distributions = model.encoder(x)
+    mu = distributions[:, :latent_dim]
+    logvar = distributions[:, latent_dim:]
+    z = reparametrize(mu, logvar)
+    return z
+
+
+def interpolate_gif_with_gpr(model, filename, latents, latent_dim=30):
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def manhattan_interpolate_evenly(n=100):
+        start, end = latents
+        diff = end - start
+        steps = diff.sign().int()
+        total_steps_per_dim = diff.abs().int()
+        max_steps = total_steps_per_dim.max()
+
+        interpolation_path = []
+        for step in range(max_steps.item()):
+            current_point = start + torch.min(total_steps_per_dim, torch.tensor([step] * latent_dim).int()) * steps
+            interpolation_path.append(current_point)
+            total_steps_per_dim = torch.max(total_steps_per_dim - 1, torch.tensor(0).int())
+
+        interpolation_path.append(end)
+
+        all_interpolations = []
+        for i in range(len(interpolation_path) - 1):
+            interp_points = torch.linspace(0, 1, steps=n)
+            for t in interp_points:
+                interpolated_point = interpolation_path[i] * (1 - t) + interpolation_path[i + 1] * t
+                all_interpolations.append(interpolated_point)
+
+        return all_interpolations
+
+    all_interpolations = manhattan_interpolate_evenly(n=100)
+
+    interpolate_tensors = []
+    for z in all_interpolations:
+        with torch.no_grad():
+            img = model.decoder(z.to(device)).detach().cpu()
+            img = img.squeeze(0)  # Assuming the output is (1, C, H, W)
+            img = transforms.ToPILImage()(img)
+            interpolate_tensors.append(img)
+
+    # After the loop, save the images as a GIF
+    interpolate_tensors[0].save(
+        f'{filename}.gif',
+        save_all=True,
+        append_images=interpolate_tensors[1:],
+        loop=0,
+        duration=100,
+        optimize=False
+    )
 
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
@@ -111,7 +118,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, sh
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_segmented'])
 
 # Convert to appropriate format and device
-selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
+start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr(model, "vae_interpolation_masked2", selected_images)
+interpolate_gif_with_gpr(model, "vae_interpolation_30", [start_latent, end_latent])
