@@ -63,6 +63,7 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
             total_steps_per_dim = torch.max(total_steps_per_dim - 1, torch.tensor(0).int())
 
         interpolation_path.append(end)
+
         all_interpolations = []
         for i in range(len(interpolation_path) - 1):
             interp_points = torch.linspace(0, 1, steps=n)
@@ -74,33 +75,27 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
 
     all_interpolations = manhattan_interpolate_evenly(n=100)
 
-    grids = []
-    for i in range(0, len(all_interpolations), grid_size[0] * grid_size[1]):
-        # Extract a batch of interpolations to form a grid
-        batch = all_interpolations[i:i + grid_size[0] * grid_size[1]]
+    interpolate_tensors = []
+    for z in all_interpolations:
+        with torch.no_grad():
+            z = z.to(device)
+            img = model.decoder(z)
+            img = model.img_decoder(img)
+            img = img.squeeze(0)  # Assuming the output is (1, C, H, W)
+            interpolate_tensors.append(img.cpu())  # Keep it as a tensor
 
-        # Check if the batch is smaller than the grid size, pad if necessary
-        while len(batch) < grid_size[0] * grid_size[1]:
-            batch.append(torch.zeros_like(batch[0]))
+    # Make sure you have the correct number of images to fill the grid
+    while len(interpolate_tensors) < grid_size[0] * grid_size[1]:
+        interpolate_tensors.append(torch.zeros_like(interpolate_tensors[0]))
 
-        # Convert batch to a tensor
-        batch_tensor = torch.stack(batch)
-        # Create a grid from the batch tensor
-        grid = make_grid(batch_tensor, nrow=grid_size[1], padding=2, normalize=True)
-        # Convert the grid to a PIL Image
-        grid_image = ToPILImage()(grid.cpu())
-        # Append the grid image to the list of grids
-        grids.append(grid_image)
-
-    # Save all grids as a GIF
-    grids[0].save(
-        f'{filename}.gif',
-        save_all=True,
-        append_images=grids[1:],
-        loop=0,
-        duration=100,
-        optimize=False
-    )
+    # Convert list of tensors to a single tensor
+    tensor_grid = torch.stack(interpolate_tensors)
+    # Create a grid of images
+    image_grid = make_grid(tensor_grid, nrow=grid_size[1], normalize=True)
+    # Convert the grid to a PIL Image
+    grid_image = ToPILImage()(image_grid)
+    # Save the grid as an image
+    grid_image.save(f'{filename}.png')
 
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
@@ -129,4 +124,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr("vae_interpolation_30", [start_latent, end_latent],grid_size=(5, 6))
+interpolate_gif_with_gpr("vae_interpolation_grid", [start_latent, end_latent], latent_dim=30, grid_size=(5, 20))
