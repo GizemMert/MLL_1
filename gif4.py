@@ -58,7 +58,7 @@ def interpolate_gif_with_gpr(model, filename, latents, latent_dim=30):
 
         interpolation_path = []
         for step in range(max_steps.item()):
-            current_point = start + torch.min(total_steps_per_dim, torch.tensor([step] * latent_dim).int()) * steps
+            current_point = start + torch.min(total_steps_per_dim, torch.tensor([step] * latent_dim, device=start.device).int()) * steps
             interpolation_path.append(current_point)
             total_steps_per_dim = torch.max(total_steps_per_dim - 1, torch.tensor(0).int())
 
