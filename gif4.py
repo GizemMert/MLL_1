@@ -46,7 +46,7 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif_with_gpr(model, filename, latents, latent_dim=30, grid_size=(5, 6)):
+def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6)):
     model.eval()
 
     def manhattan_interpolate_evenly(n=100):
@@ -63,7 +63,6 @@ def interpolate_gif_with_gpr(model, filename, latents, latent_dim=30, grid_size=
             total_steps_per_dim = torch.max(total_steps_per_dim - 1, torch.tensor(0).int())
 
         interpolation_path.append(end)
-
         all_interpolations = []
         for i in range(len(interpolation_path) - 1):
             interp_points = torch.linspace(0, 1, steps=n)
@@ -130,4 +129,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr(model, "vae_interpolation_30", [start_latent, end_latent])
+interpolate_gif_with_gpr("vae_interpolation_30", [start_latent, end_latent],grid_size=(5, 6))
