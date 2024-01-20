@@ -75,14 +75,14 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
 
     all_interpolations = manhattan_interpolate_evenly(n=100)
 
-
     interpolate_tensors = []
     for z in all_interpolations:
         with torch.no_grad():
-            img = model.decoder(z.to(device)).detach().cpu()
+            z_device = z.to(device)
             img = model.img_decoder(img)
             img = img.squeeze(0)  # Assuming the output is (1, C, H, W)
-            interpolate_tensors.append(img)
+            img_pil = ToPILImage()(img.cpu())
+            interpolate_tensors.append(img_pil)
 
     # Make sure you have the correct number of images to fill the grid
     while len(interpolate_tensors) < grid_size[0] * grid_size[1]:
