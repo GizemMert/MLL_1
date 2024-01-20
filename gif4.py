@@ -82,8 +82,7 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
             img = model.decoder(z)
             img = model.img_decoder(img)
             img = img.squeeze(0)  # Assuming the output is (1, C, H, W)
-            img_pil = ToPILImage()(img.cpu())
-            interpolate_tensors.append(img_pil)
+            interpolate_tensors.append(img.cpu())  # Keep it as a tensor
 
     # Make sure you have the correct number of images to fill the grid
     while len(interpolate_tensors) < grid_size[0] * grid_size[1]:
@@ -94,7 +93,7 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
     # Create a grid of images
     image_grid = make_grid(tensor_grid, nrow=grid_size[1], normalize=True)
     # Convert the grid to a PIL Image
-    grid_image = ToPILImage()(image_grid.cpu())
+    grid_image = ToPILImage()(image_grid)
     # Save the grid as an image
     grid_image.save(f'{filename}.png')
 
