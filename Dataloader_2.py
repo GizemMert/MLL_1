@@ -135,8 +135,8 @@ class Dataloader(Dataset):
             max(0, int(x2) - 10):min(wm, int(x3) + 20)   # Crop horizontally (columns)
         ]
         mask_dilation = mask_cropped.astype(np.uint8)
-        kernel = np.ones((5, 5), np.uint8)
-        mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=6)
+        kernel = np.ones((10, 10), np.uint8)
+        mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=5)
         mask_dilation = mask_dilation.astype(np.float32)
         mask_dilation = cv2.resize(mask_dilation, (128, 128))
         if len(mask_dilation.shape) == 2:
