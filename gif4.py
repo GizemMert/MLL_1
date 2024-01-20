@@ -48,7 +48,6 @@ def get_latent_vector(x, latent_dim=30):
 
 def interpolate_gif_with_gpr(model, filename, latents, latent_dim=30):
     model.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def manhattan_interpolate_evenly(n=100):
         start, end = latents
