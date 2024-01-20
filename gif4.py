@@ -86,13 +86,13 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
         # Convert batch to a tensor
         batch_tensor = torch.stack(batch)
         # Create a grid from the batch tensor
-        grid = make_grid(batch_tensor, nrow=grid_size[1], padding=2, normalize=True, range=(0, 1))
+        grid = make_grid(batch_tensor, nrow=grid_size[1], padding=2, normalize=True)
         # Convert the grid to a PIL Image
         grid_image = ToPILImage()(grid.cpu())
         # Append the grid image to the list of grids
         grids.append(grid_image)
 
-    # After creating all grids, save them as a GIF
+    # Save all grids as a GIF
     grids[0].save(
         f'{filename}.gif',
         save_all=True,
