@@ -135,9 +135,9 @@ class Dataloader(Dataset):
             max(0, int(x2) - 10):min(wm, int(x3) + 20)   # Crop horizontally (columns)
         ]
         mask_dilation = mask_cropped.astype(np.uint8)
-        # kernel = np.ones((5, 5), np.uint8)
-        # mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=2)
-        # mask_dilation = mask_dilation.astype(np.float32)
+        kernel = np.ones((5, 5), np.uint8)
+        mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=10)
+        mask_dilation = mask_dilation.astype(np.float32)
         mask_dilation = cv2.resize(mask_dilation, (128, 128))
         if len(mask_dilation.shape) == 2:
             mask_dilation = mask_dilation[..., np.newaxis]
@@ -150,8 +150,6 @@ class Dataloader(Dataset):
         feat = np.rollaxis(feat, 2, 0)
 
         return feat, roi_cropped, mask_dilation, label_fold, key
-
-
 """
     def get_all_labels(self):
         all_labels = set()
