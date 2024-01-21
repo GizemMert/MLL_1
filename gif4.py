@@ -46,7 +46,7 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif(filename, latents, latent_dim=30, grid_size=(5, 20)):
+def interpolate_gif(filename, latents, latent_dim=30, grid_size=(5, 50)):
     model.eval()
 
     def interpolate_single_dimension(start, end, dim, n=100):
@@ -114,4 +114,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif("vae_interpolation_grid_dimension_wise", [start_latent, end_latent], latent_dim=30, grid_size=(5, 20))
+interpolate_gif("vae_interpolation_grid_dimension_wise", [start_latent, end_latent], latent_dim=30, grid_size=(5, 30))
