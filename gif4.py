@@ -37,6 +37,18 @@ model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
+def manhattan_interpolate(start, end, num_steps=10):
+    diff = end - start
+    steps = diff / num_steps
+    current = start.clone()
+
+    interpolations = [current.clone()]
+    for dim in range(len(diff)):
+        for _ in range(num_steps):
+            current[dim] += steps[dim]
+            interpolations.append(current.clone())
+
+    return interpolations
 
 def get_latent_vector(x, latent_dim=30):
     distributions = model.encoder(x)
@@ -46,37 +58,27 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
+def interpolate_gif_manhattan(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
     model.eval()
 
-    def interpolate_single_dimension(start, end, dim, steps=10):
-        start_val = start[dim].item()  # Get the scalar value
-        end_val = end[dim].item()  # Get the scalar value
-        interp_values = torch.linspace(start_val, end_val, steps=steps, device=device)
-
-        # Create a tensor to hold all interpolated points
-        interpolated_dim = torch.stack(
-            [start.clone().detach().requires_grad_(False).scatter_(0, torch.tensor([dim], device=device), interp_value)
-             for interp_value in interp_values])
-
-        return interpolated_dim
-
-    interpolated_images = []
-    for dim in range(latent_dim):
-        # Interpolate each dimension separately and extend the list of images
-        dim_interpolations = interpolate_single_dimension(start_latent.squeeze(), end_latent.squeeze(), dim, steps_per_dim)
-        interpolated_images.extend(dim_interpolations.unbind(0))  # Unbind the 0-th dimension to get a list of images
-
-    interpolated_images = interpolated_images[:grid_size[0] * grid_size[1]]
+    # Generate the Manhattan path
+    manhattan_path = manhattan_interpolate(start_latent.squeeze(), end_latent.squeeze(), steps_per_dim)
 
     decoded_images = []
-    for z in interpolated_images:
+    for z in manhattan_path:
         z = z.to(device).unsqueeze(0)  # Add batch dimension
         with torch.no_grad():
             decoded_img = model.decoder(z)
-            decoded_img = model.img_decoder(decoded_img)# This should output the reconstructed image
+            decoded_img = model.img_decoder(decoded_img)  # This should output the reconstructed image
         decoded_images.append(decoded_img)
 
+    # Adjust the number of images to match the grid size
+    while len(decoded_images) < grid_size[0] * grid_size[1]:
+        decoded_images.append(torch.zeros_like(decoded_images[0]))
+
+    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
+
+    # Convert list of tensors to a single tensor
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension
     # Normalize and convert the grid to a PIL Image
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
@@ -110,5 +112,5 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
-interpolate_gif("vae_interpolation_grid", start_latent[0], end_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
+interpolate_gif_manhattan("vae_interpolation_grid_manhattan", start_latent[0], end_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
 
