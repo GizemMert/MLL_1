@@ -46,7 +46,7 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif(filename, latents, latent_dim=30, grid_size=(5, 6)):
+def interpolate_gif(filename, latents, latent_dim=30, grid_size=(5, 20)):
     model.eval()
 
     def interpolate_single_dimension(start, end, dim, n=100):
