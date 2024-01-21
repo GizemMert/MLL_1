@@ -46,46 +46,38 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif(filename, latents, latent_dim=30, grid_size=(5, 50)):
+def interpolate_gif(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
     model.eval()
 
-    def interpolate_single_dimension(start, end, dim, n=100):
+    def interpolate_single_dimension(start, end, dim, steps=10):
         # Generate interpolation for a single dimension
-        interpolation_path = []
-        for t in torch.linspace(0, 1, steps=n, device=device):
-            point = start.clone()
-            point[0][dim] = (1 - t) * start[0][dim] + t * end[0][dim]
-            interpolation_path.append(point)
-        return interpolation_path
+        interp_values = torch.linspace(start[dim], end[dim], steps=steps)
+        return [start.clone().detach().requires_grad_(False).scatter_(0, torch.tensor([dim]), interp_value) for
+                interp_value in interp_values]
 
-    start_latent, end_latent = latents
-    all_interpolations = []
-
-    # Interpolate each dimension separately
+    interpolated_images = []
     for dim in range(latent_dim):
-        all_interpolations.extend(interpolate_single_dimension(start_latent, end_latent, dim, n=100))
-
-    interpolate_tensors = []
-    for z in all_interpolations:
-        with torch.no_grad():
-            z = z.to(device)
-            img = model.decoder(z)
-            img = model.img_decoder(img)
-            img = img.squeeze(0)  # Assuming the output is (1, C, H, W)
-            interpolate_tensors.append(img.cpu())  # Keep it as a tensor
+        # Interpolate each dimension separately
+        dim_interpolations = interpolate_single_dimension(start_latent, end_latent, dim, steps_per_dim)
+        for interp_latent in dim_interpolations:
+            with torch.no_grad():
+                interp_latent = interp_latent.to(device).unsqueeze(0)
+                generated_img = model.decoder(interp_latent)
+                generated_img = model.img_decoder(generated_img)
+                interpolated_images.append(generated_img.cpu().squeeze(0))
 
     # Make sure you have the correct number of images to fill the grid
-    while len(interpolate_tensors) < grid_size[0] * grid_size[1]:
-        interpolate_tensors.append(torch.zeros_like(interpolate_tensors[0]))
+    while len(interpolated_images) < grid_size[0] * grid_size[1]:
+        interpolated_images.append(torch.zeros_like(interpolated_images[0]))
 
     # Convert list of tensors to a single tensor
-    tensor_grid = torch.stack(interpolate_tensors)
+    tensor_grid = torch.stack(interpolated_images)
     # Create a grid of images
     image_grid = make_grid(tensor_grid, nrow=grid_size[1], normalize=True)
     # Convert the grid to a PIL Image
     grid_image = ToPILImage()(image_grid)
     # Save the grid as an image
-    grid_image.save(f'{filename}_dimension_wise.png')
+    grid_image.save(f'{filename}_dimension_by_row.png')
 
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
@@ -114,4 +106,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif("vae_interpolation_grid_dimension_wise", [start_latent, end_latent], latent_dim=30, grid_size=(5, 30))
+interpolate_gif("vae_interpolation_grid", start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
