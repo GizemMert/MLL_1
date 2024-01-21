@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
-from Dataloader_3 import Dataloader, label_map
+from Dataloader_4 import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 import os
