@@ -69,6 +69,7 @@ def interpolate_gif(filename, start_latent, end_latent, latent_dim=30, steps_per
 
     # Ensure the interpolated images list is a multiple of the grid size, trimming if necessary
     interpolated_images = interpolated_images[:grid_size[0] * grid_size[1]]
+    assert len(interpolated_images) == grid_size[0] * grid_size[1], "The number of interpolated images does not match the grid size."
 
     # Convert list of tensors to a single tensor
     tensor_grid = torch.stack(interpolated_images)
