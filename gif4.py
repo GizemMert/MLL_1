@@ -67,15 +67,21 @@ def interpolate_gif(filename, start_latent, end_latent, latent_dim=30, steps_per
         dim_interpolations = interpolate_single_dimension(start_latent.squeeze(), end_latent.squeeze(), dim, steps_per_dim)
         interpolated_images.extend(dim_interpolations.unbind(0))  # Unbind the 0-th dimension to get a list of images
 
-    # Ensure the interpolated images list is a multiple of the grid size, trimming if necessary
     interpolated_images = interpolated_images[:grid_size[0] * grid_size[1]]
 
-    # Convert list of tensors to a single tensor
-    tensor_grid = torch.stack(interpolated_images)
-    # Create a grid of images
-    image_grid = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
-    # Convert the grid to a PIL Image
-    grid_image = ToPILImage()(image_grid)
+    decoded_images = []
+    for z in interpolated_images:
+        z = z.to(device).unsqueeze(0)  # Add batch dimension
+        with torch.no_grad():
+            decoded_img = model.decoder(z)
+            decoded_img = model.img_decoder(decoded_img)# This should output the reconstructed image
+        decoded_images.append(decoded_img)
+
+    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension
+    # Normalize and convert the grid to a PIL Image
+    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(grid_image)
+
     # Save the grid as an image
     grid_image.save(f'{filename}.png')
 
@@ -102,9 +108,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, sh
 
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_segmented'])
 
-# Convert to appropriate format and device
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
-# Now, you can use these images for your interpolation GIF
 interpolate_gif("vae_interpolation_grid", start_latent[0], end_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
 
