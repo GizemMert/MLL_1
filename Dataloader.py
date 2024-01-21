@@ -88,15 +88,15 @@ class Dataloader(Dataset):
 
     def __len__(self):
         if self.split == 'train':
-            return int(len(self.data) * 0.9)  # 90% for training
+            return int(len(self.data) * 1)  # 90% for training
         elif self.split == 'test':
-            return len(self.data) - int(len(self.data) * 0.9)  # 10% for testing
+            return len(self.data) - int(len(self.data) * 1)  # 10% for testing
 
     def __getitem__(self, index):
         if self.split == 'train':
-            index = index % int(len(self.data) * 0.9)
+            index = index % int(len(self.data) * 1)
         elif self.split == 'test':
-            index = int(len(self.data) * 0.9) + index
+            index = int(len(self.data) * 1) + index
 
         key = self.data[index]
         label_fold = self.samples[key]['label']
@@ -136,7 +136,7 @@ class Dataloader(Dataset):
         ]
         mask_dilation = mask_cropped.astype(np.uint8)
         kernel = np.ones((5, 5), np.uint8)
-        mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=10)
+        mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=4)
         mask_dilation = mask_dilation.astype(np.float32)
         mask_dilation = cv2.resize(mask_dilation, (128, 128))
         if len(mask_dilation.shape) == 2:
@@ -150,6 +150,7 @@ class Dataloader(Dataset):
         feat = np.rollaxis(feat, 2, 0)
 
         return feat, roi_cropped, mask_dilation, label_fold, key
+
 """
     def get_all_labels(self):
         all_labels = set()

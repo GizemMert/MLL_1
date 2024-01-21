@@ -19,21 +19,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-"""
-class SimpleConfig(mrcnn.config.Config):
-    NAME = "march_mrcnn"
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
-    NUM_CLASSES = 2  # Adjust based on your dataset
-
-
-
-mask_rcnn_model = mrcnn.model_feat_extract.MaskRCNN(mode="inference",
-                                                    config=SimpleConfig(),
-                                                    model_dir=os.getcwd())
-mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5', by_name=True)
-"""
-
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
 batch_size = 128
@@ -63,9 +48,9 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # custom_state_dict = torch.load(custom_weights_path)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
-cff_feat_rec = 0.20
-cff_im_rec = 0.45
-cff_kld = 0.15
+cff_feat_rec = 0.25
+cff_im_rec = 0.55
+cff_kld = 0.20
 cff_edge = 0.20
 
 beta = 4
@@ -170,20 +155,16 @@ for epoch in range(epochs):
         z_dist, output, im_out, mu, logvar = model(feat)
 
         masked_scimg = scimg * mask
-        # im_out_masked = im_out * mask
+        im_out_masked = im_out * mask
 
-        # imgs_edges = edge_loss_fn(masked_scimg)
-        # recon_edges = edge_loss_fn(im_out_masked)
+        imgs_edges = edge_loss_fn(masked_scimg)
+        recon_edges = edge_loss_fn(im_out_masked)
 
         # edge_loss = F.mse_loss(recon_edges, imgs_edges)
         feat_rec_loss = criterion(output, feat)
-        full_recon_loss = reconstruction_loss(im_out, scimg, distribution="gaussian")
-        weights = torch.zeros_like(mask)*0.5
-        weights[mask > 0] = 1.0
-        weighted_recon_loss = full_recon_loss * weights
-        recon_loss = weighted_recon_loss.mean()
+        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)  #(cff_edge * edge_loss)
 
         train_loss.backward()
         optimizer.step()
