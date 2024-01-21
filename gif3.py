@@ -82,7 +82,7 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
 # Load the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new3.pth'
+model_save_path = 'trained_model4cp2_new5.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
@@ -114,4 +114,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr(model, "vae_interpolation_masked_(5,5)_10_dilation", selected_images)
+interpolate_gif_with_gpr(model, "vae_interpolation_masked_(5,5)_6_dilation", selected_images)
