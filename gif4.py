@@ -58,7 +58,7 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif_manhattan(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
+def interpolate_gif_manhattan(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(20, 15)):
     model.eval()
 
     # Generate the Manhattan path
@@ -112,5 +112,5 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
-interpolate_gif_manhattan("vae_interpolation_grid_manhattan", start_latent[0], end_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
+interpolate_gif_manhattan("vae_interpolation_grid_manhattan", start_latent[0], end_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(20, 15))
 
