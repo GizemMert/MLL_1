@@ -113,7 +113,7 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-single_class_feature = get_images_from_different_classes(train_dataloader, label_map['neutrophil_segmented'], label_map['neutrophil_segmented'])[0]
+single_class_feature = get_images_from_different_classes(train_dataloader, label_map['neutrophil_banded'], label_map['neutrophil_banded'])[0]
 single_class_latent, _, _, _, _ = model(single_class_feature.float().to(device))
 
 # Call the function with the correct parameters
