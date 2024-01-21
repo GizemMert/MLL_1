@@ -58,7 +58,8 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_single_dimension_grid(filename, representative_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
+def interpolate_single_dimension_grid(filename, representative_latent, latent_dim=30, steps_per_dim=10,
+                                      grid_size=(30, 10)):
     model.eval()
 
     # We'll modify each dimension within a certain range around the representative latent vector
@@ -73,9 +74,14 @@ def interpolate_single_dimension_grid(filename, representative_latent, latent_di
             varied_latent = representative_latent.clone()
             varied_latent[dim] = varied_latent[dim] - latent_range + step * step_size
             varied_latent = varied_latent.to(device).unsqueeze(0)  # Add batch dimension
+
             with torch.no_grad():
-                _, _, decoded_img, _, _ = model(varied_latent)  # Decode the image
-            interpolated_images.append(decoded_img[0])  # Remove batch dimension
+                # Use the two-step decoding process as per your model's structure
+                intermediate_representation = model.decoder(varied_latent)
+                decoded_img = model.img_decoder(intermediate_representation)
+
+            # Append the decoded image to the list, make sure to remove the batch dimension
+            interpolated_images.append(decoded_img.squeeze(0))
 
     # Convert list of tensors to a single tensor
     tensor_grid = torch.stack(interpolated_images)
@@ -110,5 +116,5 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, sh
 single_class_feature = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['myeloblast'])[0]
 single_class_latent, _, _, _, _ = model(single_class_feature.float().to(device))
 
+# Call the function with the correct parameters
 interpolate_single_dimension_grid("vae_interpolation_single_class_grid", single_class_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
-
