@@ -139,6 +139,7 @@ class Dataloader(Dataset):
         mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=4)
         mask_dilation = mask_dilation.astype(np.float32)
         mask_dilation = cv2.resize(mask_dilation, (128, 128))
+        mask_dilation = cv2.GaussianBlur(mask_dilation, (5, 5), sigmaX=0)
         if len(mask_dilation.shape) == 2:
             mask_dilation = mask_dilation[..., np.newaxis]
 
