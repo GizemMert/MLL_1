@@ -46,34 +46,24 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6)):
+def interpolate_gif(filename, latents, latent_dim=30, grid_size=(5, 6)):
     model.eval()
 
-    def manhattan_interpolate_evenly(n=100):
-        start, end = latents
-        diff = end - start
-        steps = diff.sign().int()
-        total_steps_per_dim = diff.abs().int()
-        max_steps = total_steps_per_dim.max()
-
+    def interpolate_single_dimension(start, end, dim, n=100):
+        # Generate interpolation for a single dimension
         interpolation_path = []
-        for step in range(max_steps.item()):
-            current_point = start + torch.min(total_steps_per_dim, torch.tensor([step] * latent_dim, device=start.device).int()) * steps
-            interpolation_path.append(current_point)
-            total_steps_per_dim = torch.max(total_steps_per_dim - 1, torch.tensor(0).int())
+        for t in torch.linspace(0, 1, steps=n, device=device):
+            point = start.clone()
+            point[0][dim] = (1 - t) * start[0][dim] + t * end[0][dim]
+            interpolation_path.append(point)
+        return interpolation_path
 
-        interpolation_path.append(end)
+    start_latent, end_latent = latents
+    all_interpolations = []
 
-        all_interpolations = []
-        for i in range(len(interpolation_path) - 1):
-            interp_points = torch.linspace(0, 1, steps=n)
-            for t in interp_points:
-                interpolated_point = interpolation_path[i] * (1 - t) + interpolation_path[i + 1] * t
-                all_interpolations.append(interpolated_point)
-
-        return all_interpolations
-
-    all_interpolations = manhattan_interpolate_evenly(n=100)
+    # Interpolate each dimension separately
+    for dim in range(latent_dim):
+        all_interpolations.extend(interpolate_single_dimension(start_latent, end_latent, dim, n=100))
 
     interpolate_tensors = []
     for z in all_interpolations:
@@ -95,7 +85,7 @@ def interpolate_gif_with_gpr(filename, latents, latent_dim=30, grid_size=(5, 6))
     # Convert the grid to a PIL Image
     grid_image = ToPILImage()(image_grid)
     # Save the grid as an image
-    grid_image.save(f'{filename}.png')
+    grid_image.save(f'{filename}_dimension_wise.png')
 
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
@@ -124,4 +114,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr("vae_interpolation_grid", [start_latent, end_latent], latent_dim=30, grid_size=(5, 20))
+interpolate_gif("vae_interpolation_grid_dimension_wise", [start_latent, end_latent], latent_dim=30, grid_size=(5, 20))
