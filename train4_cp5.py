@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
-from Dataloader import Dataloader, label_map
+from Dataloader_3 import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 import os
@@ -18,21 +18,6 @@ import matplotlib.pyplot as plt
 # import mrcnn.model_feat_extract
 import numpy as np
 
-
-"""
-class SimpleConfig(mrcnn.config.Config):
-    NAME = "march_mrcnn"
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
-    NUM_CLASSES = 2  # Adjust based on your dataset
-
-
-
-mask_rcnn_model = mrcnn.model_feat_extract.MaskRCNN(mode="inference",
-                                                    config=SimpleConfig(),
-                                                    model_dir=os.getcwd())
-mask_rcnn_model.load_weights('/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5', by_name=True)
-"""
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 150
