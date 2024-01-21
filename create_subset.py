@@ -26,7 +26,7 @@ def create_subset(features_path, images_path, num_samples):
         images = pickle.load(f)
 
     # Create a list of keys that have labels in equivalent_classes
-    keys_with_labels = [k for k in features.keys() if features[k].get("label") in equivalent_classes]
+    keys_with_labels = [k for k in features.keys() if features[k].get("label") in equivalent_classes and equivalent_classes[features[k].get("label")] != "unknown"]
 
     # Randomly choose num_samples samples
     chosen_keys = random.sample(keys_with_labels, num_samples)
