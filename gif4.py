@@ -32,7 +32,7 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new3.pth'
+model_save_path = 'trained_model4cp2_new5.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
@@ -58,33 +58,28 @@ def get_latent_vector(x, latent_dim=30):
     return z
 
 
-def interpolate_single_dimension_grid(filename, representative_latent, latent_dim=30, steps_per_dim=10,
-                                      grid_size=(30, 10)):
+def interpolate_gif_manhattan(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
     model.eval()
 
-    # We'll modify each dimension within a certain range around the representative latent vector
-    # Here, we assume a range of -2 to 2 standard deviations if the latent space follows a standard normal distribution
-    latent_range = 2
-    step_size = latent_range * 2 / (steps_per_dim - 1)
+    # Generate the Manhattan path
+    manhattan_path = manhattan_interpolate(start_latent.squeeze(), end_latent.squeeze(), steps_per_dim)
 
-    interpolated_images = []
-    for dim in range(latent_dim):
-        for step in range(steps_per_dim):
-            # Create a variation only in the current dimension
-            varied_latent = representative_latent.clone()
-            varied_latent[dim] = varied_latent[dim] - latent_range + step * step_size
-            varied_latent = varied_latent.to(device).unsqueeze(0)  # Add batch dimension
+    decoded_images = []
+    for z in manhattan_path:
+        z = z.to(device).unsqueeze(0)  # Add batch dimension
+        with torch.no_grad():
+            decoded_img = model.decoder(z)
+            decoded_img = model.img_decoder(decoded_img)  # This should output the reconstructed image
+        decoded_images.append(decoded_img)
 
-            with torch.no_grad():
-                # Use the two-step decoding process as per your model's structure
-                intermediate_representation = model.decoder(varied_latent)
-                decoded_img = model.img_decoder(intermediate_representation)
+    # Adjust the number of images to match the grid size
+    while len(decoded_images) < grid_size[0] * grid_size[1]:
+        decoded_images.append(torch.zeros_like(decoded_images[0]))
 
-            # Append the decoded image to the list, make sure to remove the batch dimension
-            interpolated_images.append(decoded_img.squeeze(0))
+    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
     # Convert list of tensors to a single tensor
-    tensor_grid = torch.stack(interpolated_images)
+    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension
     # Normalize and convert the grid to a PIL Image
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
@@ -113,8 +108,9 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-single_class_feature = get_images_from_different_classes(train_dataloader, label_map['neutrophil_banded'], label_map['neutrophil_banded'])[0]
-single_class_latent, _, _, _, _ = model(single_class_feature.float().to(device))
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
 
-# Call the function with the correct parameters
-interpolate_single_dimension_grid("vae_interpolation_single_class_grid", single_class_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
+start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
+
+interpolate_gif_manhattan("vae_interpolation_grid_manhattan", start_latent[0], end_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
+
