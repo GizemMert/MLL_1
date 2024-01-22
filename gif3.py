@@ -114,4 +114,4 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
 
 # Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr(model, "vae_interpolation_bmasked_(5,5)_4_dilation", selected_images)
+interpolate_gif_with_gpr(model, "vae_interpolation_bmasked_(5,5)_6_dilation", selected_images)
