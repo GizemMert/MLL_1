@@ -42,11 +42,12 @@ def manhattan_interpolate(start, end, num_steps=10):
     steps = diff / num_steps
     current = start.clone()
 
-    interpolations = [current.clone()]
+    interpolations = []
     for dim in range(len(diff)):
-        for _ in range(num_steps):
-            current[dim] += steps[dim]
+        current[dim] = start[dim]
+        for _ in range(num_steps + 1):
             interpolations.append(current.clone())
+            current[dim] += steps[dim]
 
     return interpolations
 
@@ -61,30 +62,24 @@ def get_latent_vector(x, latent_dim=30):
 def interpolate_gif_manhattan(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
     model.eval()
 
-    # Generate the Manhattan path
     manhattan_path = manhattan_interpolate(start_latent.squeeze(), end_latent.squeeze(), steps_per_dim)
 
     decoded_images = []
     for z in manhattan_path:
-        z = z.to(device).unsqueeze(0)  # Add batch dimension
+        z = z.to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z)
-            decoded_img = model.img_decoder(decoded_img)  # This should output the reconstructed image
+            decoded_img = model.img_decoder(decoded_img)
         decoded_images.append(decoded_img)
 
-    # Adjust the number of images to match the grid size
     while len(decoded_images) < grid_size[0] * grid_size[1]:
         decoded_images.append(torch.zeros_like(decoded_images[0]))
 
     decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
-
-    # Convert list of tensors to a single tensor
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension
-    # Normalize and convert the grid to a PIL Image
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
 
-    # Save the grid as an image
     grid_image.save(f'{filename}.png')
 
 
