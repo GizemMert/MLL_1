@@ -84,12 +84,29 @@ if __name__ == '__main__':
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
         np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
+
+
     fig = plt.figure(figsize=(12, 10), dpi=150)
     gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
     ax = fig.add_subplot(gs[0])
     scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
     cc = np.zeros((20, 3))
     cc[:, 2] = np.linspace(0, 1, 20)
+    print("Random Myeloblast Point:", random_myeloblast_point)
+    print("Shape of Random Myeloblast Point:", random_myeloblast_point.shape)
+    print("Random Neutrophil Banded Point:", random_neutrophil_banded_point)
+    print("Shape of Random Neutrophil Banded Point:", random_neutrophil_banded_point.shape)
+
+    if random_myeloblast_point is not None and random_neutrophil_banded_point is not None:
+        if not (np.isnan(random_myeloblast_point).any() or np.isnan(random_neutrophil_banded_point).any()):
+            if random_myeloblast_point.shape == (2,) and random_neutrophil_banded_point.shape == (2,):
+                beta_p.plot_geodesic(ax, random_myeloblast_point, random_neutrophil_banded_point, n_points=20, color=cc)
+            else:
+                print("The shape of one or both points is incorrect.")
+        else:
+            print("One of the points contains NaN values.")
+    else:
+        print("One of the points is None.")
     beta_p.plot_geodesic(ax, random_myeloblast_point, random_neutrophil_banded_point, n_points=20, color=cc)
     ax.set_aspect('equal')
 
