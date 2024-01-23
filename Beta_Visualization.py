@@ -1,4 +1,4 @@
-import geomstats as gs
+import geomstats._backend as gs
 
 from geomstats.information_geometry.beta import BetaDistributions
 
