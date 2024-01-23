@@ -40,6 +40,10 @@ if __name__ == '__main__':
     if not os.path.exists(umap_dir):
         os.makedirs(umap_dir)
 
+    pdf_dir = 'pdf_manifold_path'
+    if not os.path.exists(umap_dir):
+        os.makedirs(umap_dir)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = VariationalAutoencodermodel4(latent_dim=30)
     model_save_path = 'trained_model4cp2_new5.pth'
@@ -80,9 +84,9 @@ if __name__ == '__main__':
     myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
     neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
 
-    random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
-    random_neutrophil_banded_point = neutrophil_banded_umap_points[
-        np.random.choice(neutrophil_banded_umap_points.shape[0])]
+    random_myeloblast_point = gs.array(myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])])
+    random_neutrophil_banded_point = gs.array(neutrophil_banded_umap_points[
+        np.random.choice(neutrophil_banded_umap_points.shape[0])])
 
 
 
@@ -171,5 +175,6 @@ if __name__ == '__main__':
     for i in range(n_points):
         plt.plot(x, pdfs(x)[:, i], color=cc[i, :])
     plt.title("Corresponding interpolation between pdfs")
-    plt.savefig(umap_figure_filename)
+    pdf_figure_filename = os.path.join(pdf_dir, f'pdf_interpolation_epoch_{epoch}.png')
+    plt.savefig(pdf_figure_filename)
     plt.close(fig)
