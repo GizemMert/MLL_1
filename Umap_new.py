@@ -34,7 +34,7 @@ if __name__ == '__main__':
     inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
     batch_size = 128
     num_classes = len(label_map)
-    epoch = 40
+    epoch = 140
 
     umap_dir = 'umap_manifold_path'
     if not os.path.exists(umap_dir):
