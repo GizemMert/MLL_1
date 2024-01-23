@@ -45,13 +45,13 @@ if not os.path.exists(pdf_dir):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new5.pth'
+model_save_path = 'trained_model4cp2_new4.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
 train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=30, shuffle=False, num_workers=1)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=False, num_workers=1)
 
 # Load all latent representations
 latent_dir = 'latent_data4cp2_new5'
@@ -81,7 +81,7 @@ latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='eu
     filtered_latent_data)
 
 myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
-neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
+neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['lymphocyte_typical']]
 
 random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
 random_neutrophil_banded_point = neutrophil_banded_umap_points[
