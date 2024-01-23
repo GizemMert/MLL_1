@@ -7,7 +7,7 @@ import os
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
-import geomstats as gs
+import geomstats.backend as gs
 import matplotlib.pyplot as plt
 from Beta_Visualization import Beta as beta_p
 from geomstats.information_geometry.beta import BetaDistributions as beta
