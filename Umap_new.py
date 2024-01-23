@@ -40,8 +40,8 @@ if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
 pdf_dir = 'pdf_manifold_path'
-if not os.path.exists(umap_dir):
-    os.makedirs(umap_dir)
+if not os.path.exists(pdf_dir):
+    os.makedirs(pdf_dir)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
