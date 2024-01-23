@@ -10,7 +10,7 @@ import numpy as np
 import geomstats._backend as gs
 import matplotlib.pyplot as plt
 from Beta_Visualization import Beta as beta_p
-from geomstats.information_geometry.beta import BetaDistributions
+from geomstats.information_geometry.beta import BetaDistributions as beta
 
 
 if __name__ == '__main__':
@@ -93,8 +93,11 @@ if __name__ == '__main__':
     cc = np.zeros((20, 3))
     cc[:, 2] = np.linspace(0, 1, 20)
     print("Random Myeloblast Point:", random_myeloblast_point)
+    print("Type of Random Myeloblast Point:", type(random_myeloblast_point))
     print("Shape of Random Myeloblast Point:", random_myeloblast_point.shape)
+
     print("Random Neutrophil Banded Point:", random_neutrophil_banded_point)
+    print("Type of Random Neutrophil Banded Point:", type(random_neutrophil_banded_point))
     print("Shape of Random Neutrophil Banded Point:", random_neutrophil_banded_point.shape)
 
     if random_myeloblast_point is not None and random_neutrophil_banded_point is not None:
@@ -154,4 +157,19 @@ if __name__ == '__main__':
     plt.tight_layout()
     umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
     plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
+    plt.close(fig)
+
+    n_points = 20
+    t = gs.linspace(0, 1, n_points)
+
+    pdfs = beta.point_to_pdf(beta.metric.geodesic(random_myeloblast_point, random_neutrophil_banded_point)(t))
+    x = gs.linspace(0.0, 1.0, 100)
+
+    fig = plt.figure(figsize=(10, 5))
+    cc = gs.zeros((n_points, 3))
+    cc[:, 2] = gs.linspace(0, 1, n_points)
+    for i in range(n_points):
+        plt.plot(x, pdfs(x)[:, i], color=cc[i, :])
+    plt.title("Corresponding interpolation between pdfs")
+    plt.savefig(umap_figure_filename)
     plt.close(fig)
