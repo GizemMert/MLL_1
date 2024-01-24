@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from Beta_Visualization import Beta
 from geomstats.information_geometry.beta import BetaDistributions
 from geomstats.geometry.connection import Connection
-from geomstats.geometry.complex_manifold import ComplexManifold
 import geomstats.visualization as visualization
 from geomstats.geometry.special_euclidean import SpecialEuclidean
 from Umap_new import latent_data_umap
