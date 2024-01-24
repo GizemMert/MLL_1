@@ -104,9 +104,9 @@ if __name__ == '__main__':
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
         np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
-    initial_point = random_myeloblast_point
-    end_point = random_neutrophil_banded_point
-    # end_point = hyperbolic.from_coordinates(end_point, "intrinsic")
+    initial_point = gs.array([gs.sqrt(2.0),random_myeloblast_point])
+    end_point = gs.array(random_neutrophil_banded_point)
+    end_point = hyperbolic.from_coordinates(end_point, "intrinsic")
 
     geodesic_func = hyperbolic.metric.geodesic(
         initial_point=initial_point, end_point=end_point
