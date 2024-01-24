@@ -28,9 +28,6 @@ from geomstats.information_geometry.normal import NormalDistributions
 if __name__ == '__main__':
     normal = NormalDistributions(sample_dim=1)
 
-    complex_space = ComplexManifold(dim=2)
-
-    beta = Connection(space=complex_space)
 
     beta_p = Beta()
 
