@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 from geomstats.information_geometry.beta import BetaDistributions
 from geomstats.geometry.connection import Connection
 import geomstats.visualization as visualization
-from geomstats.geometry.special_euclidean import SpecialEuclidean
-from Umap_new import latent_data_umap
 import matplotlib
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
@@ -26,8 +24,6 @@ from geomstats.information_geometry.normal import NormalDistributions
 if __name__ == '__main__':
     normal = NormalDistributions(sample_dim=1)
 
-
-    beta_p = Beta()
 
     beta_dir = 'beta_manifold_path'
     if not os.path.exists(beta_dir):
@@ -94,6 +90,9 @@ if __name__ == '__main__':
     mask = all_labels_array != erythroblast_class_index
     filtered_latent_data = latent_data_reshaped[mask]
     filtered_labels = all_labels_array[mask]
+
+    latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+        filtered_latent_data)
 
     myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
     neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['lymphocyte_typical']]
