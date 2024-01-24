@@ -110,7 +110,7 @@ if __name__ == '__main__':
     if random_myeloblast_point is not None and random_neutrophil_banded_point is not None:
         if not (np.isnan(random_myeloblast_point).any() or np.isnan(random_neutrophil_banded_point).any()):
             if random_myeloblast_point.shape == (2,) and random_neutrophil_banded_point.shape == (2,):
-                beta_p.plot_geodesic(ax, reshaped_myeloblast_point, reshaped_neutrophil_banded_point, n_points=20, color=cc)
+                beta_p.plot_geodesic(ax=ax, initial_point=reshaped_myeloblast_point, end_point=reshaped_neutrophil_banded_point, n_points=20, color=cc)
             else:
                 print("The shape of one or both points is incorrect.")
         else:
