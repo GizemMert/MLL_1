@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import geomstats._backend as gs
 import matplotlib.pyplot as plt
-from Beta_Visualization import Beta as beta_p
+from Beta_Visualization import Beta
 from geomstats.information_geometry.beta import BetaDistributions as beta
 
+beta_p = Beta()
 
 
 label_map = {
