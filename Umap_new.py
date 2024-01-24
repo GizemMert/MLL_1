@@ -7,7 +7,7 @@ import os
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
-import geomstats._backend as gs
+import geomstats.backend as gs
 import matplotlib.pyplot as plt
 from Beta_Visualization import Beta
 from geomstats.information_geometry.beta import BetaDistributions
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     g_s = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
     ax = fig.add_subplot(g_s[0])
     scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
-    cc = np.zeros((20, 3))
+    cc = gs.zeros((20, 3))
     cc[:, 2] = gs.linspace(0, 1, 20)
     print("Random Myeloblast Point:", random_myeloblast_point)
     print("Type of Random Myeloblast Point:", type(random_myeloblast_point))
