@@ -2,6 +2,7 @@ import geomstats.backend as gs
 
 
 from geomstats.geometry.connection import Connection
+from geomstats.geometry.complex_manifold import ComplexManifold
 
 import geomstats.visualization as visualization
 from geomstats.geometry.special_euclidean import SpecialEuclidean
@@ -9,9 +10,10 @@ from geomstats.geometry.special_euclidean import SpecialEuclidean
 import matplotlib
 import matplotlib.pyplot as plt
 
-SE2_GROUP = SpecialEuclidean(n=2, point_type="matrix")
+complex_space = ComplexManifold(dim=2)
 
-beta = Connection(space=SE2_GROUP)
+
+beta = Connection(space=complex_space)
 
 
 class Beta:
