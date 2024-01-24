@@ -1,7 +1,7 @@
 import geomstats.backend as gs
 
 
-from geomstats.information_geometry.beta import BetaDistributions
+from geomstats.geometry.connection import Connection
 
 import geomstats.visualization as visualization
 from geomstats.geometry.special_euclidean import SpecialEuclidean
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 SE2_GROUP = SpecialEuclidean(n=2, point_type="matrix")
 
-beta = BetaDistributions()
+beta = Connection()
 
 
 class Beta:
@@ -150,9 +150,7 @@ class Beta:
         t = gs.linspace(0, 1, n_points)
             
         if end_point is not None:
-            geod = beta.metric.geodesic(initial_point=initial_point, 
-                                        end_point=end_point,
-                                        n_steps=n_steps)(t)
+            geod = beta.geodesic(initial_point=initial_point, end_point=end_point)(t)
             self.scatter(ax=ax,points=geod,**kwargs)
             
         if initial_tangent_vec is not None:
