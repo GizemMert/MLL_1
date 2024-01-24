@@ -121,7 +121,9 @@ if __name__ == '__main__':
             if random_myeloblast_point.shape == (2,) and random_neutrophil_banded_point.shape == (2,):
                 geod = beta.metric.geodesic(initial_point=random_myeloblast_point,
                                             end_point=random_neutrophil_banded_point,
-                                            color=cc)
+                                            s=10,
+                                            c='blue',
+                                            marker='o')
 
                 # Print the geodesic points
                 print("Geodesic points:")
