@@ -105,8 +105,8 @@ if __name__ == '__main__':
 
 
     fig = plt.figure(figsize=(12, 10), dpi=150)
-    gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
-    ax = fig.add_subplot(gs[0])
+    g_s = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
+    ax = fig.add_subplot(g_s[0])
     scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
     cc = gs.zeros((20, 3))
     cc[:, 2] = gs.linspace(0, 1, 20)
