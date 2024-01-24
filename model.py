@@ -7,7 +7,7 @@ from torch.nn import init
 
 
 class VariationalAutoencodermodel(nn.Module):
-    def __init__(self, latent_dim=30):
+    def __init__(self, latent_dim=30, num_classes=13):
         super(VariationalAutoencodermodel, self).__init__()
         self.latent_dim = latent_dim
         self.encoder = nn.Sequential(
@@ -33,31 +33,32 @@ class VariationalAutoencodermodel(nn.Module):
 
         )
 
+        self.classifier = nn.Linear(30, num_classes)
+
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 50),
             View((-1, 50, 1, 1)),
-            nn.ConvTranspose2d(50, 100, kernel_size=5),
+            nn.ConvTranspose2d(50, 150, kernel_size=5),
             nn.ReLU(),
-            nn.ConvTranspose2d(100, 150, kernel_size=4, stride=2),
+            nn.ConvTranspose2d(150, 200, kernel_size=4, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(150, 256, kernel_size=3),
+            nn.ConvTranspose2d(200, 256, kernel_size=3),
             nn.Tanh()
 
         )
 
         self.img_decoder = nn.Sequential(
-            nn.ConvTranspose2d(256, 64, kernel_size=5, stride=2),
+            nn.ConvTranspose2d(256, 96, kernel_size=5, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2),
+            nn.ConvTranspose2d(96, 48, kernel_size=3, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2),
+            nn.ConvTranspose2d(48, 24, kernel_size=3, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(16, 8, kernel_size=2),
-            nn.ReLU(),
-            nn.ConvTranspose2d(8, 3, kernel_size=1),
+            nn.ConvTranspose2d(24, 3, kernel_size=2),
+            #nn.ReLU(),
+            #nn.ConvTranspose2d(16, 3, kernel_size=1),
             nn.Sigmoid()
         )
-
         self.weight_init()
 
     def weight_init(self):
@@ -70,12 +71,13 @@ class VariationalAutoencodermodel(nn.Module):
         mu = distributions[:, :self.latent_dim]
         logvar = distributions[:, self.latent_dim:]
         z = reparametrize(mu, logvar)
+        logits = self.classifier(z)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z)
         # # reconstruct the images based on the learned data representation
         img = self.img_decoder(y)
 
-        return z, y, img, mu, logvar
+        return z, y, img, mu, logvar, logits
 
 
 class View(nn.Module):
