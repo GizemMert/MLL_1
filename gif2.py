@@ -89,18 +89,22 @@ if __name__ == '__main__':
     mask = all_labels_array != erythroblast_class_index
     filtered_latent_data = latent_data_reshaped[mask]
     filtered_labels = all_labels_array[mask]
+    unique_labels = np.unique(filtered_labels)
 
     reducer = umap.UMAP(n_components=3)
     latent_data_3d = reducer.fit_transform(filtered_latent_data)
+
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    scatter = ax.scatter(latent_data_3d[:, 0], latent_data_3d[:, 1], latent_data_3d[:, 2], c=filtered_labels, cmap='viridis')
 
-    unique_labels = np.unique(filtered_labels)
-    color_map = matplotlib.colormaps.get_cmap('viridis', len(unique_labels)) # Ensure correct color mapping
+    # Create a scatter plot with color mapping using 'Spectral' colormap
+    color_map = plt.get_cmap('Spectral')  # Updated to the correct colormap fetching method
+    norm = plt.Normalize(min(unique_labels), max(unique_labels))
 
-    for idx, unique_label in enumerate(unique_labels):
-        ax.scatter([], [], [], color=color_map(idx), label=unique_label)
+    scatter = ax.scatter(latent_data_3d[:, 0], latent_data_3d[:, 1], latent_data_3d[:, 2],
+                         c=filtered_labels, cmap=color_map, norm=norm, s=5)  # Adjust the size with `s`
 
-    ax.legend()
+    # Create a colorbar for the scatter plot
+    cbar = plt.colorbar(scatter, ax=ax)
+    cbar.set_label('Label')
     plt.savefig('my_3d_latent.png', dpi=300)
