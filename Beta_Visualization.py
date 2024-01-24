@@ -151,7 +151,7 @@ class Beta:
         t = gs.linspace(0, 1, n_points)
             
         if end_point is not None:
-            geod = beta.geodesic(initial_point=initial_point, end_point=end_point)(t)
+            geod = beta.metric.geodesic(initial_point=initial_point, end_point=end_point)(t)
             self.scatter(ax=ax,points=geod,**kwargs)
             
         if initial_tangent_vec is not None:
