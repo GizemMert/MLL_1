@@ -21,6 +21,7 @@ import geomstats.visualization as visualization
 from geomstats.information_geometry.normal import NormalDistributions
 from geomstats.geometry.hyperboloid import Hyperboloid
 import geomstats.geometry.hyperbolic
+from matplotlib.lines import Line2D
 
 hyperbolic = Hyperboloid(dim=2)
 
@@ -99,7 +100,7 @@ if __name__ == '__main__':
         filtered_latent_data)
 
     myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
-    neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['lymphocyte_typical']]
+    neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
 
     random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
@@ -124,14 +125,24 @@ if __name__ == '__main__':
     representation = "H2_poincare_disk"
 
     ax = visualization.plot(
-        initial_point, ax=ax, space=representation, s=50, label="Initial point"
+        initial_point, ax=ax, space=representation, s=50, label="Initial point", color='blue'
     )
-    ax = visualization.plot(end_point, ax=ax, space=representation, s=50, label="End point")
+    ax = visualization.plot(end_point, ax=ax, space=representation, s=50, label="End point", color='orange')
 
     ax = visualization.plot(
         points[1:-1], ax=ax, space=representation, s=5, color="black", label="Geodesic"
     )
     ax.set_title("Geodesic on the hyperbolic plane in Poincare disk representation")
+
+    legend_handles = [
+        plt.Line2D([0], [0], marker='o', color='w', label='Myeloblast (Initial Point)',
+                   markerfacecolor='blue', markersize=10),
+        plt.Line2D([0], [0], marker='o', color='w', label='Neutrophil Banded (End Point)',
+                   markerfacecolor='orange', markersize=10),
+    ]
+
+    # Add the legend to the plot using the handles
+    plt.legend(handles=legend_handles, loc='lower right')
 
     pdf_figure_filename = os.path.join(beta_dir, f'beta_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
