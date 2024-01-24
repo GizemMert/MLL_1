@@ -107,7 +107,7 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(12, 10), dpi=150)
     g_s = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
     ax = fig.add_subplot(g_s[0])
-    scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
+    # scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
     cc = gs.zeros((20, 3))
     cc[:, 2] = gs.linspace(0, 1, 20)
     print("Random Myeloblast Point:", random_myeloblast_point)
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     ax.set_xlim(new_x_min, new_x_max)
     ax.set_ylim(new_y_min, new_y_max)
 
-    ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+    ax.set_title(f'Geodesic Plot - (Epoch {epoch})', fontsize=18)
     ax.set_xlabel('UMAP Dimension 1', fontsize=16)
     ax.set_ylabel('UMAP Dimension 2', fontsize=16)
 
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
     plt.tight_layout()
-    umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
+    umap_figure_filename = os.path.join(umap_dir, f'geodesic_plot.png_{epoch}.png')
     plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
     plt.close(fig)
 
