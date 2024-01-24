@@ -95,7 +95,7 @@ def reparametrize(mu, log_var):
     return mu + std * eps
 
 def kaiming_init(m):
-    if isinstance(m, (nn.Linear, nn.Conv2d)):
+    if isinstance(m, nn.Conv2d):
         nn.init.kaiming_normal_(m.weight)  # Updated to kaiming_normal_
         if m.bias is not None:
             m.bias.data.fill_(0)
