@@ -19,6 +19,9 @@ from matplotlib.lines import Line2D
 import geomstats.backend as gs
 import geomstats.visualization as visualization
 from geomstats.information_geometry.normal import NormalDistributions
+from geomstats.geometry.hyperboloid import Hyperboloid
+
+hyperbolic = Hyperboloid(dim=2)
 
 
 if __name__ == '__main__':
@@ -101,26 +104,30 @@ if __name__ == '__main__':
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
         np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
-    geodesic_ab_fisher = normal.metric.geodesic(random_myeloblast_point, random_neutrophil_banded_point)
+    initial_point = gs.array(random_myeloblast_point)
+    end_point = gs.array(random_neutrophil_banded_point)
+    # end_point = hyperbolic.from_coordinates(end_point, "intrinsic")
 
-    n_points = 20
-    t = gs.linspace(0, 1, n_points)
-    fig = plt.figure(figsize=(10, 5))
-    ax = fig.add_subplot(111)
-    cc = gs.zeros((n_points, 3))
-    cc[:, 2] = gs.linspace(0, 1, n_points)
-
-    visualization.plot(
-        geodesic_ab_fisher(t),
-        ax=ax,
-        space="H2_poincare_half_plane",
-        label="point on geodesic",
-        color=cc,
+    geodesic_func = hyperbolic.metric.geodesic(
+        initial_point=initial_point, end_point=end_point
     )
 
-    ax.set_xlim(0.0, 15.0)
-    ax.set_ylim(0.0, 5.0)
-    ax.set_title("Geodesic between two normal distributions for the Fisher-Rao metric")
+    points = geodesic_func(gs.linspace(0.0, 1.0, 10))
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111)
+
+    representation = "H2_poincare_disk"
+
+    ax = visualization.plot(
+        initial_point, ax=ax, space=representation, s=50, label="Initial point"
+    )
+    ax = visualization.plot(end_point, ax=ax, space=representation, s=50, label="End point")
+
+    ax = visualization.plot(
+        points[1:-1], ax=ax, space=representation, s=5, color="black", label="Geodesic"
+    )
+    ax.set_title("Geodesic on the hyperbolic plane in Poincare disk representation")
 
     pdf_figure_filename = os.path.join(beta_dir, f'beta_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
