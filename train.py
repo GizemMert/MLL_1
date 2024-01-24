@@ -46,7 +46,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 cff_feat_rec = 0.20
 cff_im_rec = 0.55
 cff_kld = 0.15
-cff_classification = 0.10
+cff_cls = 0.10
 
 beta = 4
 
@@ -157,8 +157,7 @@ for epoch in range(epochs):
         recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         classification_loss = class_criterion(class_pred, label)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (
-                    cff_classification * classification_loss)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_cls * classification_loss)
 
         train_loss.backward()
         optimizer.step()
