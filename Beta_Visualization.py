@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 SE2_GROUP = SpecialEuclidean(n=2, point_type="matrix")
 
-beta = Connection()
+beta = Connection(space=SE2_GROUP)
 
 
 class Beta:
