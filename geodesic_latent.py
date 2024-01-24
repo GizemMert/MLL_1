@@ -20,6 +20,7 @@ import geomstats.backend as gs
 import geomstats.visualization as visualization
 from geomstats.information_geometry.normal import NormalDistributions
 from geomstats.geometry.hyperboloid import Hyperboloid
+import geomstats.geometry.hyperbolic
 
 hyperbolic = Hyperboloid(dim=2)
 
@@ -104,9 +105,12 @@ if __name__ == '__main__':
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
         np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
-    initial_point = gs.array([gs.sqrt(2.0), random_myeloblast_point[0], random_myeloblast_point[1]])
-    end_point = gs.array([random_neutrophil_banded_point[0], random_neutrophil_banded_point[1]])
-    end_point = hyperbolic.from_coordinates(end_point, "intrinsic")
+    initial_point = hyperbolic.projection(gs.array([0.0, random_myeloblast_point[0], random_myeloblast_point[1]]))
+    end_point = hyperbolic.projection(
+        gs.array([0.0, random_neutrophil_banded_point[0], random_neutrophil_banded_point[1]]))
+
+    assert hyperbolic.belongs(initial_point).all(), "Initial point not on the hyperboloid."
+    assert hyperbolic.belongs(end_point).all(), "End point not on the hyperboloid."
 
     geodesic_func = hyperbolic.metric.geodesic(
         initial_point=initial_point, end_point=end_point
