@@ -159,7 +159,7 @@ if __name__ == '__main__':
     ax.set_ylabel('UMAP Dimension 2', fontsize=16)
 
     # Second subplot for the legend
-    ax_legend = fig.add_subplot(gs[1])
+    ax_legend = fig.add_subplot(g_s[1])
     ax_legend.axis('off')  # Turn off the axis for the legend subplot
 
     unique_filtered_labels = np.unique(filtered_labels)
