@@ -176,6 +176,7 @@ if __name__ == '__main__':
     plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
     plt.close(fig)
 
+"""
     n_points = 20
     t = gs.linspace(0, 1, n_points)
 
@@ -191,3 +192,4 @@ if __name__ == '__main__':
     pdf_figure_filename = os.path.join(pdf_dir, f'pdf_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
     plt.close(fig)
+"""
