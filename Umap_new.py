@@ -94,7 +94,7 @@ if __name__ == '__main__':
         filtered_latent_data)
 
     myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
-    neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['lymphocyte_typical']]
+    neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
 
     random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
