@@ -19,8 +19,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import geomstats.visualization as visualization
 from geomstats.geometry.special_euclidean import SpecialEuclidean
 
-import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib
 
 
 beta = BetaDistributions()
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     scatter = ax.scatter(latent_data_3d[:, 0], latent_data_3d[:, 1], latent_data_3d[:, 2], c=filtered_labels, cmap='viridis')
 
     unique_labels = np.unique(filtered_labels)
-    color_map = plt.cm.get_cmap('viridis', len(unique_labels))  # Ensure correct color mapping
+    color_map = matplotlib.colormaps.get_cmap('viridis', len(unique_labels)) # Ensure correct color mapping
 
     for idx, unique_label in enumerate(unique_labels):
         ax.scatter([], [], [], color=color_map(idx), label=unique_label)
