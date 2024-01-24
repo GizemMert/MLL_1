@@ -10,8 +10,18 @@ import numpy as np
 import geomstats._backend as gs
 import matplotlib.pyplot as plt
 from Beta_Visualization import Beta
-from geomstats.information_geometry.beta import BetaDistributions as beta
+from geomstats.information_geometry.beta import BetaDistributions
+from geomstats.geometry.connection import Connection
+from geomstats.geometry.complex_manifold import ComplexManifold
 
+import geomstats.visualization as visualization
+from geomstats.geometry.special_euclidean import SpecialEuclidean
+
+import matplotlib
+import matplotlib.pyplot as plt
+
+
+beta = BetaDistributions()
 beta_p = Beta()
 
 

@@ -9,11 +9,10 @@ from geomstats.geometry.special_euclidean import SpecialEuclidean
 
 import matplotlib
 import matplotlib.pyplot as plt
+from geomstats.information_geometry.beta import BetaDistributions
 
-complex_space = ComplexManifold(dim=2)
 
-
-beta = Connection(space=complex_space)
+beta = BetaDistributions()
 
 
 class Beta:
