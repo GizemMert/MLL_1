@@ -122,7 +122,7 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111)
 
-    representation = "H2_poincare_disk"
+    representation = "S2"
 
     ax = visualization.plot(
         initial_point, ax=ax, space=representation, s=50, label="Initial point", color='blue'
@@ -144,6 +144,6 @@ if __name__ == '__main__':
     # Add the legend to the plot using the handles
     plt.legend(handles=legend_handles, loc='lower right')
 
-    pdf_figure_filename = os.path.join(beta_dir, f'beta_interpolation_epoch_{epoch}.png')
+    pdf_figure_filename = os.path.join(beta_dir, f'Sphere_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
     plt.close(fig)
