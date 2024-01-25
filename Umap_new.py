@@ -7,6 +7,7 @@ import os
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.patches as mpatches
 import geomstats.backend as gs
 import matplotlib.pyplot as plt
 from Beta_Visualization import Beta
@@ -139,16 +140,17 @@ if __name__ == '__main__':
     x_min, x_max = latent_data_umap[:, 0].min(), latent_data_umap[:, 0].max()
     y_min, y_max = latent_data_umap[:, 1].min(), latent_data_umap[:, 1].max()
 
-    """
-    unique_filtered_labels = np.unique(filtered_labels)
-    filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
-    color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+    initial_point_color = 'blue'
+    end_point_color = 'orange'
+    ax.scatter(random_myeloblast_point[0], random_myeloblast_point[1], s=100, c=initial_point_color, marker='o',
+               label='Myeloblast')
+    ax.scatter(random_neutrophil_banded_point[0], random_neutrophil_banded_point[1], s=100, c=end_point_color,
+               marker='o', label='Neutrophil Banded')
 
-    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
-                                 markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
-
-    ax.legend(handles=legend_handles, loc='lower right', fontsize=16, title='Cell Types')
-    """
+    # Create a custom legend
+    initial_patch = mpatches.Patch(color=initial_point_color, label='Myeloblast')
+    end_patch = mpatches.Patch(color=end_point_color, label='Neutrophil Banded')
+    ax.legend(handles=[initial_patch, end_patch])
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     ax.set_title(f'Geodesic Plot - (Epoch {epoch})', fontsize=18)
