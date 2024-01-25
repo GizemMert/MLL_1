@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 import torch
-from umap import UMAP
+import umap
 from Dataloader_4 import Dataloader, label_map
 from model4 import VariationalAutoencodermodel4, reparametrize
 import os
@@ -22,6 +22,9 @@ from geomstats.information_geometry.normal import NormalDistributions
 from geomstats.geometry.hyperboloid import Hyperboloid
 import geomstats.geometry.hyperbolic
 from matplotlib.lines import Line2D
+from geomstats.geometry.hypersphere import Hypersphere
+
+sphere = Hypersphere(dim=2)
 
 hyperbolic = Hyperboloid(dim=2)
 
@@ -96,16 +99,22 @@ if __name__ == '__main__':
     filtered_latent_data = latent_data_reshaped[mask]
     filtered_labels = all_labels_array[mask]
 
-    latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-        filtered_latent_data)
+    reducer = umap.UMAP(n_components=3)
+    latent_data_3d = reducer.fit_transform(filtered_latent_data)
 
-    myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
-    neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
+    myeloblast_umap_points = latent_data_3d[filtered_labels == label_map['myeloblast']]
+    neutrophil_banded_umap_points = latent_data_3d[filtered_labels == label_map['neutrophil_banded']]
 
     random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
         np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
+    log = sphere.metric.log(point=random_neutrophil_banded_point, base_point=random_myeloblast_point)
+
+    geodesic_func = sphere.metric.geodesic(initial_point=random_myeloblast_point, end_point=random_neutrophil_banded_point)
+
+    points_on_geodesic = geodesic_func(gs.linspace(0.0, 1.0, 30))
+    """
     initial_point = hyperbolic.projection(gs.array([0.0, random_myeloblast_point[0], random_myeloblast_point[1]]))
     end_point = hyperbolic.projection(
         gs.array([0.0, random_neutrophil_banded_point[0], random_neutrophil_banded_point[1]]))
@@ -118,7 +127,7 @@ if __name__ == '__main__':
     )
 
     points = geodesic_func(gs.linspace(0.0, 1.0, 10))
-
+    
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111)
 
@@ -140,10 +149,21 @@ if __name__ == '__main__':
         plt.Line2D([0], [0], marker='o', color='w', label='Neutrophil Banded (End Point)',
                    markerfacecolor='orange', markersize=10),
     ]
-
-    # Add the legend to the plot using the handles
     plt.legend(handles=legend_handles, loc='lower right')
+    """
 
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, projection="3d")
+
+    ax = visualization.plot(random_myeloblast_point, ax=ax, space="S2", s=100, alpha=0.8, label="Myeloblast (Initial Point)")
+    ax = visualization.plot(random_neutrophil_banded_point, ax=ax, space="S2", s=100, alpha=0.8, label="Neutrophil Banded (End Point)")
+    ax = visualization.plot(
+        points_on_geodesic, ax=ax, space="S2", color="black", label="Geodesic"
+    )
+
+    arrow = visualization.Arrow3D(random_myeloblast_point, vector=log)
+    arrow.draw(ax, color="black")
+    ax.legend()
     pdf_figure_filename = os.path.join(beta_dir, f'Sphere_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
     plt.close(fig)
