@@ -101,9 +101,10 @@ if __name__ == '__main__':
 
     reducer = umap.UMAP(n_components=3)
     latent_data_3d = reducer.fit_transform(filtered_latent_data)
+    sphere_points = latent_data_3d / np.linalg.norm(latent_data_3d, axis=1, keepdims=True)
 
-    myeloblast_umap_points = latent_data_3d[filtered_labels == label_map['myeloblast']]
-    neutrophil_banded_umap_points = latent_data_3d[filtered_labels == label_map['neutrophil_banded']]
+    myeloblast_umap_points = sphere_points[filtered_labels == label_map['myeloblast']]
+    neutrophil_banded_umap_points = sphere_points[filtered_labels == label_map['neutrophil_banded']]
 
     random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
