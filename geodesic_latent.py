@@ -101,6 +101,12 @@ if __name__ == '__main__':
 
     latent_data_umap = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=3, metric='euclidean').fit_transform(
         filtered_latent_data)
+
+    # Filter out zero vectors before normalization
+    non_zero_indices = np.linalg.norm(latent_data_umap, axis=1) > 0
+    latent_data_umap = latent_data_umap[non_zero_indices]
+    filtered_labels = filtered_labels[non_zero_indices]
+
     sphere_points = latent_data_umap / np.linalg.norm(latent_data_umap, axis=1, keepdims=True)
 
     myeloblast_umap_points = sphere_points[filtered_labels == label_map['myeloblast']]
