@@ -6,13 +6,16 @@ from Dataloader_2 import Dataloader
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 from torchvision.transforms import ToPILImage
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-import numpy as np
+import geomstats.backend as gs
 import torch
 import numpy as np
-from PIL import Image
-from sklearn.gaussian_process.kernels import WhiteKernel
+import os
+import umap
+import matplotlib.pyplot as plt
+from geomstats.information_geometry.normal import NormalDistributions
+
+normal = NormalDistributions(sample_dim=1)
+epoch = 140
 
 label_map = {
     'basophil': 0,
@@ -37,52 +40,78 @@ model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
-def manhattan_interpolate(start, end, num_steps=10):
-    diff = end - start
-    steps = diff / num_steps
-    current = start.clone()
+# Load all latent representations
+latent_dir = 'latent_data4cp2_new5'
+latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+label_dir = 'label_data4cp2_new5'
+labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
 
-    interpolations = []
-    for dim in range(len(diff)):
-        current[dim] = start[dim]
-        for _ in range(num_steps + 1):
-            interpolations.append(current.clone())
-            current[dim] += steps[dim]
+# Load all latent representations
+latent_data = np.load(latents_path)
+latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+print("Latent data shape:", latent_data_reshaped.shape)
 
-    return interpolations
+# Load all labels
+all_labels_array = np.load(labels_path)
+print("Labels array shape:", all_labels_array.shape)
 
-def get_latent_vector(x, latent_dim=30):
-    distributions = model.encoder(x)
-    mu = distributions[:, :latent_dim]
-    logvar = distributions[:, latent_dim:]
-    z = reparametrize(mu, logvar)
-    return z
+# print("Labels array shape:", all_labels_array.shape)
+
+# Filter out the 'erythroblast' class
+erythroblast_class_index = label_map['erythroblast']
+mask = all_labels_array != erythroblast_class_index
+filtered_latent_data = latent_data_reshaped[mask]
+filtered_labels = all_labels_array[mask]
+
+# UMAP for latent space
+latent_data_umap = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+    filtered_latent_data)
+
+myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
+neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
+
+np.random.seed(42)
+random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
+random_neutrophil_banded_point = neutrophil_banded_umap_points[
+    np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
 
-def interpolate_gif_manhattan(filename, start_latent, end_latent, latent_dim=30, steps_per_dim=10, grid_size=(30, 10)):
+def compute_geodesic_path(start_latent, end_latent, n_points=20):
+
+    geodesic_ab_fisher = normal.metric.geodesic(start=start_latent, end=end_latent)
+    t = gs.linspace(0, 1, n_points)
+    geodesic_path = geodesic_ab_fisher(t)
+
+    return geodesic_path
+
+def interpolate_gif_pdf(filename, start_latent, end_latent, steps=20, grid_size=(30, 10)):
     model.eval()
 
-    manhattan_path = manhattan_interpolate(start_latent.squeeze(), end_latent.squeeze(), steps_per_dim)
+    geodesic_path = compute_geodesic_path(start_latent.squeeze(), end_latent.squeeze(), steps)
 
     decoded_images = []
-    for z in manhattan_path:
-        z = z.to(device).unsqueeze(0)
+    for z in geodesic_path:
+        z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
-            decoded_img = model.decoder(z)
+            decoded_img = model.decoder(z_tensor)
             decoded_img = model.img_decoder(decoded_img)
-        decoded_images.append(decoded_img)
+        decoded_images.append(decoded_img.cpu())
 
     while len(decoded_images) < grid_size[0] * grid_size[1]:
         decoded_images.append(torch.zeros_like(decoded_images[0]))
 
     decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
-    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension
+
+    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
 
     grid_image.save(f'{filename}.png')
 
 
+interpolate_gif_pdf("vae_interpolation_grid_pdf", random_myeloblast_point, random_neutrophil_banded_point, steps=20, grid_size=(30, 10))
+
+"""
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
 
@@ -106,6 +135,6 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, sh
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
+"""
 
-interpolate_gif_manhattan("vae_interpolation_grid_manhattan", start_latent[0], end_latent[0], latent_dim=30, steps_per_dim=10, grid_size=(30, 10))
 
