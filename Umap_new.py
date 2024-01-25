@@ -19,8 +19,12 @@ from sklearn.preprocessing import MinMaxScaler
 import geomstats.visualization as visualization
 from geomstats.geometry.special_euclidean import SpecialEuclidean
 
+
 import matplotlib
 import matplotlib.pyplot as plt
+from geomstats.information_geometry.normal import NormalDistributions
+
+normal = NormalDistributions(sample_dim=1)
 
 
 beta = BetaDistributions()
@@ -104,6 +108,7 @@ if __name__ == '__main__':
     reshaped_myeloblast_point = random_myeloblast_point.reshape(1, 2)
     reshaped_neutrophil_banded_point = random_neutrophil_banded_point.reshape(1, 2)
 
+    """
     fig = plt.figure(figsize=(12, 10), dpi=150)
     ax = fig.add_subplot(111)
     # scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
@@ -161,19 +166,19 @@ if __name__ == '__main__':
     plt.close()
 
 """
+
+    geodesic_ab_fisher = normal.metric.geodesic(random_myeloblast_point, random_neutrophil_banded_point)
     n_points = 20
     t = gs.linspace(0, 1, n_points)
-
-    pdfs = beta.point_to_pdf(beta.metric.geodesic(random_myeloblast_point, random_neutrophil_banded_point)(t))
-    x = gs.linspace(0.0, 1.0, 100)
+    pdfs = normal.point_to_pdf(geodesic_ab_fisher(t))
+    x = gs.linspace(-3.0, 7.0, 100)
 
     fig = plt.figure(figsize=(10, 5))
     cc = gs.zeros((n_points, 3))
     cc[:, 2] = gs.linspace(0, 1, n_points)
     for i in range(n_points):
-        plt.plot(x, pdfs(x)[:, i], color=cc[i, :])
-    plt.title("Corresponding interpolation between pdfs")
+        plt.plot(x, pdfs(x)[i, :], color=cc[i, :])
+    plt.title("Corresponding interpolation between pdfs");
     pdf_figure_filename = os.path.join(pdf_dir, f'pdf_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
     plt.close(fig)
-"""
