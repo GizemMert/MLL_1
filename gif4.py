@@ -78,7 +78,7 @@ random_neutrophil_banded_point = neutrophil_banded_umap_points[
 
 def compute_geodesic_path(start_latent, end_latent, n_points=20):
 
-    geodesic_ab_fisher = normal.metric.geodesic(start=start_latent, end=end_latent)
+    geodesic_ab_fisher = normal.metric.geodesic(start_latent, end_latent)
     t = gs.linspace(0, 1, n_points)
     geodesic_path = geodesic_ab_fisher(t)
 
