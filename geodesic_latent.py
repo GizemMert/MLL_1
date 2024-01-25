@@ -99,9 +99,9 @@ if __name__ == '__main__':
     filtered_latent_data = latent_data_reshaped[mask]
     filtered_labels = all_labels_array[mask]
 
-    reducer = umap.UMAP(n_components=3)
-    latent_data_3d = reducer.fit_transform(filtered_latent_data)
-    sphere_points = latent_data_3d / np.linalg.norm(latent_data_3d, axis=1, keepdims=True)
+    latent_data_umap = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=3, metric='euclidean').fit_transform(
+        filtered_latent_data)
+    sphere_points = latent_data_umap / np.linalg.norm(latent_data_umap, axis=1, keepdims=True)
 
     myeloblast_umap_points = sphere_points[filtered_labels == label_map['myeloblast']]
     neutrophil_banded_umap_points = sphere_points[filtered_labels == label_map['neutrophil_banded']]
