@@ -155,8 +155,8 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111, projection="3d")
 
-    ax = visualization.plot(random_myeloblast_point, ax=ax, space="S2", s=100, alpha=0.8, label="Myeloblast (Initial Point)")
-    ax = visualization.plot(random_neutrophil_banded_point, ax=ax, space="S2", s=100, alpha=0.8, label="Neutrophil Banded (End Point)")
+    ax = visualization.plot(points=random_myeloblast_point, ax=ax, space="S2", s=100, alpha=0.8, label="Myeloblast (Initial Point)")
+    ax = visualization.plot(points=random_neutrophil_banded_point, ax=ax, space="S2", s=100, alpha=0.8, label="Neutrophil Banded (End Point)")
     ax = visualization.plot(
         points_on_geodesic, ax=ax, space="S2", color="black", label="Geodesic"
     )
