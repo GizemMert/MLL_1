@@ -171,7 +171,7 @@ if __name__ == '__main__':
     n_points = 20
     t = gs.linspace(0, 1, n_points)
     pdfs = normal.point_to_pdf(geodesic_ab_fisher(t))
-    x = gs.linspace(-3.0, 7.0, 100)
+    x = gs.linspace(-5.0, 15.0, 100)
 
     fig = plt.figure(figsize=(10, 5))
     cc = gs.zeros((n_points, 3))
