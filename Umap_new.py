@@ -125,7 +125,7 @@ if __name__ == '__main__':
                                             end_point=random_neutrophil_banded_point)(t)
                 points_x = geod[:, 0]
                 points_y = geod[:, 1]
-                ax.scatter(points_x, points_y, s=50, c='blue', marker='o')
+                ax.scatter(points_x, points_y, s=50, c='black', marker='o')
 
                 # Print the geodesic points
                 print("Geodesic points:")
