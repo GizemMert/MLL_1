@@ -120,7 +120,7 @@ if __name__ == '__main__':
     if random_myeloblast_point is not None and random_neutrophil_banded_point is not None:
         if not (np.isnan(random_myeloblast_point).any() or np.isnan(random_neutrophil_banded_point).any()):
             if random_myeloblast_point.shape == (2,) and random_neutrophil_banded_point.shape == (2,):
-                t = np.linspace(0, 1, 20)
+                t = np.linspace(0, 1, 50)
                 geod = beta.metric.geodesic(initial_point=random_myeloblast_point,
                                             end_point=random_neutrophil_banded_point)(t)
                 points_x = geod[:, 0]
