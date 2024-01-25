@@ -110,8 +110,8 @@ if __name__ == '__main__':
     random_neutrophil_banded_point = neutrophil_banded_umap_points[
         np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
-    if not np.allclose(np.linalg.norm(random_myeloblast_point, axis=1), 1, atol=1e-5):
-        raise ValueError("Not all points lie on the unit sphere.")
+    if not np.allclose(np.linalg.norm(random_myeloblast_point), 1, atol=1e-5):
+        raise ValueError("The point does not lie on the unit sphere.")
 
     log = sphere.metric.log(point=random_neutrophil_banded_point, base_point=random_myeloblast_point)
 
