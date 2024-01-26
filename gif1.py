@@ -171,16 +171,16 @@ if __name__ == '__main__':
 
         params = dist.fit(filtered_latent_data)
 
-        # Separate parts of parameters
         arg = params[:-2]
         loc = params[-2]
         scale = params[-1]
 
         # Calculate fitted PDF and error with fit in distribution
+        sorted_data = np.sort(filtered_latent_data)
         if arg:
-            pdf = dist.pdf(np.sort(filtered_latent_data), *arg, loc=loc, scale=scale)
+            pdf = dist.pdf(sorted_data, *arg, loc=loc, scale=scale)
         else:
-            pdf = dist.pdf(np.sort(filtered_latent_data), loc=loc, scale=scale)
+            pdf = dist.pdf(sorted_data, loc=loc, scale=scale)
 
         # Calculate the log likelihood for the fitted distribution
         log_likelihood = np.sum(dist.logpdf(filtered_latent_data, *arg, loc=loc, scale=scale))
@@ -188,13 +188,16 @@ if __name__ == '__main__':
         # Plot the histogram and PDF
         plt.figure(figsize=(12, 8))
         plt.hist(filtered_latent_data, bins=30, density=True, alpha=0.6, color='g', label='Data histogram')
-        plt.plot(np.sort(filtered_latent_data), pdf, label=f'{name} fit (LL={log_likelihood:.2f})')
+        plt.plot(sorted_data, pdf, label=f'{name} fit (LL={log_likelihood:.2f})')
         plt.title(f'Fit of {name} distribution')
         plt.xlabel('Data')
         plt.ylabel('Frequency')
         plt.legend()
-        plt.savefig("dists.png")
+        plot_filename = f"{name}_distribution_fit.png"  # Unique filename for each plot
+        plt.savefig(plot_filename)
         plt.close()
+
+        print(f"Plot saved as {plot_filename}")
 
     n = np.max(filtered_latent_data)  # This is just an example, adjust it as needed
     p_est = np.mean(filtered_latent_data) / n
