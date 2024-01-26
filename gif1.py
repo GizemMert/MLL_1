@@ -165,10 +165,10 @@ if __name__ == '__main__':
     }
 
     for name, dist in distributions.items():
-        if name in ['expon', 'gamma'] and not np.issubdtype(filtered_latent_data.dtype, np.float):
+        if name in ['expon', 'gamma'] and not np.issubdtype(filtered_latent_data.dtype, float):
             continue
 
-        if name in ['binom', 'poisson'] and np.issubdtype(filtered_latent_data.dtype, np.float):
+        if name in ['binom', 'poisson'] and np.issubdtype(filtered_latent_data.dtype, int):
             continue
 
         params = dist.fit(filtered_latent_data)
@@ -195,5 +195,7 @@ if __name__ == '__main__':
         plt.xlabel('Data')
         plt.ylabel('Frequency')
         plt.legend()
+        plt.savefig("dists.png")  # Save Q-Q plot
+        plt.close()
 
 
