@@ -124,22 +124,22 @@ if __name__ == '__main__':
     plt.close()  # Close the plot
 
     # Q-Q plot
-    stats.probplot(latent_data_reshaped.flatten(), dist="norm", plot=plt)
+    stats.probplot(filtered_latent_data.flatten(), dist="norm", plot=plt)
     plt.title("Q-Q Plot of Latent Data")
     plt.savefig("latent_data_qqplot.png")  # Save Q-Q plot
     plt.close()  # Close the plot
 
     # Shapiro-Wilk Test
-    shapiro_test = stats.shapiro(latent_data.flatten())
+    shapiro_test = stats.shapiro(filtered_latent_data.flatten())
     print("Shapiro-Wilk Test: ", shapiro_test)
 
     # Kolmogorov-Smirnov Test
-    ks_test = stats.kstest(latent_data.flatten(), 'norm',
-                           args=(latent_data.mean(), latent_data.std()))
+    ks_test = stats.kstest(filtered_latent_data.flatten(), 'norm',
+                           args=(filtered_latent_data.mean(),filtered_latent_data.std()))
     print("Kolmogorov-Smirnov Test: ", ks_test)
 
-    mean = np.mean(latent_data, axis=0)
-    covariance_matrix = np.cov(latent_data, rowvar=False)
+    mean = np.mean(filtered_latent_data, axis=0)
+    covariance_matrix = np.cov(filtered_latent_data, rowvar=False)
 
     # Check for centered distribution
     is_centered = np.allclose(mean, 0)
