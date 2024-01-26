@@ -118,6 +118,7 @@ if __name__ == '__main__':
     filtered_latent_data = latent_data[mask]
     filtered_labels = all_labels_array[mask]
 
+    """
     plt.hist(latent_data_reshaped.flatten(), bins=30, density=True, alpha=0.6, color='g')
     plt.title("Histogram of Latent Data")
     plt.savefig("latent_data_histogram.png")  # Save histogram
@@ -156,6 +157,8 @@ if __name__ == '__main__':
         distribution_type = 'general'
 
     print("Distribution type:", distribution_type)
+    
+    """
 
     distributions = {
         'expon': stats.expon,
@@ -190,7 +193,7 @@ if __name__ == '__main__':
         plt.xlabel('Data')
         plt.ylabel('Frequency')
         plt.legend()
-        plt.savefig("dists.png")  # Save Q-Q plot
+        plt.savefig("dists.png")
         plt.close()
 
     n = np.max(filtered_latent_data)  # This is just an example, adjust it as needed
