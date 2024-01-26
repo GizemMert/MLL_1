@@ -78,6 +78,7 @@ random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
 
 random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
+print("Poin data shape:", random_myeloblast_point.shape)
 
 """"
 def get_latent_vector(x):
