@@ -203,7 +203,7 @@ for epoch in range(epochs):
 
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, latent_values)
-        print(f"Laten data is saved for epoch {epoch}")
+        print(f"Latent data is saved for epoch {epoch + 1}, Shape: {latent_values.shape}")
 
         label_filename = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
         np.save(label_filename, np.array(all_labels))
