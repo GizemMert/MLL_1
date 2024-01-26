@@ -62,6 +62,7 @@ print("Labels array shape:", all_labels_array.shape)
 erythroblast_class_index = label_map['erythroblast']
 mask = all_labels_array != erythroblast_class_index
 filtered_latent_data = latent_data[mask]
+print("filtered data shape:", filtered_latent_data.shape)
 filtered_labels = all_labels_array[mask]
 
 # UMAP for latent space
