@@ -36,16 +36,16 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = '/Users/gizem/MLL_1/trained_model4cp2_new5 (1).pth'
+model_save_path = 'trained_model4cp2_new5.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
 # Load all latent representations
 latent_dir = 'latent_data4cp2_new5'
-latents_path = '/Users/gizem/MLL_1/latent_epoch_140 (1).npy'
+latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
 label_dir = 'label_data4cp2_new5'
-labels_path = '/Users/gizem/MLL_1/label_epoch_140 (1).npy'
+labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
 
 # Load all latent representations
 latent_data = np.load(latents_path)
