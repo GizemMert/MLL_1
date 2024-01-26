@@ -36,16 +36,16 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new5.pth'
+model_save_path = '/Users/gizem/MLL_1/trained_model4cp2_new5 (1).pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
 # Load all latent representations
 latent_dir = 'latent_data4cp2_new5'
-latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+latents_path = '/Users/gizem/MLL_1/latent_epoch_140 (1).npy'
 label_dir = 'label_data4cp2_new5'
-labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
+labels_path = '/Users/gizem/MLL_1/label_epoch_140 (1).npy'
 
 # Load all latent representations
 latent_data = np.load(latents_path)
@@ -68,13 +68,16 @@ filtered_labels = all_labels_array[mask]
 latent_data_umap = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
     filtered_latent_data)
 
-myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
-neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
+myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
+neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
 
 np.random.seed(42)
-random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
-random_neutrophil_banded_point = neutrophil_banded_umap_points[
-    np.random.choice(neutrophil_banded_umap_points.shape[0])]
+# Select random latent vectors for myeloblast and neutrophil banded points
+random_myeloblast_index = np.random.choice(myeloblast_indices)
+random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
+
+random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
+random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
 
 """"
 def get_latent_vector(x):
@@ -95,18 +98,22 @@ def compute_geodesic_path(start_latent, end_latent, n_points=20):
     return geodesic_path
 
 def interpolate_gif_pdf(filename, start_latent, end_latent, steps=20, grid_size=(30, 10)):
+    print("Starting interpolate_gif_pdf function")
     model.eval()
 
     geodesic_path = compute_geodesic_path(start_latent.squeeze(), end_latent.squeeze(), steps)
+    print("Computed geodesic path")
 
     decoded_images = []
     for z in geodesic_path:
+        print(f"Decoding image {i + 1} of {len(geodesic_path)}")
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
             decoded_img = model.img_decoder(decoded_img)
         decoded_images.append(decoded_img.cpu())
 
+    print(f"Total decoded images: {len(decoded_images)}")
     while len(decoded_images) < grid_size[0] * grid_size[1]:
         decoded_images.append(torch.zeros_like(decoded_images[0]))
 
@@ -116,6 +123,7 @@ def interpolate_gif_pdf(filename, start_latent, end_latent, steps=20, grid_size=
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
     grid_image.save('/path/to/directory/' + filename + '.jpg', quality=95)
+    print("Image saved successfully")
 
 
 interpolate_gif_pdf("vae_interpolation_pdf", random_myeloblast_point, random_neutrophil_banded_point, steps=20, grid_size=(30, 10))
