@@ -157,4 +157,43 @@ if __name__ == '__main__':
 
     print("Distribution type:", distribution_type)
 
+    distributions = {
+        'binom': stats.binom,
+        'poisson': stats.poisson,
+        'expon': stats.expon,
+        'gamma': stats.gamma,
+    }
+
+    for name, dist in distributions.items():
+        if name in ['expon', 'gamma'] and not np.issubdtype(filtered_latent_data.dtype, np.float):
+            continue
+
+        if name in ['binom', 'poisson'] and np.issubdtype(filtered_latent_data.dtype, np.float):
+            continue
+
+        params = dist.fit(filtered_latent_data)
+
+        # Separate parts of parameters
+        arg = params[:-2]
+        loc = params[-2]
+        scale = params[-1]
+
+        # Calculate fitted PDF and error with fit in distribution
+        if arg:
+            pdf = dist.pdf(np.sort(filtered_latent_data), *arg, loc=loc, scale=scale)
+        else:
+            pdf = dist.pdf(np.sort(filtered_latent_data), loc=loc, scale=scale)
+
+        # Calculate the log likelihood for the fitted distribution
+        log_likelihood = np.sum(dist.logpdf(filtered_latent_data, *arg, loc=loc, scale=scale))
+
+        # Plot the histogram and PDF
+        plt.figure(figsize=(12, 8))
+        plt.hist(filtered_latent_data, bins=30, density=True, alpha=0.6, color='g', label='Data histogram')
+        plt.plot(np.sort(filtered_latent_data), pdf, label=f'{name} fit (LL={log_likelihood:.2f})')
+        plt.title(f'Fit of {name} distribution')
+        plt.xlabel('Data')
+        plt.ylabel('Frequency')
+        plt.legend()
+
 
