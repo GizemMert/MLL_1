@@ -55,27 +55,27 @@ cff_edge = 0.20
 
 beta = 4
 
-umap_dir = 'umap_figures4cp2_new5'
+umap_dir = 'umap_figures4cp2_new5_std'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp2_new5'
+latent_dir = 'latent_data4cp2_new5_std'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-label_dir = 'label_data4cp2_new5'
+label_dir = 'label_data4cp2_new5_std'
 if not os.path.exists(label_dir):
     os.makedirs(label_dir)
 
-result_dir = "training_results4cp2_new5"
+result_dir = "training_results4cp2_new5_std"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp2_new5.txt")
+result_file = os.path.join(result_dir, "training_results4cp2_new5_std.txt")
 
-save_img_dir = "masked_images5"
+save_img_dir = "masked_images5_std"
 if not os.path.exists(save_img_dir):
     os.makedirs(save_img_dir)
 
-save_mask_dir = "masks5"
+save_mask_dir = "masks5_std"
 if not os.path.exists(save_mask_dir):
     os.makedirs(save_mask_dir)
 
@@ -141,6 +141,7 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         all_means = []
         all_labels = []
+        all_logvars = []
 
     for feat, scimg, mask, label, _ in train_dataloader:
         feat = feat.float()
@@ -176,6 +177,7 @@ for epoch in range(epochs):
 
         if epoch % 10 == 0:
             all_means.append(mu.data.cpu().numpy())
+            all_logvars.append(logvar.data.cpu().numpy())
             all_labels.extend(label.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
@@ -196,11 +198,16 @@ for epoch in range(epochs):
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
+        latent_values_per_epoch = [np.concatenate((m, lv), axis=1) for m, lv in zip(all_means, all_logvars)]
+        latent_values = np.concatenate(latent_values_per_epoch, axis=0)
+
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-        np.save(latent_filename, np.concatenate(all_means, axis=0))
+        np.save(latent_filename, latent_values)
+        print(f"Laten data is saved for epoch {epoch}")
 
         label_filename = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
         np.save(label_filename, np.array(all_labels))
+        print(f"Laten data is saved for epoch {epoch}")
 
         for i, img in enumerate(masked_scimg):
             img_np = img.cpu().numpy().transpose(1, 2, 0)
@@ -300,14 +307,14 @@ for epoch in range(epochs):
         im = np.concatenate([img, im_out], axis=1)
 
         if epoch % 10 == 0:
-            file_name = "reconsructed-images4_cp2_new5/"
+            file_name = "reconsructed-images4_cp2_new5_std/"
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp2_new5.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new5_std.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
