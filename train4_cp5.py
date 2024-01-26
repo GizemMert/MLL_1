@@ -198,14 +198,14 @@ for epoch in range(epochs):
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
-        latent_values_per_epoch = [np.concatenate((m, lv), axis=1) for m, lv in zip(all_means, all_logvars)]
+        latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
         latent_values = np.concatenate(latent_values_per_epoch, axis=0)
 
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, latent_values)
         print(f"Latent data is saved for epoch {epoch + 1}, Shape: {latent_values.shape}")
 
-        label_filename = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
+        label_filename = os.path.join(label_dir, f'label_epoch_{epoch+1}.npy')
         np.save(label_filename, np.array(all_labels))
         print(f"Laten data is saved for epoch {epoch}")
 
