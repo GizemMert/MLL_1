@@ -106,7 +106,6 @@ def interpolate_gif_pdf(filename, start_latent, end_latent, steps=20, grid_size=
 
     decoded_images = []
     for z in geodesic_path:
-        print(f"Decoding image {i + 1} of {len(geodesic_path)}")
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
