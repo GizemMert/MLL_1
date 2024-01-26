@@ -140,4 +140,23 @@ if __name__ == '__main__':
                            args=(latent_data.mean(), latent_data.std()))
     print("Kolmogorov-Smirnov Test: ", ks_test)
 
+    mean = np.mean(latent_data, axis=0)
+    covariance_matrix = np.cov(latent_data, rowvar=False)
+
+    # Check for centered distribution
+    is_centered = np.allclose(mean, 0)
+
+    # Check for diagonal distribution
+    is_diagonal = np.allclose(covariance_matrix, np.diag(np.diagonal(covariance_matrix)))
+
+    # Determine distribution type
+    if is_centered:
+        distribution_type = 'centered'
+    elif is_diagonal:
+        distribution_type = 'diagonal'
+    else:
+        distribution_type = 'general'
+
+    print("Distribution type:", distribution_type)
+
 
