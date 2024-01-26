@@ -1,3 +1,4 @@
+
 from PIL import Image
 import torch
 import numpy as np
@@ -35,7 +36,7 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new5.pth'
+model_save_path = '/Users/gizem/MLL_1/trained_model4cp2_new5 (1).pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
@@ -60,7 +61,7 @@ print("Labels array shape:", all_labels_array.shape)
 # Filter out the 'erythroblast' class
 erythroblast_class_index = label_map['erythroblast']
 mask = all_labels_array != erythroblast_class_index
-filtered_latent_data = latent_data_reshaped[mask]
+filtered_latent_data = latent_data[mask]
 filtered_labels = all_labels_array[mask]
 
 # UMAP for latent space
@@ -75,9 +76,18 @@ random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_uma
 random_neutrophil_banded_point = neutrophil_banded_umap_points[
     np.random.choice(neutrophil_banded_umap_points.shape[0])]
 
+""""
+def get_latent_vector(x):
+    distributions = model.encoder(x)
+    mu = distributions[:, :latent_dim]
+    logvar = distributions[:, latent_dim:]
+    z = reparametrize(mu, logvar)
+    return z
+    
+"""
 
 def compute_geodesic_path(start_latent, end_latent, n_points=20):
-
+    # points : array-like, shape=[..., 2]
     geodesic_ab_fisher = normal.metric.geodesic(start_latent, end_latent)
     t = gs.linspace(0, 1, n_points)
     geodesic_path = geodesic_ab_fisher(t)
@@ -105,11 +115,10 @@ def interpolate_gif_pdf(filename, start_latent, end_latent, steps=20, grid_size=
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
+    grid_image.save('/path/to/directory/' + filename + '.jpg', quality=95)
 
-    grid_image.save(f'{filename}.png')
 
-
-interpolate_gif_pdf("vae_interpolation_grid_pdf", random_myeloblast_point, random_neutrophil_banded_point, steps=20, grid_size=(30, 10))
+interpolate_gif_pdf("vae_interpolation_pdf", random_myeloblast_point, random_neutrophil_banded_point, steps=20, grid_size=(30, 10))
 
 """
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
