@@ -1,4 +1,4 @@
-from scipy.stats import stats
+from scipy import stats
 from torch.utils.data import DataLoader
 import torch
 from umap import UMAP
@@ -118,18 +118,16 @@ if __name__ == '__main__':
     filtered_latent_data = latent_data[mask]
     filtered_labels = all_labels_array[mask]
 
-    plt.hist(latent_data.flatten(), bins=30, density=True, alpha=0.6, color='g')
+    plt.hist(latent_data_reshaped.flatten(), bins=30, density=True, alpha=0.6, color='g')
     plt.title("Histogram of Latent Data")
-    histo_filename = os.path.join(histo_dir, f'histo_epoch_{epoch}.png')
     plt.savefig("latent_data_histogram.png")  # Save histogram
-    plt.close()
+    plt.close()  # Close the plot
 
     # Q-Q plot
-    stats.probplot(latent_data.flatten(), dist="norm", plot=plt)
+    stats.probplot(latent_data_reshaped.flatten(), dist="norm", plot=plt)
     plt.title("Q-Q Plot of Latent Data")
-    q_filename = os.path.join(q_dir, f'histo_epoch_{epoch}.png')
     plt.savefig("latent_data_qqplot.png")  # Save Q-Q plot
-    plt.close()
+    plt.close()  # Close the plot
 
     # Shapiro-Wilk Test
     shapiro_test = stats.shapiro(latent_data.flatten())
