@@ -158,7 +158,6 @@ if __name__ == '__main__':
     print("Distribution type:", distribution_type)
 
     distributions = {
-        'binom': stats.binom,
         'poisson': stats.poisson,
         'expon': stats.expon,
         'gamma': stats.gamma,
@@ -168,7 +167,7 @@ if __name__ == '__main__':
         if name in ['expon', 'gamma'] and not np.issubdtype(filtered_latent_data.dtype, float):
             continue
 
-        if name in ['binom', 'poisson'] and np.issubdtype(filtered_latent_data.dtype, int):
+        if name in ['poisson'] and np.issubdtype(filtered_latent_data.dtype, int):
             continue
 
         params = dist.fit(filtered_latent_data)
@@ -198,4 +197,9 @@ if __name__ == '__main__':
         plt.savefig("dists.png")  # Save Q-Q plot
         plt.close()
 
+    n = np.max(filtered_latent_data)  # This is just an example, adjust it as needed
+    p_est = np.mean(filtered_latent_data) / n
+    binom_est = stats.binom(n=n, p=p_est)
+
+    print(f"Estimated parameters for Binomial distribution: n = {n}, p = {p_est}")
 
