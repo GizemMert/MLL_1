@@ -114,7 +114,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=20):
 
     return interpolated_latent_vectors
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, steps=20, grid_size=(30, 10)):
+def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100, grid_size=(10, 10)):
     model.eval()
 
     # Compute interpolated latent vectors using GPR
@@ -168,7 +168,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Call the function with your data
-interpolate_gif_gpr("vae_interpolation_gpr", start_latent, end_latent, steps=20, grid_size=(30, 10))
+interpolate_gif_gpr("vae_interpolation_gpr", start_latent, end_latent, steps=100, grid_size=(10, 10))
 
 """"
 def get_latent_vector(x):
