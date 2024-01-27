@@ -1,3 +1,4 @@
+from sklearn.manifold import TSNE
 from torch.utils.data import DataLoader
 import torch
 import umap
@@ -77,7 +78,7 @@ if __name__ == '__main__':
     # Load all latent representations
     latent_data = np.load(latents_path)
     latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-    print("Latent data shape:", latent_data_reshaped.shape)
+    print("Latent data shape:", latent_data.shape)
 
     # Load all labels
     all_labels_array = np.load(labels_path)
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     # Filter out the 'erythroblast' class
     erythroblast_class_index = label_map['erythroblast']
     mask = all_labels_array != erythroblast_class_index
-    filtered_latent_data = latent_data_reshaped[mask]
+    filtered_latent_data = latent_data[mask]
     filtered_labels = all_labels_array[mask]
     unique_labels = np.unique(filtered_labels)
 
@@ -124,3 +125,25 @@ if __name__ == '__main__':
     fig = go.Figure(data=data, layout=layout)
     fig.show()
     fig.write_html("your_plot.html")
+
+    tsne = TSNE(n_components=2, random_state=42)
+    tsne_results = tsne.fit_transform(filtered_latent_data)
+
+    # Plotting the t-SNE results
+    plt.figure(figsize=(12, 8))
+
+    unique_labels = np.unique(filtered_labels)
+    for label in unique_labels:
+        indices = filtered_labels == label
+        plt.scatter(tsne_results[indices, 0], tsne_results[indices, 1], label=inverse_label_map[label])
+
+    plt.legend()
+    plt.title('t-SNE visualization of Latent Space')
+    plt.xlabel('t-SNE 1')
+    plt.ylabel('t-SNE 2')
+
+    # Save the plot to a file
+    save_path = os.path.join(pdf_dir, "tsne_visualization_epoch_{}.png".format(epoch))
+    plt.savefig(save_path)
+    print(f"t-SNE plot saved as: {save_path}")
+
