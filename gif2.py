@@ -105,7 +105,7 @@ if __name__ == '__main__':
         marker=dict(
             size=5,
             color=filtered_labels,  # Color by labels
-            colorscale='Viridis',  # Choose a colorscale
+            colorscale='Spectral',  # Choose a colorscale
             opacity=0.8
         )
     )
