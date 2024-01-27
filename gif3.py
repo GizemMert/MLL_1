@@ -34,7 +34,7 @@ model.to(device)
 model.eval()
 
 train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=False, num_workers=1)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
 # Load all latent representations
 latent_dir = 'latent_data4cp2_new5_std'
