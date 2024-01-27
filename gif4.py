@@ -93,23 +93,23 @@ def get_latent_vector(x):
     return z
 
 def interpolate_gpr(latent_start, latent_end, n_points=20):
-    # Create an index array for start and end
+    if isinstance(latent_start, torch.Tensor):
+        latent_start = latent_start.detach().cpu().numpy()
+    if isinstance(latent_end, torch.Tensor):
+        latent_end = latent_end.detach().cpu().numpy()
+
     indices = np.array([0, 1]).reshape(-1, 1)
 
-    # Stack start and end latent vectors
+
     latent_vectors = np.vstack([latent_start, latent_end])
 
-    # Define a kernel with parameters suitable for your data
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
 
-    # Create and fit the Gaussian process regressor
     gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
     gpr.fit(indices, latent_vectors)
 
-    # Define the range for interpolation
     index_range = np.linspace(0, 1, n_points).reshape(-1, 1)
 
-    # Predict latent vectors for these new indices
     interpolated_latent_vectors = gpr.predict(index_range)
 
     return interpolated_latent_vectors
