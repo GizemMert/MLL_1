@@ -90,14 +90,15 @@ def get_latent_vector(x):
     return z
     
 """
-
 def compute_geodesic_path(start_latent, end_latent, n_points=20):
-    # points : array-like, shape=[..., 2]
+    print(f"Start latent shape: {start_latent.shape}")
+    print(f"End latent shape: {end_latent.shape}")
+
     geodesic_ab_fisher = normal.metric.geodesic(start_latent, end_latent)
     t = gs.linspace(0, 1, n_points)
     geodesic_path = geodesic_ab_fisher(t)
 
-    return geodesic_path
+    print(f"Geodesic path shape: {geodesic_path.shape}")
 
 def interpolate_gif_pdf(filename, start_latent, end_latent, steps=20, grid_size=(30, 10)):
     print("Starting interpolate_gif_pdf function")
