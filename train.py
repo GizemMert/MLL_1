@@ -20,7 +20,7 @@ import numpy as np
 
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 150
+epochs = 240
 batch_size = 128
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,9 +44,9 @@ class_criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 cff_feat_rec = 0.20
-cff_im_rec = 0.50
+cff_im_rec = 0.55
 cff_kld = 0.15
-cff_cls = 0.15
+cff_cls = 0.10
 
 beta = 4
 
