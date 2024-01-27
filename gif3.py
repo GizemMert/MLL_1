@@ -62,7 +62,7 @@ filtered_labels = all_labels_array[mask]
 myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
 neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
 
-np.random.seed(42)
+
 # Select random latent vectors for myeloblast and neutrophil banded points
 random_myeloblast_index = np.random.choice(myeloblast_indices)
 random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
