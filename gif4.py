@@ -114,7 +114,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=20):
 
     return interpolated_latent_vectors
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100, grid_size=(10, 10)):
+def interpolate_gif_gpr(filename, start_latent, end_latent, steps=200, grid_size=(20, 10)):
     model.eval()
 
     # Compute interpolated latent vectors using GPR
