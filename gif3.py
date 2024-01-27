@@ -71,11 +71,12 @@ random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
 print("Poin data shape:", random_myeloblast_point.shape)
 
-mu_myeloblast = random_myeloblast_point[:, 0]  # Extracts all 'mu' values
-logvar_myeloblast = random_myeloblast_point[:, 1]  # Extracts all 'logvar' values
+# Extract mu and logvar
+mu_myeloblast = random_myeloblast_point[:30]  # First 30 values are mu
+logvar_myeloblast = random_myeloblast_point[30:]  # Next 30 values are logvar
 
-mu_neutrophil_banded = random_neutrophil_banded_point[:, 0]
-logvar_neutrophil_banded = random_neutrophil_banded_point[:, 1]
+mu_neutrophil_banded = random_neutrophil_banded_point[:30]
+logvar_neutrophil_banded = random_neutrophil_banded_point[30:]
 
 def interpolate_gif_with_gpr(model, filename, mu1, logvar1, mu2, logvar2, n=100, latent_dim=30):
     model.eval()
