@@ -128,11 +128,14 @@ def interpolate_gif_gpr(filename, start_latent, end_latent, steps=20, grid_size=
             decoded_img = model.img_decoder(decoded_img)
         decoded_images.append(decoded_img.cpu())
 
-    # Arrange images in a grid
-    while len(decoded_images) < grid_size[0] * grid_size[1]:
+    total_slots = grid_size[0] * grid_size[1]
+    while len(decoded_images) < total_slots:
         decoded_images.append(torch.zeros_like(decoded_images[0]))
 
-    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
+    # Trim the list to match the grid size exactly
+    decoded_images = decoded_images[:total_slots]
+
+    # Arrange images in a grid
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
