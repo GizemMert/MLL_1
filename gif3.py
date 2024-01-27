@@ -87,8 +87,8 @@ def interpolate_gif_with_gpr(model, filename, mu1, logvar1, mu2, logvar2, n=100,
         return z
 
     # Generate the latent representations
-    latent1 = get_latent_vector(mu1, logvar1)
-    latent2 = get_latent_vector(mu2, logvar2)
+    latent1 = get_latent_vector(mu1, logvar1).view(1, -1)
+    latent2 = get_latent_vector(mu2, logvar2).view(1, -1)
 
 
     def slerp(val, low, high):
