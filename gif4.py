@@ -98,13 +98,38 @@ def get_latent_vector(x):
     return z
 
 
+def compute_class_centroid(dataloader, class_label, model, device, latent_dim):
+    latent_vectors = []
+    model.eval()
+
+    with torch.no_grad():
+        for data, labels in dataloader:
+            data, labels = data.to(device), labels.to(device)
+            class_data = data[labels == class_label]
+            if len(class_data) > 0:
+                distributions = model.encoder(class_data)
+                mu = distributions[:, :latent_dim]
+                latent_vectors.append(mu.cpu().numpy())
+
+    if latent_vectors:
+        centroid = np.mean(np.vstack(latent_vectors), axis=0)
+    else:
+        centroid = np.zeros(latent_dim)
+    return centroid
+
+def interpolate_centroids(centroid1, centroid2, steps=100):
+    interpolated_latents = np.linspace(centroid1, centroid2, num=steps)
+    return interpolated_latents
+
+
+
 """
 def to_complex_coordinates(latent_vector):
     real_part = latent_vector[:latent_vector.shape[0] // 2]
     imag_part = latent_vector[latent_vector.shape[0] // 2:]
     return real_part + 1j * imag_part
 
-"""
+
 def interpolate_gpr(latent_start, latent_end, n_points=20):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
@@ -155,6 +180,7 @@ def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100, grid_size
     grid_image.save(filename + '.jpg', quality=95)
     print("Image saved successfully")
 
+"""
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
@@ -176,12 +202,32 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
+label_map = {'myeloblast': 0, 'neutrophil_banded': 1}  # Example label_map
+
+centroid_class_1 = compute_class_centroid(train_dataloader, label_map['myeloblast'], model, device, 30)
+centroid_class_2 = compute_class_centroid(train_dataloader, label_map['neutrophil_banded'], model, device, 30)
+
+interpolated_latents = interpolate_centroids(centroid_class_1, centroid_class_2, steps=100)
+decoded_images = []
+for latent in interpolated_latents:
+    z_tensor = torch.from_numpy(latent).float().to(device).unsqueeze(0)
+    with torch.no_grad():
+        decoded_img = model.decoder(z_tensor)
+        decoded_img = model.img_decoder(decoded_img)
+    decoded_images.append(decoded_img.cpu())
+
+# Create and save the image grid
+grid_size = (10, 10)  # Adjust as needed
+tensor_grid = make_grid(decoded_images, nrow=grid_size[1], normalize=True, padding=2)
+grid_image = ToPILImage()(tensor_grid)
+grid_image.save('vae_interpolation_center_of_mass.jpg', quality=95)
+
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Call the function with your data
-interpolate_gif_gpr("vae_interpolation_gpr", start_latent, end_latent, steps=100, grid_size=(10, 10))
+# interpolate_gif_gpr("vae_interpolation_gpr", start_latent, end_latent, steps=100, grid_size=(10, 10))
 
 """"
 def get_latent_vector(x):
