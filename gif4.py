@@ -260,7 +260,7 @@ def interpolate_grid_com(filename, centroid1, centroid2, grid_size=(10, 10)):
     while tensor_grid.dim() > 4:
         tensor_grid = tensor_grid.squeeze(0)
         print("Current tensor_grid shape:", tensor_grid.shape)
-    tensor_grid = tensor_grid.permute(0, 2, 3, 1)
+    # tensor_grid = tensor_grid.permute(0, 2, 3, 1)
 
     # Make sure grid_size does not exceed the number of images
     # grid_size = (min(grid_size[0], len(decoded_images)), min(grid_size[1], len(decoded_images) // grid_size[0]))
