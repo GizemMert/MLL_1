@@ -229,6 +229,13 @@ def interpolate_grid_com(filename, centroid1, centroid2, grid_size=(10, 10)):
         decoded_images.append(decoded_img.cpu())
         print(f"Decoded image {i + 1}/{len(interpolated_latents)}")
 
+    print("Loop completed")
+
+    if not decoded_images:
+        print("No images to create a grid.")
+        return
+    print("Checked if decoded_images is empty")
+
     total_slots = grid_size[0] * grid_size[1]
 
     # Check if decoded_images is empty
@@ -242,6 +249,7 @@ def interpolate_grid_com(filename, centroid1, centroid2, grid_size=(10, 10)):
 
     # Trim the list to match the grid size exactly
     decoded_images = decoded_images[:total_slots]
+    print("Trimmed the list of decoded images")
 
     # Arrange images in a grid
     tensor_grid = torch.stack(decoded_images, dim=0)  # Remove batch dimension if necessary
