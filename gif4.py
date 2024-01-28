@@ -213,28 +213,54 @@ label_map = {'myeloblast': 0, 'neutrophil_banded': 1}  # Example label_map
 
 centroid_class_1 = compute_class_centroid(train_dataloader, label_map['myeloblast'], model, device, 30)
 centroid_class_2 = compute_class_centroid(train_dataloader, label_map['neutrophil_banded'], model, device, 30)
+def interpolate_grid_com(filename, start_latent, end_latent, steps=100, grid_size=(10, 10)):
+    model.eval()
 
-interpolated_latents = interpolate_centroids(centroid_class_1, centroid_class_2, steps=100)
-decoded_images = []
-for latent in interpolated_latents:
-    z_tensor = torch.from_numpy(latent).float().to(device).unsqueeze(0)
-    with torch.no_grad():
-        decoded_img = model.decoder(z_tensor)
-        decoded_img = model.img_decoder(decoded_img)
-    decoded_images.append(decoded_img.cpu())
+    # Compute interpolated latent vectors using GPR
+    interpolated_latents = interpolate_centroids(centroid_class_1, centroid_class_2, steps=100)
 
-# Create and save the image grid
-grid_size = (10, 10)  # Adjust as needed
-tensor_grid = make_grid(decoded_images, nrow=grid_size[1], normalize=True, padding=2)
-grid_image = ToPILImage()(tensor_grid)
-grid_image.save('vae_interpolation_center_of_mass.jpg', quality=95)
+    decoded_images = []
+    for i, z in enumerate(interpolated_latents):
+        z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
+        with torch.no_grad():
+            decoded_img = model.decoder(z_tensor)
+            decoded_img = model.img_decoder(decoded_img)
+        decoded_images.append(decoded_img.cpu())
+
+    total_slots = grid_size[0] * grid_size[1]
+
+    # Check if decoded_images is empty
+    if not decoded_images:
+        print("No images to create a grid.")
+        return
+
+    # Check if the number of decoded images is less than total_slots
+    while len(decoded_images) < total_slots:
+        decoded_images.append(torch.zeros_like(decoded_images[0]))
+
+    # Trim the list to match the grid size exactly
+    decoded_images = decoded_images[:total_slots]
+
+    # Arrange images in a grid
+    tensor_grid = torch.stack(decoded_images)  # Remove batch dimension if necessary
+
+    # Rearrange dimensions to 3x128x128 (channels, height, width)
+    tensor_grid = tensor_grid.permute(0, 2, 3, 1)
+
+    # Make sure grid_size does not exceed the number of images
+    grid_size = (min(grid_size[0], len(decoded_images)), min(grid_size[1], len(decoded_images) // grid_size[0]))
+
+    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(grid_image)
+    grid_image.save(filename + '.jpg', quality=95)
+    print("Image saved successfully")
 
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Call the function with your data
-# interpolate_gif_gpr("vae_interpolation_gpr", start_latent, end_latent, steps=100, grid_size=(10, 10))
+interpolate_grid_com("vae_interpolation_com", start_latent, end_latent, steps=100, grid_size=(10, 10))
 
 """"
 def get_latent_vector(x):
