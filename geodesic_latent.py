@@ -23,6 +23,9 @@ from geomstats.geometry.hyperboloid import Hyperboloid
 import geomstats.geometry.hyperbolic
 from matplotlib.lines import Line2D
 from geomstats.geometry.hypersphere import Hypersphere
+import geomstats.datasets.utils as data_utils
+
+
 
 sphere = Hypersphere(dim=2)
 
@@ -109,15 +112,16 @@ if __name__ == '__main__':
 
     sphere_points = latent_data_umap / np.linalg.norm(latent_data_umap, axis=1, keepdims=True)
 
-    myeloblast_umap_points = sphere_points[filtered_labels == label_map['myeloblast']]
-    neutrophil_banded_umap_points = sphere_points[filtered_labels == label_map['neutrophil_banded']]
+    myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
+    neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
 
-    random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
-    random_neutrophil_banded_point = neutrophil_banded_umap_points[
-        np.random.choice(neutrophil_banded_umap_points.shape[0])]
+    # np.random.seed(42)
+    random_myeloblast_index = np.random.choice(myeloblast_indices)
+    random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
 
-    if not np.allclose(np.linalg.norm(random_myeloblast_point), 1, atol=1e-5):
-        raise ValueError("The point does not lie on the unit sphere.")
+    random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
+    random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
+    print("Poin data shape:", random_myeloblast_point.shape)
 
     log = sphere.metric.log(point=random_neutrophil_banded_point, base_point=random_myeloblast_point)
 
