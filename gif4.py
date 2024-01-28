@@ -253,7 +253,9 @@ def interpolate_grid_com(filename, centroid1, centroid2, grid_size=(10, 10)):
 
     # Arrange images in a grid
     print("Before while loop")
-    tensor_grid = torch.stack(decoded_images, dim=0)  # Remove batch dimension if necessary
+    tensor_grid = torch.stack(decoded_images, dim=0)
+    tensor_grid = tensor_grid.squeeze(1)
+    print("Updated tensor_grid shape:", tensor_grid.shape)
     print("Initial tensor_grid shape:", tensor_grid.shape)
     while tensor_grid.dim() > 4:
         tensor_grid = tensor_grid.squeeze(0)
