@@ -15,6 +15,10 @@ import os
 import umap
 import matplotlib.pyplot as plt
 from geomstats.information_geometry.normal import NormalDistributions
+import geomstats.geometry.complex_manifold as cm
+
+dimension = 30
+complex_manifold = cm.ComplexManifold(dimension)
 
 normal = NormalDistributions(sample_dim=1)
 epoch = 140
@@ -85,12 +89,18 @@ random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_i
 print("Poin data shape:", random_myeloblast_point.shape)
 """
 
+
 def get_latent_vector(x):
     distributions = model.encoder(x)
     mu = distributions[:, :latent_dim]
     logvar = distributions[:, latent_dim:]
     z = reparametrize(mu, logvar)
     return z
+
+def to_complex_coordinates(latent_vector):
+    real_part = latent_vector[:latent_vector.shape[0] // 2]
+    imag_part = latent_vector[latent_vector.shape[0] // 2:]
+    return real_part + 1j * imag_part
 
 def interpolate_gpr(latent_start, latent_end, n_points=20):
     if isinstance(latent_start, torch.Tensor):
@@ -103,7 +113,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=20):
 
     latent_vectors = np.vstack([latent_start, latent_end])
 
-    kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+    kernel = C(1.0, (1e-4, 1e3)) * RBF(10, (1e-2, 1e2))
 
     gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
     gpr.fit(indices, latent_vectors)
