@@ -218,6 +218,7 @@ def interpolate_grid_com(filename, start_latent, end_latent, steps=100, grid_siz
 
     # Compute interpolated latent vectors using GPR
     interpolated_latents = interpolate_centroids(centroid_class_1, centroid_class_2, steps=100)
+    print("Number of interpolated latent vectors:", len(interpolated_latents))
 
     decoded_images = []
     for i, z in enumerate(interpolated_latents):
@@ -249,9 +250,15 @@ def interpolate_grid_com(filename, start_latent, end_latent, steps=100, grid_siz
     tensor_grid = tensor_grid.permute(0, 2, 3, 1)
 
     # Make sure grid_size does not exceed the number of images
-    grid_size = (min(grid_size[0], len(decoded_images)), min(grid_size[1], len(decoded_images) // grid_size[0]))
+    # grid_size = (min(grid_size[0], len(decoded_images)), min(grid_size[1], len(decoded_images) // grid_size[0]))
+    total_images = 100
+    images_per_grid = grid_size[0] * grid_size[1]
 
-    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    # Check if the total_images is equal to the grid size
+    if total_images != images_per_grid:
+        print(f"Warning: Total images ({total_images}) should match grid size ({images_per_grid}).")
+
+    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=0)
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=95)
     print("Image saved successfully")
