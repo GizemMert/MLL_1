@@ -242,10 +242,10 @@ def interpolate_grid_com(filename, start_latent, end_latent, steps=100, grid_siz
     decoded_images = decoded_images[:total_slots]
 
     # Arrange images in a grid
-    tensor_grid = torch.stack(decoded_images)  # Remove batch dimension if necessary
+    tensor_grid = torch.stack(decoded_images, dim=0)  # Remove batch dimension if necessary
 
     print("Shape of tensor_grid:", tensor_grid.shape)
-    tensor_grid = tensor_grid.permute(0, 3, 1, 2)
+    tensor_grid = tensor_grid.permute(0, 2, 3, 1)
 
     # Make sure grid_size does not exceed the number of images
     grid_size = (min(grid_size[0], len(decoded_images)), min(grid_size[1], len(decoded_images) // grid_size[0]))
