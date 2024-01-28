@@ -106,10 +106,11 @@ def compute_class_centroid(dataloader, class_label, model, device, latent_dim):
         for batch in dataloader:
             # Unpack the batch
             feat, _, _, labels, _ = batch
-            data, labels = data.to(device), labels.to(device)
+            feat = feat.to(device)
+            labels = labels.to(device)
 
             # Filter the data for the desired class
-            class_data = data[labels == class_label]
+            class_data = feat[labels == class_label]
 
             if len(class_data) > 0:
                 distributions = model.encoder(class_data)
@@ -121,6 +122,7 @@ def compute_class_centroid(dataloader, class_label, model, device, latent_dim):
     else:
         centroid = np.zeros(latent_dim)
     return centroid
+
 
 def interpolate_centroids(centroid1, centroid2, steps=100):
     interpolated_latents = np.linspace(centroid1, centroid2, num=steps)
