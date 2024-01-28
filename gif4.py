@@ -227,6 +227,7 @@ def interpolate_grid_com(filename, centroid1, centroid2, grid_size=(10, 10)):
             decoded_img = model.decoder(z_tensor)
             decoded_img = model.img_decoder(decoded_img)
         decoded_images.append(decoded_img.cpu())
+        print(f"Decoded image {i + 1}/{len(interpolated_latents)}")
 
     total_slots = grid_size[0] * grid_size[1]
 
@@ -260,7 +261,7 @@ def interpolate_grid_com(filename, centroid1, centroid2, grid_size=(10, 10)):
 
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=0)
     grid_image = ToPILImage()(grid_image)
-    grid_image.save(filename + '.jpg', quality=95)
+    grid_image.save(filename + '.jpg')
     print("Image saved successfully")
 
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
