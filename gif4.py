@@ -97,11 +97,14 @@ def get_latent_vector(x):
     z = reparametrize(mu, logvar)
     return z
 
+
+"""
 def to_complex_coordinates(latent_vector):
     real_part = latent_vector[:latent_vector.shape[0] // 2]
     imag_part = latent_vector[latent_vector.shape[0] // 2:]
     return real_part + 1j * imag_part
 
+"""
 def interpolate_gpr(latent_start, latent_end, n_points=20):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
