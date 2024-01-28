@@ -17,10 +17,10 @@ import matplotlib.pyplot as plt
 from geomstats.information_geometry.normal import NormalDistributions
 import geomstats.geometry.complex_manifold as cm
 
-dimension = 30
+# dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
 
-normal = NormalDistributions(sample_dim=1)
+# normal = NormalDistributions(sample_dim=1)
 epoch = 140
 latent_dim = 30
 
@@ -213,11 +213,11 @@ label_map = {'myeloblast': 0, 'neutrophil_banded': 1}  # Example label_map
 
 centroid_class_1 = compute_class_centroid(train_dataloader, label_map['myeloblast'], model, device, 30)
 centroid_class_2 = compute_class_centroid(train_dataloader, label_map['neutrophil_banded'], model, device, 30)
-def interpolate_grid_com(filename, start_latent, end_latent, steps=100, grid_size=(10, 10)):
+def interpolate_grid_com(filename, start_latent, end_latent, grid_size=(10, 10)):
     model.eval()
 
     # Compute interpolated latent vectors using GPR
-    interpolated_latents = interpolate_centroids(centroid_class_1, centroid_class_2, steps=100)
+    interpolated_latents = interpolate_centroids(start_latent, end_latent, steps=100)
     print("Number of interpolated latent vectors:", len(interpolated_latents))
 
     decoded_images = []
@@ -268,7 +268,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 # Call the function with your data
-interpolate_grid_com("vae_interpolation_com", start_latent, end_latent, steps=100, grid_size=(10, 10))
+interpolate_grid_com("vae_interpolation_com", start_latent, end_latent, grid_size=(10, 10))
 
 """"
 def get_latent_vector(x):
