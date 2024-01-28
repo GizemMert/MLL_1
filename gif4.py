@@ -18,7 +18,7 @@ from geomstats.information_geometry.normal import NormalDistributions
 import geomstats.geometry.complex_manifold as cm
 
 dimension = 30
-complex_manifold = cm.ComplexManifold(dimension)
+# complex_manifold = cm.ComplexManifold(dimension)
 
 normal = NormalDistributions(sample_dim=1)
 epoch = 140
