@@ -103,9 +103,14 @@ def compute_class_centroid(dataloader, class_label, model, device, latent_dim):
     model.eval()
 
     with torch.no_grad():
-        for data, labels in dataloader:
+        for batch in dataloader:
+            # Unpack the batch
+            feat, _, _, labels, _ = batch
             data, labels = data.to(device), labels.to(device)
+
+            # Filter the data for the desired class
             class_data = data[labels == class_label]
+
             if len(class_data) > 0:
                 distributions = model.encoder(class_data)
                 mu = distributions[:, :latent_dim]
