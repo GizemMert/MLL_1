@@ -1,32 +1,30 @@
-from sklearn.manifold import TSNE
-from torch.utils.data import DataLoader
-import torch
-import umap
-from Dataloader_4 import Dataloader, label_map
-from model4 import VariationalAutoencodermodel4, reparametrize
-import os
 import plotly.graph_objs as go
-from matplotlib.gridspec import GridSpec
-import matplotlib.pyplot as plt
-import numpy as np
-import geomstats.backend as gs
-import matplotlib.pyplot as plt
-from Beta_Visualization import Beta
-from geomstats.information_geometry.beta import BetaDistributions
-from geomstats.geometry.connection import Connection
-from geomstats.geometry.complex_manifold import ComplexManifold
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
-import geomstats.visualization as visualization
-from geomstats.geometry.special_euclidean import SpecialEuclidean
-
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from PIL import Image
+import os
+from matplotlib.gridspec import GridSpec
+from model4 import VariationalAutoencodermodel4, reparametrize
+from Dataloader_2 import Dataloader
+from torch.utils.data import DataLoader
+from torchvision.utils import make_grid
+from torchvision.transforms import ToPILImage
+import geomstats.backend as gs
+import torch
+import numpy as np
+import cv2
+import umap
 import matplotlib.pyplot as plt
-import matplotlib
+from geomstats.information_geometry.normal import NormalDistributions
+import geomstats.geometry.complex_manifold as cm
 
+# dimension = 30
+# complex_manifold = cm.ComplexManifold(dimension)
 
-beta = BetaDistributions()
-beta_p = Beta()
+normal = NormalDistributions(sample_dim=1)
+epoch = 140
+latent_dim = 30
 
 
 label_map = {
@@ -44,106 +42,132 @@ label_map = {
     'lymphocyte_atypical': 11,
     'smudge_cell': 12,
 }
+inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 
-if __name__ == '__main__':
-    inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-    batch_size = 128
-    num_classes = len(label_map)
-    epoch = 140
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = VariationalAutoencodermodel4(latent_dim=30)
+model_save_path = 'trained_model4cp2_new5.pth'
+model.load_state_dict(torch.load(model_save_path, map_location=device))
+model.to(device)
+model.eval()
 
-    umap_dir = 'umap_manifold_path'
-    if not os.path.exists(umap_dir):
-        os.makedirs(umap_dir)
+umap_dir = 'umap_path_3d'
+if not os.path.exists(umap_dir):
+    os.makedirs(umap_dir)
 
-    pdf_dir = 'pdf_manifold_path'
-    if not os.path.exists(pdf_dir):
-        os.makedirs(pdf_dir)
+# Load all latent representations
+latent_dir = 'latent_data4cp2_new5'
+latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+label_dir = 'label_data4cp2_new5'
+labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = VariationalAutoencodermodel4(latent_dim=30)
-    model_save_path = 'trained_model4cp2_new5.pth'
-    # model.load_state_dict(torch.load(model_save_path, map_location=device))
-    model.to(device)
-    model.eval()
+# Load all latent representations
+latent_data = np.load(latents_path)
+latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+print("Latent data shape:", latent_data_reshaped.shape)
 
-    train_dataset = Dataloader(split='train')
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=False, num_workers=1)
+# Load all labels
+all_labels_array = np.load(labels_path)
+print("Labels array shape:", all_labels_array.shape)
 
-    # Load all latent representations
-    latent_dir = 'latent_data4cp2_new5'
-    latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-    label_dir = 'label_data4cp2_new5'
-    labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
+# print("Labels array shape:", all_labels_array.shape)
 
-    # Load all latent representations
-    latent_data = np.load(latents_path)
-    latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-    print("Latent data shape:", latent_data.shape)
+# Filter out the 'erythroblast' class
+erythroblast_class_index = label_map['erythroblast']
+mask = all_labels_array != erythroblast_class_index
+filtered_latent_data = latent_data[mask]
+print("filtered data shape:", filtered_latent_data.shape)
+filtered_labels = all_labels_array[mask]
 
-    # Load all labels
-    all_labels_array = np.load(labels_path)
-    print("Labels array shape:", all_labels_array.shape)
+myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
+neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
 
-    # print("Labels array shape:", all_labels_array.shape)
+# np.random.seed(42)
+random_myeloblast_index = np.random.choice(myeloblast_indices)
+random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
 
-    # Filter out the 'erythroblast' class
-    erythroblast_class_index = label_map['erythroblast']
-    mask = all_labels_array != erythroblast_class_index
-    filtered_latent_data = latent_data[mask]
-    filtered_labels = all_labels_array[mask]
-    unique_labels = np.unique(filtered_labels)
+random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
+random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
+print("Poin data shape:", random_myeloblast_point.shape)
 
-    # Perform UMAP dimensionality reduction to 3D
-    reducer = umap.UMAP(n_components=3)
-    latent_data_3d = reducer.fit_transform(filtered_latent_data)
+def interpolate_gpr(latent_start, latent_end, n_points=100):
+    if isinstance(latent_start, torch.Tensor):
+        latent_start = latent_start.detach().cpu().numpy()
+    if isinstance(latent_end, torch.Tensor):
+        latent_end = latent_end.detach().cpu().numpy()
 
-    # Create a Plotly interactive 3D scatter plot
-    trace = go.Scatter3d(
-        x=latent_data_3d[:, 0],
-        y=latent_data_3d[:, 1],
-        z=latent_data_3d[:, 2],
-        mode='markers',
-        marker=dict(
-            size=5,
-            color=filtered_labels,  # Color by labels
-            colorscale='Spectral',  # Choose a colorscale
-            opacity=0.8
-        )
-    )
+    indices = np.array([0, 1]).reshape(-1, 1)
 
-    data = [trace]
-    layout = go.Layout(
-        title="3D UMAP Visualization",
-        margin=dict(l=0, r=0, b=0, t=0),
-        scene=dict(
-            xaxis=dict(title='UMAP Dimension 1'),
-            yaxis=dict(title='UMAP Dimension 2'),
-            zaxis=dict(title='UMAP Dimension 3'),
-        )
-    )
 
-    fig = go.Figure(data=data, layout=layout)
-    fig.show()
-    fig.write_html("your_plot.html")
+    latent_vectors = np.vstack([latent_start, latent_end])
 
-    tsne = TSNE(n_components=2, random_state=42)
-    tsne_results = tsne.fit_transform(filtered_latent_data)
+    kernel = C(1.0, (1e-1, 1e1)) * RBF(1e-1, (1e-1, 1e1))
 
-    # Plotting the t-SNE results
-    plt.figure(figsize=(12, 8))
+    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+    gpr.fit(indices, latent_vectors)
 
-    unique_labels = np.unique(filtered_labels)
-    for label in unique_labels:
-        indices = filtered_labels == label
-        plt.scatter(tsne_results[indices, 0], tsne_results[indices, 1], label=inverse_label_map[label])
+    index_range = np.linspace(0, 1, n_points).reshape(-1, 1)
 
-    plt.legend()
-    plt.title('t-SNE visualization of Latent Space')
-    plt.xlabel('t-SNE 1')
-    plt.ylabel('t-SNE 2')
+    interpolated_latent_vectors = gpr.predict(index_range)
 
-    # Save the plot to a file
-    save_path = os.path.join(pdf_dir, "tsne_visualization_epoch_{}.png".format(epoch))
-    plt.savefig(save_path)
-    print(f"t-SNE plot saved as: {save_path}")
+    return interpolated_latent_vectors
+
+unique_labels = np.unique(filtered_labels)
+
+interpolated_latents = interpolate_gpr(random_myeloblast_point, random_neutrophil_banded_point, n_points=100)
+# Perform UMAP dimensionality reduction to 3D
+reducer = umap.UMAP(n_components=3)
+latent_data_3d = reducer.fit_transform(filtered_latent_data)
+
+interpolated_latents_3d = reducer.transform(interpolated_latents)
+
+# Create a Plotly interactive 3D scatter plot for the original data
+trace_data = go.Scatter3d(
+    x=latent_data_3d[:, 0],
+    y=latent_data_3d[:, 1],
+    z=latent_data_3d[:, 2],
+    mode='markers',
+    marker=dict(
+        size=5,
+        color=filtered_labels,  # Color by labels
+        colorscale='Spectral',  # Choose a colorscale
+        opacity=0.8
+    ),
+    name='Data Points'
+)
+
+# Create a trace for the interpolation path
+trace_path = go.Scatter3d(
+    x=interpolated_latents_3d[:, 0],
+    y=interpolated_latents_3d[:, 1],
+    z=interpolated_latents_3d[:, 2],
+    mode='lines',
+    line=dict(
+        color='black',  # Line color can be adjusted
+        width=2
+    ),
+    name='Interpolation Path'
+)
+
+# Combine the data and the path for plotting
+data = [trace_data, trace_path]
+
+# Define the layout of the plot
+layout = go.Layout(
+    title="3D UMAP Visualization",
+    margin=dict(l=0, r=0, b=0, t=0),
+    scene=dict(
+        xaxis=dict(title='UMAP Dimension 1'),
+        yaxis=dict(title='UMAP Dimension 2'),
+        zaxis=dict(title='UMAP Dimension 3'),
+    ),
+    legend=dict(itemsizing='constant')  # Ensure constant legend item size
+)
+
+# Create the figure with data and layout
+fig = go.Figure(data=data, layout=layout)
+fig.show()
+
+# Save the figure to an HTML file
+fig.write_html("3d_umap_interpolation.html")
 
