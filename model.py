@@ -70,7 +70,7 @@ class VariationalAutoencodermodel(nn.Module):
         mu = distributions[:, :self.latent_dim]
         logvar = distributions[:, self.latent_dim:]
         z = reparametrize(mu, logvar)
-        logits = self.classifier(z)
+        logits = self.classifier(mu)
         # reconstruct the data based on the learned data representation
         y = self.decoder(z)
         # # reconstruct the images based on the learned data representation
