@@ -143,8 +143,8 @@ trace_path = go.Scatter3d(
     z=interpolated_latents_3d[:, 2],
     mode='lines',
     line=dict(
-        color='black',  # Line color can be adjusted
-        width=2
+        color='white',  # Line color can be adjusted
+        width=10
     ),
     name='Interpolation Path'
 )
