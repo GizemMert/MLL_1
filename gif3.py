@@ -30,8 +30,12 @@ def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def get_latent_vector(mu, logvar):
-        z = reparametrize(torch.from_numpy(mu), torch.from_numpy(logvar))
+
+    def get_latent_vector(x):
+        distributions = model.encoder(x)
+        mu = distributions[:, :latent_dim]
+        logvar = distributions[:, latent_dim:]
+        z = reparametrize(mu, logvar)
         return z
 
     # Generate the latent representations
@@ -102,7 +106,7 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 
 
 train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=False, num_workers=1)
 
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
 
