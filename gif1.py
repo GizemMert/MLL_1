@@ -110,20 +110,36 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
 
     return interpolated_latent_vectors
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100, grid_size=(10, 10)):
-    model.eval()
+def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100):
+    model.eval()  # Ensure the model is in evaluation mode
 
     # Compute interpolated latent vectors using GPR
     interpolated_latents = interpolate_gpr(start_latent, end_latent, steps)
 
-    decoded_images = []
-    for i, z in enumerate(interpolated_latents):
+    images_list = []
+    for z in interpolated_latents:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
             decoded_img = model.img_decoder(decoded_img)
-        decoded_images.append(decoded_img.cpu())
+            img = decoded_img.cpu().squeeze(0).permute(1, 2, 0).numpy()
+            img = np.clip(img * 255, 0, 255).astype(np.uint8)
+            images_list.append(Image.fromarray(img))
 
+    # Save the sequence of images as a GIF (outside the loop)
+    images_list[0].save(
+        f'{filename}.gif',
+        save_all=True,
+        append_images=images_list[1:],
+        loop=0,
+        duration=100  # Duration between frames in milliseconds
+    )
+    print("GIF saved successfully")
+
+interpolate_gif_gpr("vae_interpolation_gpr_gif", random_myeloblast_point, random_neutrophil_banded_point, steps=100)
+
+
+"""
     total_slots = grid_size[0] * grid_size[1]
     while len(decoded_images) < total_slots:
         decoded_images.append(torch.zeros_like(decoded_images[0]))
@@ -240,7 +256,7 @@ umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
 plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
 plt.close(fig)
 
-"""
+
 plt.hist(latent_data_reshaped.flatten(), bins=30, density=True, alpha=0.6, color='g')
 plt.title("Histogram of Latent Data")
 plt.savefig("latent_data_histogram.png")  # Save histogram
