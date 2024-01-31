@@ -65,7 +65,7 @@ print("filtered data shape:", filtered_latent_data.shape)
 filtered_labels = all_labels_array[mask]
 
 myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
-neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
+neutrophil_banded_indices = np.where(filtered_labels == label_map['monocyte'])[0]
 
 # np.random.seed(42)
 random_myeloblast_index = np.random.choice(myeloblast_indices)
