@@ -163,5 +163,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 # Convert to appropriate format and device
 selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
 
-latent_points = [random_myeloblast_point.to(device), random_neutrophil_banded_point.to(device)]
+latent_points = [
+    torch.from_numpy(random_myeloblast_point).float().to(device),
+    torch.from_numpy(random_neutrophil_banded_point).float().to(device)]
 interpolate_gif_with_gpr(model, "vae_interpolation_latent_space", latent_points)
