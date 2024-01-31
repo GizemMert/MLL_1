@@ -182,8 +182,7 @@ combined_data_umap = umap_model.fit_transform(combined_data)
 interpolated_latents_umap = combined_data_umap[-100:]
 latent_data_umap = combined_data_umap[:-100]
 
-# Now, use the model to transform new data points
-interpolated_latents_umap = umap_model.transform(interpolated_latents)
+
 
 fig = plt.figure(figsize=(12, 10), dpi=150)
 gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
