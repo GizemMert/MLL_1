@@ -49,6 +49,10 @@ model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
+umap_dir = 'umap_path'
+if not os.path.exists(umap_dir):
+    os.makedirs(umap_dir)
+
 # Load all latent representations
 latent_dir = 'latent_data4cp2_new5'
 latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
@@ -168,12 +172,15 @@ start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for f
 
 interpolate_gif_gpr("vae_interpolation_gpr", random_myeloblast_point, random_neutrophil_banded_point, steps=100, grid_size=(10, 10))
 
-"""
+
 interpolated_latents = interpolate_gpr(random_myeloblast_point, random_neutrophil_banded_point, n_points=100)
 
 # UMAP for latent space
-latent_data_umap = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-    filtered_latent_data)
+umap_model = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean')
+latent_data_umap = umap_model.fit_transform(filtered_latent_data)
+
+# Now, use the model to transform new data points
+interpolated_latents_umap = umap_model.transform(interpolated_latents)
 
 fig = plt.figure(figsize=(12, 10), dpi=150)
 gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
@@ -181,6 +188,8 @@ gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 ax = fig.add_subplot(gs[0])
 scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral',
                      edgecolor=(1, 1, 1, 0.7))
+
+ax.plot(interpolated_latents_umap[:, 0], interpolated_latents_umap[:, 1], color='white', linestyle='-', linewidth=2)
 ax.set_aspect('equal')
 
 x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
@@ -224,11 +233,13 @@ legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_cla
 
 ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
+
 plt.tight_layout()
 umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
 plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
 plt.close(fig)
 
+"""
 plt.hist(latent_data_reshaped.flatten(), bins=30, density=True, alpha=0.6, color='g')
 plt.title("Histogram of Latent Data")
 plt.savefig("latent_data_histogram.png")  # Save histogram
