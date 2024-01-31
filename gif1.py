@@ -2,7 +2,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from PIL import Image
 import os
-import numpy as np
+from matplotlib.gridspec import GridSpec
 from model4 import VariationalAutoencodermodel4, reparametrize
 from Dataloader_2 import Dataloader
 from torch.utils.data import DataLoader
@@ -24,6 +24,7 @@ normal = NormalDistributions(sample_dim=1)
 epoch = 140
 latent_dim = 30
 
+
 label_map = {
     'basophil': 0,
     'eosinophil': 1,
@@ -39,6 +40,7 @@ label_map = {
     'lymphocyte_atypical': 11,
     'smudge_cell': 12,
 }
+inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
@@ -82,7 +84,7 @@ random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
 print("Poin data shape:", random_myeloblast_point.shape)
 
-def interpolate_gpr(latent_start, latent_end, n_points=20):
+def interpolate_gpr(latent_start, latent_end, n_points=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
@@ -165,7 +167,68 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for feature in selected_features]
 
 interpolate_gif_gpr("vae_interpolation_gpr", random_myeloblast_point, random_neutrophil_banded_point, steps=100, grid_size=(10, 10))
+
 """
+interpolated_latents = interpolate_gpr(random_myeloblast_point, random_neutrophil_banded_point, n_points=100)
+
+# UMAP for latent space
+latent_data_umap = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+    filtered_latent_data)
+
+fig = plt.figure(figsize=(12, 10), dpi=150)
+gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
+
+ax = fig.add_subplot(gs[0])
+scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral',
+                     edgecolor=(1, 1, 1, 0.7))
+ax.set_aspect('equal')
+
+x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
+y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
+
+zoom_factor = 0.40  # Smaller values mean more zoom
+padding_factor = 0.3  # Adjust padding around the zoomed area
+
+# Calculate the range for zooming in based on the zoom factor
+x_range = (x_max - x_min) * zoom_factor
+y_range = (y_max - y_min) * zoom_factor
+
+# Calculate the center of the data
+center_x = (x_max + x_min) / 2
+center_y = (y_max + y_min) / 2
+
+# Calculate new limits around the center of the data
+new_x_min = center_x - (x_range * (1 + padding_factor))
+new_x_max = center_x + (x_range * (1 + padding_factor))
+new_y_min = center_y - (y_range * (1 + padding_factor))
+new_y_max = center_y + (y_range * (1 + padding_factor))
+
+# Apply the new limits to zoom in on the plot
+ax.set_xlim(new_x_min, new_x_max)
+ax.set_ylim(new_y_min, new_y_max)
+
+ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+ax.set_xlabel('UMAP Dimension 1', fontsize=16)
+ax.set_ylabel('UMAP Dimension 2', fontsize=16)
+
+# Second subplot for the legend
+ax_legend = fig.add_subplot(gs[1])
+ax_legend.axis('off')  # Turn off the axis for the legend subplot
+
+unique_filtered_labels = np.unique(filtered_labels)
+filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+
+legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                             markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
+
+ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
+
+plt.tight_layout()
+umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
+plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
+plt.close(fig)
+
 plt.hist(latent_data_reshaped.flatten(), bins=30, density=True, alpha=0.6, color='g')
 plt.title("Histogram of Latent Data")
 plt.savefig("latent_data_histogram.png")  # Save histogram
