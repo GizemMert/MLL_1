@@ -88,7 +88,7 @@ random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
 print("Poin data shape:", random_myeloblast_point.shape)
 
-def interpolate_gpr(latent_start, latent_end, n_points=100):
+def interpolate_gpr(latent_start, latent_end, n_points=200):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
