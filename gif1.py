@@ -88,7 +88,7 @@ random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
 print("Poin data shape:", random_myeloblast_point.shape)
 
-def interpolate_gpr(latent_start, latent_end, n_points=200):
+def interpolate_gpr(latent_start, latent_end, n_points=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
@@ -110,7 +110,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=200):
 
     return interpolated_latent_vectors
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, steps=200):
+def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100):
     model.eval()  # Ensure the model is in evaluation mode
 
     # Compute interpolated latent vectors using GPR
@@ -136,7 +136,7 @@ def interpolate_gif_gpr(filename, start_latent, end_latent, steps=200):
     )
     print("GIF saved successfully")
 
-interpolate_gif_gpr("vae_interpolation_gpr_gif", random_myeloblast_point, random_neutrophil_banded_point, steps=200)
+interpolate_gif_gpr("vae_interpolation_gpr_gif", random_myeloblast_point, random_neutrophil_banded_point, steps=100)
 
 
 """
@@ -188,7 +188,7 @@ start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for f
 
 interpolate_gif_gpr("vae_interpolation_gpr", random_myeloblast_point, random_neutrophil_banded_point, steps=100, grid_size=(10, 10))
 
-
+"""
 interpolated_latents = interpolate_gpr(random_myeloblast_point, random_neutrophil_banded_point, n_points=100)
 
 combined_data = np.vstack([filtered_latent_data, interpolated_latents])
@@ -254,9 +254,10 @@ ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell 
 plt.tight_layout()
 umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
 plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
+print("umap_path is saved")
 plt.close(fig)
 
-
+"""
 plt.hist(latent_data_reshaped.flatten(), bins=30, density=True, alpha=0.6, color='g')
 plt.title("Histogram of Latent Data")
 plt.savefig("latent_data_histogram.png")  # Save histogram
