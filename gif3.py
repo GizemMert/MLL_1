@@ -79,7 +79,7 @@ random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_i
 print("Poin data shape:", random_myeloblast_point.shape)
 
 
-def interpolate_gif_with_gpr(model, filename, latent_points, n=100, grid_size=(10, 10)):
+def interpolate_gif_with_gpr(model, filename, latent_points, n=200, grid_size=(20, 10)):
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -172,4 +172,4 @@ selected_images = [feature.float().to(device) for feature in selected_features i
 latent_points = [
     torch.from_numpy(random_myeloblast_point).float().to(device),
     torch.from_numpy(random_neutrophil_banded_point).float().to(device)]
-interpolate_gif_with_gpr(model, "vae_interpolation_grid_SLERP", latent_points, n=100, grid_size=(10, 10))
+interpolate_gif_with_gpr(model, "vae_interpolation_grid_SLERP", latent_points, n=200, grid_size=(20, 10))
