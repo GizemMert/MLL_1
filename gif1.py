@@ -136,7 +136,7 @@ def interpolate_gif_gpr(filename, start_latent, end_latent, steps=200):
     )
     print("GIF saved successfully")
 
-interpolate_gif_gpr("vae_interpolation_gpr_gif", random_myeloblast_point, random_neutrophil_banded_point, steps=100)
+interpolate_gif_gpr("vae_interpolation_gpr_gif", random_myeloblast_point, random_neutrophil_banded_point, steps=200)
 
 
 """
