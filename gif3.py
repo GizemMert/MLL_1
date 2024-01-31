@@ -8,7 +8,6 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import numpy as np
 from sklearn.gaussian_process.kernels import WhiteKernel
-import os
 
 label_map = {
     'basophil': 0,
@@ -26,59 +25,8 @@ label_map = {
     'smudge_cell': 12,
 }
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new5_std.pth'
-model.load_state_dict(torch.load(model_save_path, map_location=device))
-model.to(device)
-model.eval()
 
-train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
-
-# Load all latent representations
-latent_dir = 'latent_data4cp2_new5_std'
-latents_path = os.path.join(latent_dir, f'latent_epoch_140.npy')
-label_dir = 'label_data4cp2_new5_std'
-labels_path = os.path.join(label_dir, f'label_epoch_141.npy')
-
-# Load all latent representations
-latent_data = np.load(latents_path)
-latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-print("Latent data shape:", latent_data_reshaped.shape)
-
-# Load all labels
-all_labels_array = np.load(labels_path)
-print("Labels array shape:", all_labels_array.shape)
-
-# print("Labels array shape:", all_labels_array.shape)
-
-# Filter out the 'erythroblast' class
-erythroblast_class_index = label_map['erythroblast']
-mask = all_labels_array != erythroblast_class_index
-filtered_latent_data = latent_data_reshaped[mask]
-filtered_labels = all_labels_array[mask]
-
-myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
-neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
-
-
-# Select random latent vectors for myeloblast and neutrophil banded points
-random_myeloblast_index = np.random.choice(myeloblast_indices)
-random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
-
-random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
-random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
-print("Poin data shape:", random_myeloblast_point.shape)
-
-# Extract mu and logvar
-mu_myeloblast = random_myeloblast_point[:30]  # First 30 values are mu
-logvar_myeloblast = random_myeloblast_point[30:]  # Next 30 values are logvar
-
-mu_neutrophil_banded = random_neutrophil_banded_point[:30]
-logvar_neutrophil_banded = random_neutrophil_banded_point[30:]
-
-def interpolate_gif_with_gpr(model, filename, mu1, logvar1, mu2, logvar2, n=100, latent_dim=30):
+def interpolate_gif_with_gpr(model, filename, features, n=100, latent_dim=30):
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -87,8 +35,7 @@ def interpolate_gif_with_gpr(model, filename, mu1, logvar1, mu2, logvar2, n=100,
         return z
 
     # Generate the latent representations
-    latent1 = get_latent_vector(mu1, logvar1).view(1, -1)
-    latent2 = get_latent_vector(mu2, logvar2).view(1, -1)
+    latents = [get_latent_vector(feature.to(device)) for feature in features]
 
 
     def slerp(val, low, high):
@@ -101,9 +48,10 @@ def interpolate_gif_with_gpr(model, filename, mu1, logvar1, mu2, logvar2, n=100,
 
     # Interpolate between the latent vectors
     all_interpolations = []
-    for t in np.linspace(0, 1, n):
-        z_interp = slerp(t, latent1, latent2)
-        all_interpolations.append(z_interp)
+    for i in range(len(latents) - 1):
+        for t in np.linspace(0, 1, n):
+            z_interp = slerp(t, latents[i], latents[i + 1])
+            all_interpolations.append(z_interp)
 
 
     interpolate_list = []
@@ -127,10 +75,13 @@ def interpolate_gif_with_gpr(model, filename, mu1, logvar1, mu2, logvar2, n=100,
         duration=100
     )
 
-
-# Now, you can use these images for your interpolation GIF
-interpolate_gif_with_gpr(model, "vae_interpolation_std", mu_myeloblast, logvar_myeloblast, mu_neutrophil_banded, logvar_neutrophil_banded)
-"""
+# Load the model
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = VariationalAutoencodermodel4(latent_dim=30)
+model_save_path = 'trained_model4cp2_new5.pth'
+model.load_state_dict(torch.load(model_save_path, map_location=device))
+model.to(device)
+model.eval()
 
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
@@ -151,10 +102,12 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 
 
 train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=False, num_workers=1)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
 selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
 
 # Convert to appropriate format and device
 selected_images = [feature.float().to(device) for feature in selected_features if feature is not None]
-"""
+
+# Now, you can use these images for your interpolation GIF
+interpolate_gif_with_gpr(model, "vae_interpolation_bmasked_(5,5)_6_dilation", selected_images)
