@@ -1,7 +1,7 @@
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from PIL import Image
-import torch
+import os
 import numpy as np
 from model4 import VariationalAutoencodermodel4, reparametrize
 from Dataloader_2 import Dataloader
@@ -47,12 +47,11 @@ model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
-
 # Load all latent representations
 latent_dir = 'latent_data4cp2_new5'
-latents_path = '/Users/gizem/MLL_1/latent_epoch_140 (1).npy'
+latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
 label_dir = 'label_data4cp2_new5'
-labels_path = '/Users/gizem/MLL_1/label_epoch_140 (1).npy'
+labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
 
 # Load all latent representations
 latent_data = np.load(latents_path)
