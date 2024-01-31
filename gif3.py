@@ -93,9 +93,9 @@ def interpolate_gif_with_gpr(model, filename, latent_points, n=100, latent_dim=3
     """
 
     def slerp(val, low, high):
-        low_norm = low / torch.norm(low, dim=1, keepdim=True)
-        high_norm = high / torch.norm(high, dim=1, keepdim=True)
-        omega = torch.acos((low_norm * high_norm).sum(dim=1, keepdim=True).clamp(-1, 1))
+        low_norm = low / torch.norm(low)
+        high_norm = high / torch.norm(high)
+        omega = torch.acos((low_norm * high_norm).sum().clamp(-1, 1))
         so = torch.sin(omega)
         res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
         return res.where(so != 0, low)
