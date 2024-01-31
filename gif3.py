@@ -9,6 +9,9 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import numpy as np
 from sklearn.gaussian_process.kernels import WhiteKernel
 import os
+from torchvision.utils import make_grid
+from PIL import Image
+from torchvision.transforms import ToPILImage
 
 label_map = {
     'basophil': 0,
@@ -76,7 +79,7 @@ random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_i
 print("Poin data shape:", random_myeloblast_point.shape)
 
 
-def interpolate_gif_with_gpr(model, filename, latent_points, n=100, latent_dim=30):
+def interpolate_gif_with_gpr(model, filename, latent_points, n=100, grid_size=(10, 10)):
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -107,28 +110,31 @@ def interpolate_gif_with_gpr(model, filename, latent_points, n=100, latent_dim=3
             z_interp = slerp(t, latent_points[i], latent_points[i + 1])
             all_interpolations.append(z_interp)
 
-
-    interpolate_list = []
+    # Second loop: Decode all interpolations
+    decoded_images = []
     for z in all_interpolations:
-        y = model.decoder(z)
-        img = model.img_decoder(y)
-        img = img.permute(0, 2, 3, 1)
-        interpolate_list.append(img.squeeze(0).to('cpu').detach().numpy())
+        z_tensor = z.float().to(device).unsqueeze(0)
+        with torch.no_grad():
+            decoded_img = model.decoder(z_tensor)
+            decoded_img = model.img_decoder(decoded_img)
+        decoded_images.append(decoded_img.cpu())
 
+        # Make sure the number of images matches the grid size
+    total_slots = grid_size[0] * grid_size[1]
+    while len(decoded_images) < total_slots:
+        decoded_images.append(torch.zeros_like(decoded_images[0]))
 
-    interpolate_list = [np.clip(img * 255, 0, 255).astype(np.uint8) for img in interpolate_list]
+    # Trim the list to match the grid size exactly
+    decoded_images = decoded_images[:total_slots]
 
-    images_list = [Image.fromarray(img) for img in interpolate_list]
+    # Arrange images in a grid and save
+    tensor_grid = torch.stack(decoded_images).squeeze(1)
+    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(grid_image)
+    grid_image.save(filename + '.jpg', quality=95)
+    print("Grid image saved successfully")
 
-
-    images_list[0].save(
-        f'{filename}.gif',
-        save_all=True,
-        append_images=images_list[1:],
-        loop=0,
-        duration=100
-    )
-
+    # Example usage
 # Load the model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
@@ -166,4 +172,4 @@ selected_images = [feature.float().to(device) for feature in selected_features i
 latent_points = [
     torch.from_numpy(random_myeloblast_point).float().to(device),
     torch.from_numpy(random_neutrophil_banded_point).float().to(device)]
-interpolate_gif_with_gpr(model, "vae_interpolation_latent_space", latent_points)
+interpolate_gif_with_gpr(model, "vae_interpolation_grid_SLERP", latent_points, n=100, grid_size=(10, 10))
