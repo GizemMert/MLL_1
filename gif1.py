@@ -175,9 +175,12 @@ interpolate_gif_gpr("vae_interpolation_gpr", random_myeloblast_point, random_neu
 
 interpolated_latents = interpolate_gpr(random_myeloblast_point, random_neutrophil_banded_point, n_points=100)
 
+combined_data = np.vstack([filtered_latent_data, interpolated_latents])
 # UMAP for latent space
 umap_model = umap.UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean')
-latent_data_umap = umap_model.fit_transform(filtered_latent_data)
+combined_data_umap = umap_model.fit_transform(combined_data)
+interpolated_latents_umap = combined_data_umap[-100:]
+latent_data_umap = combined_data_umap[:-100]
 
 # Now, use the model to transform new data points
 interpolated_latents_umap = umap_model.transform(interpolated_latents)
@@ -186,8 +189,7 @@ fig = plt.figure(figsize=(12, 10), dpi=150)
 gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
 ax = fig.add_subplot(gs[0])
-scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral',
-                     edgecolor=(1, 1, 1, 0.7))
+scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
 
 ax.plot(interpolated_latents_umap[:, 0], interpolated_latents_umap[:, 1], color='white', linestyle='-', linewidth=2)
 ax.set_aspect('equal')
