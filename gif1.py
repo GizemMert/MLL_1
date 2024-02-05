@@ -78,6 +78,8 @@ mask = all_labels_array != erythroblast_class_index
 filtered_latent_data = latent_data[mask]
 print("filtered data shape:", filtered_latent_data.shape)
 filtered_labels = all_labels_array[mask]
+unique_labels = np.unique(filtered_labels)
+print("Unique labels:", unique_labels)
 
 myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
 neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
@@ -103,6 +105,7 @@ def construct_graph(centers_of_mass):
     G = nx.Graph()
     # Add centers of mass as nodes with their labels as identifiers
     for label, center in centers_of_mass.items():
+        print("Adding node for label:", label)  # This can help verify that 'myeloblast' is added
         G.add_node(label, pos=center)
 
     # Compute and add edges based on distances
@@ -117,7 +120,7 @@ def find_shortest_path(graph, start_label, end_label):
     path = nx.dijkstra_path(graph, source=start_label, target=end_label, weight='weight')
     return path
 
-# Assuming latent_dataset and labels are already defined and loaded
+
 centers_of_mass = compute_centers_of_mass(filtered_latent_data, filtered_labels)
 G = construct_graph(centers_of_mass)
 
@@ -125,9 +128,12 @@ G = construct_graph(centers_of_mass)
 start_class_label = 'myeloblast'
 end_class_label = 'neutrophil_banded'
 
-shortest_path_labels = find_shortest_path(G, start_class_label, end_class_label)
+if start_class_label in G and end_class_label in G:
+    shortest_path_labels = find_shortest_path(G, start_class_label, end_class_label)
+else:
+    print(f"One of the labels '{start_class_label}' or '{end_class_label}' does not exist in the graph.")
 
-# Assuming model is already defined, loaded, and set to evaluation mode
+
 def visualize_path(path_labels, centers_of_mass, grid_size=(10, 10)):
     path_latents = np.array([centers_of_mass[label] for label in path_labels])
 
@@ -138,7 +144,7 @@ def visualize_path(path_labels, centers_of_mass, grid_size=(10, 10)):
             decoded_img = model.decoder(z_tensor)
         decoded_images.append(decoded_img.cpu())
 
-    # Adjust the grid size dynamically based on the path length
+
     num_columns = max(len(decoded_images) // grid_size[0], 1)  # Ensure at least 1 column
     grid_size = (grid_size[0], num_columns)
 
