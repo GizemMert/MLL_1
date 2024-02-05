@@ -94,47 +94,41 @@ random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_i
 print("Poin data shape:", random_myeloblast_point.shape)
 
 
-def interpolate_gpr(latent_start, latent_end, n_points=400):
-    # Assuming latent_start and latent_end are NumPy arrays or convertible to such
+def interpolate_gpr(latent_start, latent_end, n_points=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
         latent_end = latent_end.detach().cpu().numpy()
 
     indices = np.array([0, 1]).reshape(-1, 1)
+
+
     latent_vectors = np.vstack([latent_start, latent_end])
 
     kernel = C(1.0, (1e-1, 1e1)) * RBF(1e-1, (1e-1, 1e1))
-    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+
+    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=50)
     gpr.fit(indices, latent_vectors)
 
     index_range = np.linspace(0, 1, n_points).reshape(-1, 1)
+
     interpolated_latent_vectors = gpr.predict(index_range)
 
     return interpolated_latent_vectors
 
 
-def snap_to_nearest(interpolated_latents, latent_dataset):
-    tree = KDTree(latent_dataset)
-    snapped_latents = []
-    for latent in interpolated_latents:
-        dist, ind = tree.query(latent.reshape(1, -1), k=1)
-        snapped_latents.append(latent_dataset[ind[0]])
-    return np.array(snapped_latents)
 
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, latent_dataset, steps=400, grid_size=(20, 20),
+def interpolate_gif_gpr(filename, start_latent, end_latent, latent_dataset, steps=100, grid_size=(10, 10),
                         device='cpu'):
     # Assuming 'model' is defined outside this function and has .eval(), .decoder, .img_decoder methods
 
     model.eval()
     # Compute interpolated latent vectors using GPR
     interpolated_latents = interpolate_gpr(start_latent, end_latent, steps)
-    # Snap interpolated latents to nearest real data points in latent space
-    snapped_latents = snap_to_nearest(interpolated_latents, latent_dataset)
 
     decoded_images = []
-    for z in snapped_latents:
+    for z in interpolated_latents:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
@@ -187,7 +181,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_gpr("vae_interpolation_gpr_knn", start_latent, end_latent, latent_dataset=filtered_latent_data, steps=400, grid_size=(20, 20))
+interpolate_gif_gpr("vae_interpolation_gpr_knn", start_latent, end_latent, latent_dataset=filtered_latent_data, steps=100, grid_size=(10, 10))
 
 
 
