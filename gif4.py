@@ -94,7 +94,7 @@ random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_i
 print("Poin data shape:", random_myeloblast_point.shape)
 
 
-def interpolate_gpr(latent_start, latent_end, n_points=100):
+def interpolate_gpr(latent_start, latent_end, n_points=400):
     # Assuming latent_start and latent_end are NumPy arrays or convertible to such
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
@@ -123,7 +123,7 @@ def snap_to_nearest(interpolated_latents, latent_dataset):
     return np.array(snapped_latents)
 
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, latent_dataset, steps=100, grid_size=(10, 10),
+def interpolate_gif_gpr(filename, start_latent, end_latent, latent_dataset, steps=400, grid_size=(20, 20),
                         device='cpu'):
     # Assuming 'model' is defined outside this function and has .eval(), .decoder, .img_decoder methods
 
@@ -187,7 +187,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_gpr("vae_interpolation_gpr_knn", start_latent, end_latent, latent_dataset=filtered_latent_data, steps=100, grid_size=(10, 10))
+interpolate_gif_gpr("vae_interpolation_gpr_knn", start_latent, end_latent, latent_dataset=filtered_latent_data, steps=400, grid_size=(20, 20))
 
 
 
