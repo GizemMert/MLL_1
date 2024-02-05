@@ -99,116 +99,57 @@ def compute_centers_of_mass(latent_data, labels):
         centers_of_mass[label] = center_of_mass
     return centers_of_mass
 
-
-def construct_graph(centers_of_mass, start_latent, end_latent):
+def construct_graph(centers_of_mass):
     G = nx.Graph()
-    G.add_node('start', pos=start_latent)
-    G.add_node('end', pos=end_latent)
-
-    # Add centers of mass as nodes
+    # Add centers of mass as nodes with their labels as identifiers
     for label, center in centers_of_mass.items():
         G.add_node(label, pos=center)
 
     # Compute and add edges based on distances
-    for node1 in G.nodes:
-        for node2 in G.nodes:
-            if node1 != node2:
-                dist = np.linalg.norm(G.nodes[node1]['pos'] - G.nodes[node2]['pos'])
-                G.add_edge(node1, node2, weight=dist)
-
+    for label1, pos1 in centers_of_mass.items():
+        for label2, pos2 in centers_of_mass.items():
+            if label1 != label2:
+                dist = np.linalg.norm(pos1 - pos2)
+                G.add_edge(label1, label2, weight=dist)
     return G
 
-def find_shortest_path(graph):
-    path = nx.dijkstra_path(graph, source='start', target='end', weight='weight')
+def find_shortest_path(graph, start_label, end_label):
+    path = nx.dijkstra_path(graph, source=start_label, target=end_label, weight='weight')
     return path
 
-def interpolate_gif_dijkstra(filename, start_latent, end_latent, latent_dataset, labels):
-    model.eval()
+# Assuming latent_dataset and labels are already defined and loaded
+centers_of_mass = compute_centers_of_mass(filtered_latent_data, filtered_labels)
+G = construct_graph(centers_of_mass)
 
-    # Compute centers of mass for each class
-    centers_of_mass = compute_centers_of_mass(latent_dataset, labels)
+# Specify the labels for the start and end classes
+start_class_label = 'myeloblast'
+end_class_label = 'neutrophil_banded'
 
-    # Adding start and end latents to the centers of mass
-    centers_of_mass['start'] = start_latent.detach().cpu().numpy()
-    centers_of_mass['end'] = end_latent.detach().cpu().numpy()
+shortest_path_labels = find_shortest_path(G, start_class_label, end_class_label)
 
-    # Construct the graph
-    G = construct_graph(centers_of_mass, start_latent, end_latent)
+# Assuming model is already defined, loaded, and set to evaluation mode
+def visualize_path(path_labels, centers_of_mass, grid_size=(10, 10)):
+    path_latents = np.array([centers_of_mass[label] for label in path_labels])
 
-    # Find the shortest path using Dijkstra's algorithm
-    shortest_path_labels = find_shortest_path(G)
-
-    # For each label in the shortest path, get the corresponding latent vector
-    path_latents = np.array([centers_of_mass[label] for label in shortest_path_labels if label in centers_of_mass])
-
-    num_points = len(path_latents)
-
-    # Desired number of rows, adjust as needed
-    num_rows = 10  # For example
-
-    # Calculate the number of columns needed
-    num_columns = int(np.ceil(num_points / num_rows))
-
-    # Update grid_size based on the number of points
-    grid_size = (num_rows, num_columns)
-
-    # Decode each point along this path to generate images
     decoded_images = []
     for z in path_latents:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
-            decoded_img = model.img_decoder(decoded_img)
         decoded_images.append(decoded_img.cpu())
 
-    # Ensure the decoded images fit into the specified grid size
-    while len(decoded_images) < grid_size[0] * grid_size[1]:
-        decoded_images.append(torch.zeros_like(decoded_images[0]))
-    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
+    # Adjust the grid size dynamically based on the path length
+    num_columns = max(len(decoded_images) // grid_size[0], 1)  # Ensure at least 1 column
+    grid_size = (grid_size[0], num_columns)
 
     # Arrange images in a grid and save
-    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
-    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
-    grid_image = ToPILImage()(grid_image)
-    grid_image.save(filename + '.jpg', quality=95)
-    print("Image saved successfully")
+    tensor_grid = make_grid(decoded_images, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(tensor_grid)
+    filename = "path_visualization.jpg"
+    grid_image.save(filename, quality=95)
+    print(f"Image saved successfully as {filename}")
 
-
-def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
-    feature_1, feature_2 = None, None
-
-    for feature, _, _, labels, _ in dataloader:
-        if feature_1 is not None and feature_2 is not None:
-            break
-
-        for i, label in enumerate(labels):
-            if label.item() == class_1_label and feature_1 is None:
-                feature_1 = feature[i].unsqueeze(0)
-
-            if label.item() == class_2_label and feature_2 is None:
-                feature_2 = feature[i].unsqueeze(0)
-
-    return [feature_1, feature_2]
-
-
-def get_latent_vector(x):
-    distributions = model.encoder(x)
-    mu = distributions[:, :latent_dim]
-    logvar = distributions[:, latent_dim:]
-    z = reparametrize(mu, logvar)
-    return z
-
-
-train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
-
-selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
-
-start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
-
-interpolate_gif_dijkstra("vae_interpolation_COM", start_latent=start_latent, end_latent=end_latent, latent_dataset=filtered_latent_data, labels=filtered_labels)
-
-
+visualize_path(shortest_path_labels, centers_of_mass)
 """
     total_slots = grid_size[0] * grid_size[1]
     while len(decoded_images) < total_slots:
