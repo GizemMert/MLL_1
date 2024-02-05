@@ -206,7 +206,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_dijkstra("vae_interpolation_COM", start_latent, end_latent, latent_dataset=filtered_latent_data, labels=filtered_labels)
+interpolate_gif_dijkstra("vae_interpolation_COM", start_latent=start_latent, end_latent=end_latent, latent_dataset=filtered_latent_data, labels=filtered_labels)
 
 
 """
