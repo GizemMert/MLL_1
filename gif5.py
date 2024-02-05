@@ -95,6 +95,10 @@ def euclidean_distance(point1, point2):
 
 
 def nearest_neighbor_interpolation_with_exemplars(start_point, end_point, latent_points, n_steps=100):
+    if isinstance(start_point, torch.Tensor):
+        start_point = start_point.detach().cpu().numpy()
+    if isinstance(end_point, torch.Tensor):
+        end_point = end_point.detach().cpu().numpy()
 
     tree = KDTree(latent_points)
 
@@ -121,8 +125,9 @@ def generate_image_grid(filename, latent_start, latent_end, latent_dataset, n_st
                         grid_size=(10, 10)):
     model.eval()
 
-
-    interpolated_latents = nearest_neighbor_interpolation_with_exemplars(latent_start, latent_end, latent_dataset,
+    start_latent = latent_start.detach().cpu().numpy()
+    end_latent = latent_end.detach().cpu().numpy()
+    interpolated_latents = nearest_neighbor_interpolation_with_exemplars(start_latent, end_latent, latent_dataset,
                                                                          n_steps)
 
 
