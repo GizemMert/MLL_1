@@ -122,7 +122,7 @@ def find_shortest_path(graph):
     path = nx.dijkstra_path(graph, source='start', target='end', weight='weight')
     return path
 
-def interpolate_gif_dijkstra(filename, start_latent, end_latent, latent_dataset, labels, grid_size=(10, 10)):
+def interpolate_gif_dijkstra(filename, start_latent, end_latent, latent_dataset, labels):
     model.eval()
 
     # Compute centers of mass for each class
@@ -140,6 +140,17 @@ def interpolate_gif_dijkstra(filename, start_latent, end_latent, latent_dataset,
 
     # For each label in the shortest path, get the corresponding latent vector
     path_latents = np.array([centers_of_mass[label] for label in shortest_path_labels if label in centers_of_mass])
+
+    num_points = len(path_latents)
+
+    # Desired number of rows, adjust as needed
+    num_rows = 10  # For example
+
+    # Calculate the number of columns needed
+    num_columns = int(np.ceil(num_points / num_rows))
+
+    # Update grid_size based on the number of points
+    grid_size = (num_rows, num_columns)
 
     # Decode each point along this path to generate images
     decoded_images = []
@@ -195,7 +206,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_dijkstra("vae_interpolation_COM", start_latent, end_latent, latent_dataset=filtered_latent_data, labels=filtered_labels, grid_size=(10,10))
+interpolate_gif_dijkstra("vae_interpolation_COM", start_latent, end_latent, latent_dataset=filtered_latent_data, labels=filtered_labels)
 
 
 """
