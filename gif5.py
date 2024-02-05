@@ -183,6 +183,6 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-generate_image_grid("vae_interpolation_KNN", start_latent, end_latent, latent_dataset=filtered_latent_data,  steps=100, grid_size=(10, 10))
+generate_image_grid("vae_interpolation_KNN", start_latent, end_latent, latent_dataset=filtered_latent_data,  n_steps=100, grid_size=(10, 10))
 
 
