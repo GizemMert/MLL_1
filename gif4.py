@@ -193,7 +193,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_gpr("vae_interpolation_gpr", random_myeloblast_point, random_basophil_point, steps=100, grid_size=(10, 10))
+interpolate_gif_gpr("vae_interpolation_gpr_BAS", random_myeloblast_point, random_basophil_point, steps=100, grid_size=(10, 10))
 
 
 
