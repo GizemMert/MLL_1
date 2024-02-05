@@ -133,7 +133,7 @@ def interpolate_gif_dijkstra(filename, start_latent, end_latent, latent_dataset,
     centers_of_mass['end'] = end_latent.detach().cpu().numpy()
 
     # Construct the graph
-    G = construct_graph(centers_of_mass)
+    G = construct_graph(centers_of_mass, start_latent, end_latent)
 
     # Find the shortest path using Dijkstra's algorithm
     shortest_path_labels = find_shortest_path(G, 'start', 'end')
