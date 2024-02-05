@@ -89,7 +89,7 @@ basophil_indices = np.where(filtered_labels == label_map['basophil'])[0]
 eosinophil_indices = np.where(filtered_labels == label_map['eosinophil'])[0]
 monocyte_indices = np.where(filtered_labels == label_map['monocyte'])[0]
 
-np.random.seed(98)
+np.random.seed(10)
 random_myeloblast_index = np.random.choice(myeloblast_indices)
 random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
 random_neutrophil_seg_index = np.random.choice(neutrophil_seg_indices)
