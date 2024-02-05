@@ -1,8 +1,6 @@
 import os
 
 from scipy.spatial import KDTree
-
-os.environ['PYDEVD_USE_CYTHON'] = 'NO'
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from PIL import Image
@@ -97,24 +95,23 @@ def euclidean_distance(point1, point2):
 
 
 def nearest_neighbor_interpolation_with_exemplars(start_point, end_point, latent_points, n_steps=100):
-    # Create a KDTree for efficient nearest neighbor searches
+
     tree = KDTree(latent_points)
 
-    # Generate linear interpolation steps in latent space
+
     linear_steps = np.linspace(start_point, end_point, n_steps)
 
-    # Initialize the path with the start point
+
     path = [start_point]
 
-    for step in linear_steps[1:-1]:  # Exclude the very first and last since we already have start and end
-        # Use the KDTree to find the nearest neighbor in the latent space
+    for step in linear_steps[1:-1]:
         _, nearest_index = tree.query(step)
         nearest_point = latent_points[nearest_index]
 
-        # Add this nearest point to the path
+
         path.append(nearest_point)
 
-    # Ensure the end point is included in the path
+
     path.append(end_point)
 
     return np.array(path)
@@ -122,29 +119,28 @@ def nearest_neighbor_interpolation_with_exemplars(start_point, end_point, latent
 
 def generate_image_grid(filename, latent_start, latent_end, latent_dataset, model, device, n_steps=100,
                         grid_size=(10, 10)):
-    model.eval()  # Set the model to evaluation mode
+    model.eval()
 
-    # Perform nearest neighbor interpolation in latent space
+
     interpolated_latents = nearest_neighbor_interpolation_with_exemplars(latent_start, latent_end, latent_dataset,
                                                                          n_steps)
 
-    # Prepare a batch for the model
+
     latent_tensors = torch.tensor(interpolated_latents).float().to(device)
 
-    # Decode the latents to images in batches if possible
+
     with torch.no_grad():
-        # Assuming model.decoder() can handle batch inputs
+
         decoded_images = model.decoder(latent_tensors).cpu()
         decoded_images = model.img_decoder(decoded_images) if hasattr(model, 'img_decoder') else decoded_images
 
 
-    # Adjust the number of images to fit the grid size, if necessary
     if len(decoded_images) < grid_size[0] * grid_size[1]:
         additional_images = torch.zeros((grid_size[0] * grid_size[1] - len(decoded_images), *decoded_images.shape[1:]),
                                         device='cpu')
         decoded_images = torch.cat([decoded_images, additional_images], dim=0)
 
-    # Trim the list to match the grid size exactly
+
     decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
     # Arrange images in a grid
