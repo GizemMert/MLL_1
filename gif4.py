@@ -106,7 +106,7 @@ random_monocyte_point = filtered_latent_data[random_monocyte_index]
 print("Poin data shape:", random_myeloblast_point.shape)
 
 
-def interpolate_gpr(latent_start, latent_end, n_points=200):
+def interpolate_gpr(latent_start, latent_end, n_points=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
@@ -131,13 +131,16 @@ def interpolate_gpr(latent_start, latent_end, n_points=200):
 
 
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, steps=200, grid_size=(20, 10),
+def interpolate_gif_gpr(filename, latent_1, latent_2, latent_3, steps=100, grid_size=(20, 10),
                         device='cpu'):
 
 
     model.eval()
     # Compute interpolated latent vectors using GPR
-    interpolated_latents = interpolate_gpr(start_latent, end_latent, steps)
+    interpolated_latent_1 = interpolate_gpr(latent_1, latent_2, steps)
+    interpolated_latent_2 = interpolate_gpr(latent_2, latent_3, steps)
+
+    interpolated_latents = np.vstack((interpolated_latent_1[:-1], interpolated_latent_2))
 
     decoded_images = []
     for z in interpolated_latents:
@@ -193,7 +196,8 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_gpr("vae_interpolation_gpr_MONO", random_myeloblast_point, random_monocyte_point, steps=200, grid_size=(20, 10))
+interpolate_gif_gpr("vae_interpolation_gpr_MONO", random_myeloblast_point, random_neutrophil_banded_point,
+                    random_neutrophil_seg_point, steps=100, grid_size=(20, 10))
 
 
 
