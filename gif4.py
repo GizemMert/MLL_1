@@ -119,7 +119,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
 
 
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, latent_dataset, steps=100, grid_size=(10, 10),
+def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100, grid_size=(10, 10),
                         device='cpu'):
     # Assuming 'model' is defined outside this function and has .eval(), .decoder, .img_decoder methods
 
@@ -181,7 +181,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_gpr("vae_interpolation_gpr", start_latent, end_latent, latent_dataset=filtered_latent_data, steps=100, grid_size=(10, 10))
+interpolate_gif_gpr("vae_interpolation_gpr", random_myeloblast_point, random_neutrophil_banded_point, steps=100, grid_size=(10, 10))
 
 
 
