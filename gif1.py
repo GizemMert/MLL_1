@@ -125,13 +125,14 @@ centers_of_mass = compute_centers_of_mass(filtered_latent_data, filtered_labels)
 G = construct_graph(centers_of_mass)
 
 # Specify the labels for the start and end classes
-start_class_label = 'myeloblast'
-end_class_label = 'neutrophil_banded'
+start_class_label = label_map['myeloblast']  # This will be 3
+end_class_label = label_map['neutrophil_banded']  # This will be 7
 
-if start_class_label in G and end_class_label in G:
+# Then, call find_shortest_path with these numeric labels
+if start_class_label in G.nodes and end_class_label in G.nodes:
     shortest_path_labels = find_shortest_path(G, start_class_label, end_class_label)
 else:
-    print(f"One of the labels '{start_class_label}' or '{end_class_label}' does not exist in the graph.")
+    print(f"One of the labels {start_class_label} or {end_class_label} does not exist in the graph.")
 
 
 def visualize_path(path_labels, centers_of_mass, grid_size=(10, 10)):
