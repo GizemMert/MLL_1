@@ -1,3 +1,4 @@
+import networkx as nx
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from PIL import Image
@@ -9,6 +10,7 @@ from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 from torchvision.transforms import ToPILImage
 import geomstats.backend as gs
+import networkx as nx
 import torch
 import numpy as np
 import cv2
@@ -88,55 +90,112 @@ random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
 print("Poin data shape:", random_myeloblast_point.shape)
 
-def interpolate_gpr(latent_start, latent_end, n_points=100):
-    if isinstance(latent_start, torch.Tensor):
-        latent_start = latent_start.detach().cpu().numpy()
-    if isinstance(latent_end, torch.Tensor):
-        latent_end = latent_end.detach().cpu().numpy()
+def compute_centers_of_mass(latent_data, labels):
+    unique_labels = np.unique(labels)
+    centers_of_mass = {}
+    for label in unique_labels:
+        class_points = latent_data[labels == label]
+        center_of_mass = np.mean(class_points, axis=0)
+        centers_of_mass[label] = center_of_mass
+    return centers_of_mass
 
-    indices = np.array([0, 1]).reshape(-1, 1)
 
+def construct_graph(centers_of_mass, start_latent, end_latent):
+    G = nx.Graph()
+    G.add_node('start', pos=start_latent)
+    G.add_node('end', pos=end_latent)
 
-    latent_vectors = np.vstack([latent_start, latent_end])
+    # Add centers of mass as nodes
+    for label, center in centers_of_mass.items():
+        G.add_node(label, pos=center)
 
-    kernel = C(1.0, (1e-1, 1e1)) * RBF(1e-1, (1e-1, 1e1))
+    # Compute and add edges based on distances
+    for node1 in G.nodes:
+        for node2 in G.nodes:
+            if node1 != node2:
+                dist = np.linalg.norm(G.nodes[node1]['pos'] - G.nodes[node2]['pos'])
+                G.add_edge(node1, node2, weight=dist)
 
-    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
-    gpr.fit(indices, latent_vectors)
+    return G
 
-    index_range = np.linspace(0, 1, n_points).reshape(-1, 1)
+def find_shortest_path(graph):
+    path = nx.dijkstra_path(graph, source='start', target='end', weight='weight')
+    return path
 
-    interpolated_latent_vectors = gpr.predict(index_range)
+def interpolate_gif_dijkstra(filename, start_latent, end_latent, latent_dataset, labels, grid_size=(10, 10)):
+    model.eval()
 
-    return interpolated_latent_vectors
+    # Compute centers of mass for each class
+    centers_of_mass = compute_centers_of_mass(latent_dataset, labels)
 
-def interpolate_gif_gpr(filename, start_latent, end_latent, steps=100):
-    model.eval()  # Ensure the model is in evaluation mode
+    # Adding start and end latents to the centers of mass
+    centers_of_mass['start'] = start_latent.detach().cpu().numpy()
+    centers_of_mass['end'] = end_latent.detach().cpu().numpy()
 
-    # Compute interpolated latent vectors using GPR
-    interpolated_latents = interpolate_gpr(start_latent, end_latent, steps)
+    # Construct the graph
+    G = construct_graph(centers_of_mass)
 
-    images_list = []
-    for z in interpolated_latents:
+    # Find the shortest path using Dijkstra's algorithm
+    shortest_path_labels = find_shortest_path(G, 'start', 'end')
+
+    # For each label in the shortest path, get the corresponding latent vector
+    path_latents = np.array([centers_of_mass[label] for label in shortest_path_labels if label in centers_of_mass])
+
+    # Decode each point along this path to generate images
+    decoded_images = []
+    for z in path_latents:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
             decoded_img = model.img_decoder(decoded_img)
-            img = decoded_img.cpu().squeeze(0).permute(1, 2, 0).numpy()
-            img = np.clip(img * 255, 0, 255).astype(np.uint8)
-            images_list.append(Image.fromarray(img))
+        decoded_images.append(decoded_img.cpu())
 
-    # Save the sequence of images as a GIF (outside the loop)
-    images_list[0].save(
-        f'{filename}.gif',
-        save_all=True,
-        append_images=images_list[1:],
-        loop=0,
-        duration=100  # Duration between frames in milliseconds
-    )
-    print("GIF saved successfully")
+    # Ensure the decoded images fit into the specified grid size
+    while len(decoded_images) < grid_size[0] * grid_size[1]:
+        decoded_images.append(torch.zeros_like(decoded_images[0]))
+    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
-interpolate_gif_gpr("vae_interpolation_gpr_gif", random_myeloblast_point, random_neutrophil_banded_point, steps=100)
+    # Arrange images in a grid and save
+    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
+    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(grid_image)
+    grid_image.save(filename + '.jpg', quality=95)
+    print("Image saved successfully")
+
+
+def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
+    feature_1, feature_2 = None, None
+
+    for feature, _, _, labels, _ in dataloader:
+        if feature_1 is not None and feature_2 is not None:
+            break
+
+        for i, label in enumerate(labels):
+            if label.item() == class_1_label and feature_1 is None:
+                feature_1 = feature[i].unsqueeze(0)
+
+            if label.item() == class_2_label and feature_2 is None:
+                feature_2 = feature[i].unsqueeze(0)
+
+    return [feature_1, feature_2]
+
+
+def get_latent_vector(x):
+    distributions = model.encoder(x)
+    mu = distributions[:, :latent_dim]
+    logvar = distributions[:, latent_dim:]
+    z = reparametrize(mu, logvar)
+    return z
+
+
+train_dataset = Dataloader(split='train')
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
+
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
+
+start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
+
+interpolate_gif_dijkstra("vae_interpolation_COM", start_latent, end_latent, latent_dataset=filtered_latent_data, labels=filtered_labels, grid_size=(10,10))
 
 
 """
@@ -188,7 +247,7 @@ start_latent, end_latent = [get_latent_vector(feature.float().to(device),) for f
 
 interpolate_gif_gpr("vae_interpolation_gpr", random_myeloblast_point, random_neutrophil_banded_point, steps=100, grid_size=(10, 10))
 
-"""
+
 interpolated_latents = interpolate_gpr(random_myeloblast_point, random_neutrophil_banded_point, n_points=100)
 
 combined_data = np.vstack([filtered_latent_data, interpolated_latents])
@@ -257,7 +316,7 @@ plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
 print("umap_path is saved")
 plt.close(fig)
 
-"""
+
 plt.hist(latent_data_reshaped.flatten(), bins=30, density=True, alpha=0.6, color='g')
 plt.title("Histogram of Latent Data")
 plt.savefig("latent_data_histogram.png")  # Save histogram
