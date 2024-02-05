@@ -148,6 +148,14 @@ def visualize_path(path_labels, centers_of_mass, grid_size=(10, 10)):
             print(decoded_img.shape)
         decoded_images.append(decoded_img.cpu())
 
+    desired_shape = (1, 3, 128, 128)  # The desired shape
+
+    # Check and modify tensors in decoded_images
+    for i in range(len(decoded_images)):
+        if decoded_images[i].shape != desired_shape:
+            # If the shape is not as desired, reshape or resize it
+            decoded_images[i] = torch.nn.functional.interpolate(decoded_images[i], size=(128, 128), mode='bilinear',
+                                                                align_corners=False)
 
     num_columns = max(len(decoded_images) // grid_size[0], 1)  # Ensure at least 1 column
     grid_size = (grid_size[0], num_columns)
