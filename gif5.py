@@ -117,7 +117,7 @@ def nearest_neighbor_interpolation_with_exemplars(start_point, end_point, latent
     return np.array(path)
 
 
-def generate_image_grid(filename, latent_start, latent_end, latent_dataset, model, device, n_steps=100,
+def generate_image_grid(filename, latent_start, latent_end, latent_dataset, n_steps=100,
                         grid_size=(10, 10)):
     model.eval()
 
@@ -183,6 +183,6 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-generate_image_grid("vae_interpolation_KNN", start_latent, end_latent, latent_dataset=filtered_latent_data,  n_steps=100, grid_size=(10, 10))
+generate_image_grid("vae_interpolation_KNN", start_latent, end_latent, latent_dataset=filtered_latent_data, n_steps=100, grid_size=(10, 10))
 
 
