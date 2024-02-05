@@ -189,7 +189,7 @@ def get_latent_vector(x):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'])
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['monocyte'])
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
