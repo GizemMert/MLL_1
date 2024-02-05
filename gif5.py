@@ -94,7 +94,7 @@ def euclidean_distance(point1, point2):
     return np.sqrt(np.sum((point1 - point2) ** 2))
 
 
-def nearest_neighbor_interpolation_with_exemplars(start_point, end_point, latent_points, n_steps=100):
+def nearest_neighbor_interpolation_with_exemplars(start_point, end_point, latent_points, n_steps=200):
     if isinstance(start_point, torch.Tensor):
         start_point = start_point.detach().cpu().numpy()
     if isinstance(end_point, torch.Tensor):
@@ -121,8 +121,8 @@ def nearest_neighbor_interpolation_with_exemplars(start_point, end_point, latent
     return np.array(path)
 
 
-def generate_image_grid(filename, latent_start, latent_end, latent_dataset, n_steps=100,
-                        grid_size=(10, 10)):
+def generate_image_grid(filename, latent_start, latent_end, latent_dataset, n_steps=400,
+                        grid_size=(20, 20)):
     model.eval()
 
     start_latent = latent_start.detach().cpu().numpy()
@@ -188,6 +188,6 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-generate_image_grid("vae_interpolation_KNN", start_latent, end_latent, latent_dataset=filtered_latent_data, n_steps=100, grid_size=(10, 10))
+generate_image_grid("vae_interpolation_KNN", start_latent, end_latent, latent_dataset=filtered_latent_data, n_steps=400, grid_size=(20, 20))
 
 
