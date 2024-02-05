@@ -144,7 +144,7 @@ def visualize_path(path_labels, centers_of_mass, grid_size=(10, 10)):
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
             decoded_img = model.img_decoder(decoded_img)
-            decoded_img = decoded_img.permute(0, 2, 3, 1)
+            # decoded_img = decoded_img.permute(0, 2, 3, 1)
             print(decoded_img.shape)
         decoded_images.append(decoded_img.cpu())
 
