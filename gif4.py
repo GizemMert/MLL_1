@@ -119,7 +119,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
 
     kernel = C(1.0, (1e-1, 1e1)) * RBF(1e-1, (1e-1, 1e1))
 
-    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=100)
+    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
     gpr.fit(indices, latent_vectors)
 
     index_range = np.linspace(0, 1, n_points).reshape(-1, 1)
