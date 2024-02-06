@@ -164,8 +164,8 @@ def interpolate_gif_gpr(filename, latent_1, latent_2, latent_3, steps=100, grid_
 
 
 
-def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
-    feature_1, feature_2 = None, None
+def get_images_from_different_classes(dataloader, class_1_label, class_2_label, class_3_label):
+    feature_1, feature_2, feature_3 = None, None, None
 
     for feature, _, _, labels, _ in dataloader:
         if feature_1 is not None and feature_2 is not None:
@@ -178,7 +178,10 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
             if label.item() == class_2_label and feature_2 is None:
                 feature_2 = feature[i].unsqueeze(0)
 
-    return [feature_1, feature_2]
+            if label.item() == class_3_label and feature_3 is None:
+                feature_3 = feature[i].unsqueeze(0)
+
+    return [feature_1, feature_2, feature_3]
 
 
 def get_latent_vector(x):
@@ -192,12 +195,11 @@ def get_latent_vector(x):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['monocyte'])
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'], label_map['neutrophil_segmented'])
 
-start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
+start_latent, middle_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 
-interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_myeloblast_point, random_neutrophil_banded_point,
-                    random_neutrophil_seg_point, steps=100, grid_size=(20, 10))
+interpolate_gif_gpr("vae_interpolation_gpr_NEU", start_latent, middle_latent, end_latent, steps=100, grid_size=(20, 10))
 
 
 
