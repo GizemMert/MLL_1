@@ -98,72 +98,59 @@ if __name__ == '__main__':
     latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
         filtered_latent_data)
 
-    myeloblast_umap_points = latent_data_umap[filtered_labels == label_map['myeloblast']]
-    neutrophil_banded_umap_points = latent_data_umap[filtered_labels == label_map['neutrophil_banded']]
-
-    random_myeloblast_point = myeloblast_umap_points[np.random.choice(myeloblast_umap_points.shape[0])]
-    random_neutrophil_banded_point = neutrophil_banded_umap_points[
-        np.random.choice(neutrophil_banded_umap_points.shape[0])]
-
-    reshaped_myeloblast_point = random_myeloblast_point.reshape(1, 2)
-    reshaped_neutrophil_banded_point = random_neutrophil_banded_point.reshape(1, 2)
-
-    """
     fig = plt.figure(figsize=(12, 10), dpi=150)
-    ax = fig.add_subplot(111)
-    # scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
-    cc = gs.zeros((20, 3))
-    cc[:, 2] = gs.linspace(0, 1, 20)
-    print("Random Myeloblast Point:", random_myeloblast_point)
-    print("Type of Random Myeloblast Point:", type(random_myeloblast_point))
-    print("Shape of Random Myeloblast Point:", random_myeloblast_point.shape)
+    gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
-    print("Random Neutrophil Banded Point:", random_neutrophil_banded_point)
-    print("Type of Random Neutrophil Banded Point:", type(random_neutrophil_banded_point))
-    print("Shape of Random Neutrophil Banded Point:", random_neutrophil_banded_point.shape)
+    ax = fig.add_subplot(gs[0])
+    scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral',
+                         edgecolor=(1, 1, 1, 0.7))
+    ax.set_aspect('equal')
 
-    if random_myeloblast_point is not None and random_neutrophil_banded_point is not None:
-        if not (np.isnan(random_myeloblast_point).any() or np.isnan(random_neutrophil_banded_point).any()):
-            if random_myeloblast_point.shape == (2,) and random_neutrophil_banded_point.shape == (2,):
-                t = np.linspace(0, 1, 50)
-                geod = beta.metric.geodesic(initial_point=random_myeloblast_point,
-                                            end_point=random_neutrophil_banded_point)(t)
-                points_x = geod[:, 0]
-                points_y = geod[:, 1]
-                ax.scatter(points_x, points_y, s=50, c='black', marker='o')
+    x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
+    y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
 
-                # Print the geodesic points
-                print("Geodesic points:")
-                print(geod)
-            else:
-                print("The shape of one or both points is incorrect.")
-        else:
-            print("One of the points contains NaN values.")
-    else:
-        print("One of the points is None.")
+    zoom_factor = 0.40  # Smaller values mean more zoom
+    padding_factor = 0.3  # Adjust padding around the zoomed area
 
-    x_min, x_max = latent_data_umap[:, 0].min(), latent_data_umap[:, 0].max()
-    y_min, y_max = latent_data_umap[:, 1].min(), latent_data_umap[:, 1].max()
+    # Calculate the range for zooming in based on the zoom factor
+    x_range = (x_max - x_min) * zoom_factor
+    y_range = (y_max - y_min) * zoom_factor
 
-    initial_point_color = 'blue'
-    end_point_color = 'orange'
-    ax.scatter(random_myeloblast_point[0], random_myeloblast_point[1], s=100, c=initial_point_color, marker='o',
-               label='Myeloblast')
-    ax.scatter(random_neutrophil_banded_point[0], random_neutrophil_banded_point[1], s=100, c=end_point_color,
-               marker='o', label='Neutrophil Banded')
+    # Calculate the center of the data
+    center_x = (x_max + x_min) / 2
+    center_y = (y_max + y_min) / 2
 
-    # Create a custom legend
-    initial_patch = mpatches.Patch(color=initial_point_color, label='Myeloblast')
-    end_patch = mpatches.Patch(color=end_point_color, label='Neutrophil Banded')
-    ax.legend(handles=[initial_patch, end_patch])
-    ax.set_xlim(x_min, x_max)
-    ax.set_ylim(y_min, y_max)
-    ax.set_title(f'Geodesic Plot - (Epoch {epoch})', fontsize=18)
-    ax.set_xlabel('UMAP Dimension 1', fontsize=14)
-    ax.set_ylabel('UMAP Dimension 2', fontsize=14)
-    umap_figure_filename = os.path.join(umap_dir, f'geodesic_plot.png_{epoch}.png')
+    # Calculate new limits around the center of the data
+    new_x_min = center_x - (x_range * (1 + padding_factor))
+    new_x_max = center_x + (x_range * (1 + padding_factor))
+    new_y_min = center_y - (y_range * (1 + padding_factor))
+    new_y_max = center_y + (y_range * (1 + padding_factor))
+
+    # Apply the new limits to zoom in on the plot
+    ax.set_xlim(new_x_min, new_x_max)
+    ax.set_ylim(new_y_min, new_y_max)
+
+    ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+    ax.set_xlabel('UMAP Dimension 1', fontsize=16)
+    ax.set_ylabel('UMAP Dimension 2', fontsize=16)
+
+    # Second subplot for the legend
+    ax_legend = fig.add_subplot(gs[1])
+    ax_legend.axis('off')  # Turn off the axis for the legend subplot
+
+    unique_filtered_labels = np.unique(filtered_labels)
+    filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+    color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+
+    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                                 markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
+
+    ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
+
+    plt.tight_layout()
+    umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
     plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
-    plt.close()
+    plt.close(fig)
 
 """
 
@@ -182,3 +169,4 @@ if __name__ == '__main__':
     pdf_figure_filename = os.path.join(pdf_dir, f'pdf_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
     plt.close(fig)
+"""
