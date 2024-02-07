@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     ax = fig.add_subplot(gs[0])
     scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral',
-                         edgecolor=(1, 1, 1, 0.7))
+                         )
     ax.set_aspect('equal')
 
     x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
