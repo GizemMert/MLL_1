@@ -9,7 +9,7 @@ from PIL import Image
 import torch
 import numpy as np
 from model4 import VariationalAutoencodermodel4, reparametrize
-from Dataloader_2 import Dataloader
+from Dataloader_4 import Dataloader
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 from torchvision.transforms import ToPILImage
