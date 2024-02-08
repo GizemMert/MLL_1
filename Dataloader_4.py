@@ -86,9 +86,7 @@ class Dataloader(Dataset):
         random.shuffle(data_keys)
         self.data = list(set(self.samples.keys()) & set(self.images.keys()))
 
-        print("Image shapes:")
-        for key, img in self.images.items():
-            print(f"{key}: {img.shape}")
+        print("Total number of samples:", len(self.data))
 
     def __len__(self):
         if self.split == 'train':
