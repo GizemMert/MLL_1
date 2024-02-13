@@ -44,6 +44,7 @@ class VAE_GE(nn.Module):
         )
 
 
+
     def forward(self, x):
         distributions = self.encoder(x)
         mu = distributions[:, :self.latent_dim]
