@@ -8,7 +8,7 @@ from umap import UMAP
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from Model_Vae_GE import VAE_GE
+from Model_Vae_GE_2 import VAE_GE
 
 # Load data
 adata = anndata.read_h5ad('sdata_d.h5ad')
