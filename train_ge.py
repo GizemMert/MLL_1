@@ -13,6 +13,7 @@ from Model_Vae_GE import VAE_GE
 adata = anndata.read_h5ad('sdata_d.h5ad')
 X = adata.layers["scran_normalization"]  # normalized gene expression matrix
 
+
 label_mapping = {label: index for index, label in enumerate(adata.obs['cell_ontology_class'].cat.categories)}
 numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
@@ -39,7 +40,8 @@ class GeneExpressionDataset(Dataset):
 
 
 # Convert to PyTorch tensors
-X_tensor = torch.tensor(X, dtype=torch.float32)
+X_dense = X.toarray()  # Convert sparse matrix to dense
+X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
 
 # Initialize dataset
