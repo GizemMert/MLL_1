@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from sklearn.decomposition import PCA
 from torch.optim import Adam
 from torch.utils.data import DataLoader, TensorDataset
 import anndata
@@ -143,8 +144,12 @@ for epoch in range(epochs):
         all_labels_array = np.array(all_labels)
         print("Labels array shape:", all_labels_array.shape)
 
-        latent_data_umap = UMAP(n_neighbors=3, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-            latent_data_reshaped)
+
+        pca = PCA(n_components=40).fit(latent_data_reshaped)
+        latent_data_pca = pca.transform(latent_data_reshaped)
+
+        # Now applying UMAP on PCA-transformed data
+        latent_data_umap = UMAP(n_neighbors=10, min_dist=0.1, n_components=2).fit_transform(latent_data_pca)
 
         plt.figure(figsize=(12, 10), dpi=150)
         scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
