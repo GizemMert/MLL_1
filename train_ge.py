@@ -9,7 +9,6 @@ import numpy as np
 import os
 from Model_Vae_GE import VAE_GE
 
-
 # Load data
 adata = anndata.read_h5ad('sdata_d.h5ad')
 X = adata.layers["scran_normalization"]  # normalized gene expression matrix
