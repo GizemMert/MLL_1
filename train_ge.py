@@ -142,7 +142,7 @@ for epoch in range(epochs):
         all_labels_array = np.array(all_labels)
         print("Labels array shape:", all_labels_array.shape)
 
-        latent_data_umap = UMAP(n_neighbors=3, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
             latent_data_reshaped)
 
         plt.figure(figsize=(12, 10), dpi=150)
