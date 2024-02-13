@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from Model_Vae_GE_2 import VAE_GE
+import scanpy as sc
 
 # Load data
 adata = anndata.read_h5ad('sdata_d.h5ad')
+sc.pp.combat(adata, key='donor')
 X = adata.layers["scran_normalization"]  # normalized gene expression matrix
 
 
