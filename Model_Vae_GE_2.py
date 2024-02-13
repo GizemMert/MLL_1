@@ -40,7 +40,7 @@ class VAE_GE(nn.Module):
             nn.BatchNorm1d(1024),
             nn.ReLU(),
 
-            nn.Linear(2048, self.input_shape),
+            nn.Linear(1024, self.input_shape),
             nn.Sigmoid()
 
         )
