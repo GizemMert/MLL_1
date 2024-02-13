@@ -20,7 +20,9 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 150
-# Create dataset and dataloader
+beta = 20
+
+
 from torch.utils.data import Dataset
 
 
@@ -103,7 +105,7 @@ for epoch in range(epochs):
 
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
-        train_loss = recon_loss + kl_div_loss
+        train_loss = recon_loss + (beta*kl_div_loss)
 
         # Backward pass
         train_loss.backward()
