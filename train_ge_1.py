@@ -145,7 +145,7 @@ for epoch in range(epochs):
         print("Labels array shape:", all_labels_array.shape)
 
 
-        pca = PCA(n_components=40).fit(latent_data_reshaped)
+        pca = PCA(n_components=30).fit(latent_data_reshaped)
         latent_data_pca = pca.transform(latent_data_reshaped)
 
         # Now applying UMAP on PCA-transformed data
