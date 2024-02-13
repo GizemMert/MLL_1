@@ -151,8 +151,9 @@ for epoch in range(epochs):
         # Now applying UMAP on PCA-transformed data
         latent_data_umap = UMAP(n_neighbors=10, min_dist=0.1, n_components=2).fit_transform(latent_data_pca)
 
+        embedding = UMAP(n_components=2, metric='hellinger').fit_transform(latent_data_reshaped)
         plt.figure(figsize=(12, 10), dpi=150)
-        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], s=1, c=all_labels_array, cmap='Spectral')
 
         color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
         class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
