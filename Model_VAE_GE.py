@@ -4,6 +4,7 @@ from torch import Tensor
 from torch._inductor.ir import View
 from torch.autograd import Variable
 
+
 class VAE_GE(nn.Module):
     def __init__(self, input_shape=None, latent_dim=30):
         super(VAE_GE, self).__init__()
