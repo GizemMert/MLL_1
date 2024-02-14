@@ -108,7 +108,7 @@ if __name__ == '__main__':
         filtered_latent_data)
 
     plt.figure(figsize=(12, 10), dpi=150)
-    scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='plasma')
+    scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=filtered_labels, cmap='plasma')
 
     color_map = plt.cm.plasma(np.linspace(0, 1, len(set(all_labels_array))))
     class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
