@@ -80,7 +80,7 @@ def kl_loss(mu, logvar):
     return kl_loss
 
 def rec_loss(recgen, gen):
-    recon_loss = F.mse_loss(recgen, gen, reduction='sum').div(batch_size)
+    recon_loss = F.mse_loss(recgen, gen, reduction='mean')
     return recon_loss
 
 # Training loop
@@ -172,6 +172,36 @@ for epoch in range(epochs):
         # Save the UMAP figure
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
+
+
+        mae_values = []
+        file_name = "heat_map/"
+
+        if not os.path.exists(file_name):
+            os.makedirs(file_name)
+        for i in range(50):
+            for i, (gen, label) in enumerate(dataloader):
+                gen = np.expand_dims(gen.numpy(),
+                                     axis=0)
+                gen = torch.tensor(gen).to(device)
+
+            _, recgen, _, _ = model(gen)
+            recgen = recgen.data.cpu().numpy()
+            recgen = np.squeeze(recgen)
+
+            mae = np.mean(np.abs(gen - recgen))
+            mae_values.append(mae)
+
+            if epoch % 10 == 0:
+                plt.figure(figsize=(20, 5))
+                plt.imshow([mae_values], cmap='hot', aspect='auto')
+                plt.colorbar(label='MAE')
+                plt.xlabel('Samples')
+                plt.ylabel('MAE')
+                plt.title(f'Mean Absolute Error (MAE) Heatmap at Epoch {epoch}')
+
+                plt.savefig(os.path.join(file_name, f"heatmap-epoch-{epoch}.jpg"))
+                plt.close()
 
 script_dir = os.path.dirname(__file__)
 
