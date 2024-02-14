@@ -185,9 +185,9 @@ for epoch in range(epochs):
                 gen = gen.float().to(device)
 
             _, recgen, _, _ = model(gen)
-            recgen = recgen.detach().cpu().numpy()
-            gen = gen.detach().cpu().numpy()
-            mae = np.mean(np.abs(gen - recgen), axis=1)
+            recgen = recgen.data.cpu().numpy()
+            gen = gen.cpu().numpy()
+            mae = np.mean(np.abs(gen - recgen))
             mae_values.append(mae)
 
             if epoch % 10 == 0:
