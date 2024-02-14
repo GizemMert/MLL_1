@@ -33,18 +33,11 @@ beta_p = Beta()
 
 label_map = {
     'basophil': 0,
-    'eosinophil': 1,
-    'erythroblast': 2,
-    'myeloblast': 3,
-    'promyelocyte': 4,
-    'myelocyte': 5,
-    'metamyelocyte': 6,
+
     'neutrophil_banded': 7,
     'neutrophil_segmented': 8,
     'monocyte': 9,
-    'lymphocyte_typical': 10,
-    'lymphocyte_atypical': 11,
-    'smudge_cell': 12,
+
 }
 
 if __name__ == '__main__':
