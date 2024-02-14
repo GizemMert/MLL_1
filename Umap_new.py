@@ -88,69 +88,43 @@ if __name__ == '__main__':
 
     # print("Labels array shape:", all_labels_array.shape)
 
-    # Filter out the 'erythroblast' class
-    erythroblast_class_index = label_map['erythroblast']
-    mask = all_labels_array != erythroblast_class_index
+    neutrophil_index = label_map['neutrophil']
+    basophil_index = label_map['basophil']
+    monocyte_index = label_map['monocyte']
+
+    # Create a mask for selecting only the desired classes
+    mask = (all_labels_array == neutrophil_index) | \
+           (all_labels_array == basophil_index) | \
+           (all_labels_array == monocyte_index)
+
+    # Apply the mask to filter both latent data and labels
     filtered_latent_data = latent_data_reshaped[mask]
     filtered_labels = all_labels_array[mask]
 
     # UMAP for latent space
     latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-        filtered_latent_data)
+        latent_data_reshaped)
 
-    fig = plt.figure(figsize=(12, 10), dpi=150)
-    gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
+    plt.figure(figsize=(12, 10), dpi=150)
+    scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='plasma')
 
-    ax = fig.add_subplot(gs[0])
-    scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral',
-                         )
-    ax.set_aspect('equal')
+    color_map = plt.cm.plasma(np.linspace(0, 1, len(set(all_labels_array))))
+    class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
 
-    x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
-    y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
+    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
+                                 markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+    plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
 
-    zoom_factor = 0.40  # Smaller values mean more zoom
-    padding_factor = 0.3  # Adjust padding around the zoomed area
+    plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+    plt.xlabel('UMAP Dimension 1', fontsize=14)
+    plt.ylabel('UMAP Dimension 2', fontsize=14)
 
-    # Calculate the range for zooming in based on the zoom factor
-    x_range = (x_max - x_min) * zoom_factor
-    y_range = (y_max - y_min) * zoom_factor
-
-    # Calculate the center of the data
-    center_x = (x_max + x_min) / 2
-    center_y = (y_max + y_min) / 2
-
-    # Calculate new limits around the center of the data
-    new_x_min = center_x - (x_range * (1 + padding_factor))
-    new_x_max = center_x + (x_range * (1 + padding_factor))
-    new_y_min = center_y - (y_range * (1 + padding_factor))
-    new_y_max = center_y + (y_range * (1 + padding_factor))
-
-    # Apply the new limits to zoom in on the plot
-    ax.set_xlim(new_x_min, new_x_max)
-    ax.set_ylim(new_y_min, new_y_max)
-
-    ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
-    ax.set_xlabel('UMAP Dimension 1', fontsize=16)
-    ax.set_ylabel('UMAP Dimension 2', fontsize=16)
-
-    # Second subplot for the legend
-    ax_legend = fig.add_subplot(gs[1])
-    ax_legend.axis('off')  # Turn off the axis for the legend subplot
-
-    unique_filtered_labels = np.unique(filtered_labels)
-    filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
-    color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
-
-    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
-                                 markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
-
-    ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
-
-    plt.tight_layout()
     umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
-    plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
-    plt.close(fig)
+
+    # Save the UMAP figure
+    plt.savefig(umap_figure_filename, dpi=300)
+    print("it is saved")
+    plt.close()
 
 """
 
