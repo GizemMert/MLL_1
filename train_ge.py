@@ -78,9 +78,8 @@ def kl_loss(mu, logvar):
     return kl_loss
 
 def rec_loss(recgen, gen):
-    recon_loss = F.mse_loss(recgen, gen, reduction='sum').div(batch_size)
+    recon_loss = F.mse_loss(recgen, gen, reduction='mean')
     return recon_loss
-
 # Training loop
 
 for epoch in range(epochs):
