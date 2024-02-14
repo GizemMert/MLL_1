@@ -174,6 +174,7 @@ for epoch in range(epochs):
         plt.close()
 
 
+
         mae_values = []
         file_name = "heat_map/"
 
@@ -181,14 +182,11 @@ for epoch in range(epochs):
             os.makedirs(file_name)
         for i in range(50):
             for i, (gen, label) in enumerate(dataloader):
-                gen = np.expand_dims(gen.numpy(),
-                                     axis=0)
-                gen = torch.tensor(gen).to(device)
+                gen = gen.float().to(device)
 
             _, recgen, _, _ = model(gen)
             recgen = recgen.data.cpu().numpy()
-            recgen = np.squeeze(recgen)
-
+            gen = gen.cpu().numpy()
             mae = np.mean(np.abs(gen - recgen))
             mae_values.append(mae)
 
