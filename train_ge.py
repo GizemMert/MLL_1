@@ -173,10 +173,11 @@ for epoch in range(epochs):
         if not os.path.exists(file_name):
             os.makedirs(file_name)
         for i in range(50):
-            for i, (gen, label) in enumerate(dataloader):
-                gen = np.expand_dims(gen.numpy(),
-                                     axis=0)
-                gen = torch.tensor(gen).to(device)
+            gen, label = dataloader[i]
+            gen = np.expand_dims(gen, axis=0)
+            gen = torch.tensor(gen)
+            gen = gen.to(device)
+
 
             _, recgen, _, _ = model(gen)
             recgen = recgen.data.cpu().numpy()
