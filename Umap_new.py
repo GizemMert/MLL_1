@@ -88,12 +88,14 @@ if __name__ == '__main__':
 
     # print("Labels array shape:", all_labels_array.shape)
 
-    neutrophil_index = label_map['neutrophil']
+    neutrophilb_index = label_map['neutrophil_banded']
+    neutrophils_index = label_map['neutrophil_segmented']
     basophil_index = label_map['basophil']
     monocyte_index = label_map['monocyte']
 
     # Create a mask for selecting only the desired classes
-    mask = (all_labels_array == neutrophil_index) | \
+    mask = (all_labels_array == neutrophilb_index) | \
+           (all_labels_array == neutrophils_index) | \
            (all_labels_array == basophil_index) | \
            (all_labels_array == monocyte_index)
 
