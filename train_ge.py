@@ -46,10 +46,12 @@ X_dense = X.toarray()  # Convert sparse matrix to dense
 X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
 
+torch.manual_seed(42)
 # Initialize dataset
 dataset = GeneExpressionDataset(X_tensor, label_tensor)
 dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
 print("loading done")
+heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -167,31 +169,35 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
 
-        mae_values = []
         file_name = "heat_map/"
 
         if not os.path.exists(file_name):
             os.makedirs(file_name)
-        for i in range(50):
-            for i, (gen, label) in enumerate(dataloader):
-                gen = gen.float().to(device)
 
+        for sample_index, (gen, label) in enumerate(heatmap_dataloader):
+            if sample_index >= 30:
+                break
+
+            gen = gen.to(device)
             _, recgen, _, _ = model(gen)
-            recgen = recgen.data.cpu().numpy()
-            gen = gen.cpu().numpy()
-            mae = np.mean(np.abs(gen - recgen))
-            mae_values.append(mae)
 
-            if epoch % 10 == 0:
-                plt.figure(figsize=(20, 5))
-                plt.imshow([mae_values], cmap='hot', aspect='auto')
-                plt.colorbar(label='MAE')
-                plt.xlabel('Samples')
-                plt.ylabel('MAE')
-                plt.title(f'Mean Absolute Error (MAE) Heatmap at Epoch {epoch}')
+            recgen = recgen.detach().cpu().numpy()
+            gen = gen.detach().cpu().numpy()
 
-                plt.savefig(os.path.join(file_name, f"heatmap-epoch-{epoch}.jpg"))
-                plt.close()
+            mae_per_feature = np.abs(gen.squeeze() - recgen.squeeze())
+
+            # Plotting the 1D heatmap for this sample
+            plt.figure(figsize=(20, 5))
+            heatmap_data = mae_per_feature[np.newaxis, :]
+            plt.imshow(heatmap_data, cmap='hot', aspect='auto')
+            plt.colorbar(label='MAE')
+            plt.xlabel('Features')
+            plt.xticks(range(len(mae_per_feature)), rotation=90)
+            plt.yticks([])
+            plt.title(f'MAE for Sample {sample_index + 1}')
+
+            plt.savefig(os.path.join(file_name, f"heatmap-sample-{sample_index + 1}.jpg"))
+            plt.close()
 
 
 
