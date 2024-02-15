@@ -138,9 +138,45 @@ for epoch in range(epochs):
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, np.concatenate(all_means, axis=0))
 
+    model.eval()
+
+    if epoch % 10 == 0:
+        # Load all latent representations
+        latent_data = np.load(latent_filename)
+        latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+        print(latent_data_reshaped.shape)
+        all_labels_array = np.array(all_labels)
+        print("Labels array shape:", all_labels_array.shape)
+
+
+        pca = PCA(n_components=30).fit(latent_data_reshaped)
+        latent_data_pca = pca.transform(latent_data_reshaped)
+
+        # Now applying UMAP on PCA-transformed data
+        latent_data_umap = UMAP(n_neighbors=10, min_dist=0.1, n_components=2).fit_transform(latent_data_reshaped)
+
+        plt.figure(figsize=(12, 10), dpi=150)
+        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+
+        color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
+        class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
+
+        legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
+                                     markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+        plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
+
+        plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+        plt.xlabel('UMAP Dimension 1', fontsize=14)
+        plt.ylabel('UMAP Dimension 2', fontsize=14)
+
+        umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
+
+        # Save the UMAP figure
+        plt.savefig(umap_figure_filename, dpi=300)
+        plt.close()
 
 model.eval()
-file_name = "heat_map_1/"
+file_name = "heat_map/"
 
 if not os.path.exists(file_name):
     os.makedirs(file_name)
@@ -169,8 +205,6 @@ for sample_index, (gen, label) in enumerate(heatmap_dataloader):
 
     plt.savefig(os.path.join(file_name, f"heatmap-sample-{sample_index + 1}.jpg"))
     plt.close()
-
-
 
 
 
