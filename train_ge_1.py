@@ -176,7 +176,7 @@ for epoch in range(epochs):
         plt.close()
 
 model.eval()
-file_name = "heat_map/"
+file_name = "heat_map_1/"
 
 if not os.path.exists(file_name):
     os.makedirs(file_name)
