@@ -188,7 +188,7 @@ for sample_index, (gen, label) in enumerate(heatmap_dataloader):
     mae_per_feature = np.abs(gen.squeeze() - recgen.squeeze())
 
     # Plotting the 1D heatmap for this sample
-    plt.figure(figsize=(50, 3))
+    plt.figure(figsize=(50, 5))
     heatmap_data = mae_per_feature[np.newaxis, :]
     plt.imshow(heatmap_data, cmap='hot', aspect='auto')
     plt.colorbar(label='MAE')
