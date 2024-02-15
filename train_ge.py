@@ -169,35 +169,36 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
 
-        file_name = "heat_map/"
+model.eval()
+file_name = "heat_map/"
 
-        if not os.path.exists(file_name):
-            os.makedirs(file_name)
+if not os.path.exists(file_name):
+    os.makedirs(file_name)
 
-        for sample_index, (gen, label) in enumerate(heatmap_dataloader):
-            if sample_index >= 30:
-                break
+for sample_index, (gen, label) in enumerate(heatmap_dataloader):
+    if sample_index >= 30:
+        break
 
-            gen = gen.to(device)
-            _, recgen, _, _ = model(gen)
+    gen = gen.to(device)
+    _, recgen, _, _ = model(gen)
 
-            recgen = recgen.detach().cpu().numpy()
-            gen = gen.detach().cpu().numpy()
+    recgen = recgen.detach().cpu().numpy()
+    gen = gen.detach().cpu().numpy()
 
-            mae_per_feature = np.abs(gen.squeeze() - recgen.squeeze())
+    mae_per_feature = np.abs(gen.squeeze() - recgen.squeeze())
 
-            # Plotting the 1D heatmap for this sample
-            plt.figure(figsize=(20, 5))
-            heatmap_data = mae_per_feature[np.newaxis, :]
-            plt.imshow(heatmap_data, cmap='hot', aspect='auto')
-            plt.colorbar(label='MAE')
-            plt.xlabel('Features')
-            plt.xticks(range(len(mae_per_feature)), rotation=90)
-            plt.yticks([])
-            plt.title(f'MAE for Sample {sample_index + 1}')
+    # Plotting the 1D heatmap for this sample
+    plt.figure(figsize=(50, 3))
+    heatmap_data = mae_per_feature[np.newaxis, :]
+    plt.imshow(heatmap_data, cmap='hot', aspect='auto')
+    plt.colorbar(label='MAE')
+    plt.xlabel('Features')
+    plt.xticks(range(len(mae_per_feature)), rotation=90)
+    plt.yticks([])
+    plt.title(f'MAE for Sample {sample_index + 1}')
 
-            plt.savefig(os.path.join(file_name, f"heatmap-sample-{sample_index + 1}.jpg"))
-            plt.close()
+    plt.savefig(os.path.join(file_name, f"heatmap-sample-{sample_index + 1}.jpg"))
+    plt.close()
 
 
 
