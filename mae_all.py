@@ -12,6 +12,8 @@ from Model_Vae_GE import VAE_GE
 # Load data
 adata = anndata.read_h5ad('sdata_d.h5ad')
 X = adata.layers["scran_normalization"]  # normalized gene expression matrix
+print("Maximum value in X:", X.max())
+print("Minimum value in X:", X.min())
 
 
 label_mapping = {label: index for index, label in enumerate(adata.obs['cell_ontology_class'].cat.categories)}
