@@ -20,7 +20,7 @@ numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
-epochs = 150
+epochs = 160
 beta = 1
 
 
