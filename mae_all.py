@@ -89,8 +89,8 @@ average_mae = accumulated_mae / total_samples
 # Plotting the averaged 1D heatmap for all samples
 plt.figure(figsize=(50, 5))
 heatmap_data = average_mae[np.newaxis, :]
-plt.imshow(heatmap_data, cmap='hot', aspect='auto')
-plt.colorbar(label='MAE')
+im = plt.imshow(heatmap_data, cmap='hot', aspect='auto')
+cbar = plt.colorbar(im, label='MAE', fraction=0.05, pad=0.04)
 plt.xlabel('Features')
 plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)),
            rotation=90)
