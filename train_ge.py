@@ -94,9 +94,10 @@ def embedding_loss(z, scvi_embedding):
 # Training loop
 
 for epoch in range(epochs):
-    loss = 0
-    acc_recgen_loss  =0
-    acc_kl_loss = 0
+    loss = 0.0
+    embedd_loss = 0.0
+    acc_recgen_loss = 0.0
+    acc_kl_loss = 0.0
 
     model.train()
 
@@ -142,8 +143,8 @@ for epoch in range(epochs):
           (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
 
     with open(result_file, "a") as f:
-        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f}, "
-                f"KL_Loss = {acc_kl_loss.item():.6f} \n")
+        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f} "
+                f"KL_Loss = {acc_kl_loss.item():.6f}, Embedd_Loss = {emb_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
