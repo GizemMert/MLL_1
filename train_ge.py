@@ -70,6 +70,11 @@ optimizer = Adam(model.parameters(), lr=0.001)
 latent_dir = 'latent_variables_GE'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
+
+z_dir = 'z_variables_GE'
+if not os.path.exists(latent_dir):
+    os.makedirs(latent_dir)
+
 umap_dir = 'umap_GE'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
@@ -104,7 +109,8 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         all_means = []
         all_labels = []
-        embedd_loss = []
+        all_z = []
+
 
     for gen, label, scvi_embedding in dataloader:
         gen = gen.to(device)
@@ -133,6 +139,7 @@ for epoch in range(epochs):
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
+            all_z.extend(z.detach().cpu.numpy())
 
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
@@ -149,6 +156,9 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, np.concatenate(all_means, axis=0))
+
+        z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
+        np.save(z_filename, np.concatenate(all_z, axis=0))
 
     model.eval()
 
