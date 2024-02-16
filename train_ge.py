@@ -108,14 +108,16 @@ for epoch in range(epochs):
         gen = gen.to(device)
         label = label.to(device)
         scvi_embedding = scvi_embedding.to(device)
+        print("scvi shape:", scvi_embedding.shape)
         optimizer.zero_grad()
 
         # Forward pass
         z, recgen, mu, logvar = model(gen)
 
+        print("z shape: ", z.shape)
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
-        scvi_embedding_loss = embedding_loss(z, scvi_tensor)
+        scvi_embedding_loss = embedding_loss(z, scvi_embedding)
         train_loss = recon_loss + (beta*kl_div_loss) + scvi_embedding_loss
 
         # Backward pass
