@@ -44,7 +44,7 @@ class GeneExpressionDataset(Dataset):
 
 
 
-# Convert to PyTorch tensors
+
 X_dense = X.toarray()  # Convert sparse matrix to dense
 X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
@@ -102,6 +102,7 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         all_means = []
         all_labels = []
+        embedding_loss = []
 
     for gen, label, scvi_embedding in dataloader:
         gen = gen.to(device)
@@ -124,7 +125,7 @@ for epoch in range(epochs):
         loss +=train_loss.data.cpu()
         acc_recgen_loss +=recon_loss.data.cpu()
         acc_kl_loss +=kl_div_loss.data.cpu()
-
+        embedding_loss +=scvi_embedding_loss.data.cpu()
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
@@ -132,9 +133,10 @@ for epoch in range(epochs):
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
     acc_kl_loss = acc_kl_loss / len(dataloader)
+    emb_loss =embedding_loss / len(dataloader)
 
-    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item()))
+    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f}".format
+          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f}, "
