@@ -87,6 +87,7 @@ def rec_loss(recgen, gen):
     recon_loss = F.mse_loss(recgen, gen, reduction='mean')
     return recon_loss
 
+
 def embedding_loss(z, scvi_embedding):
     loss = F.mse_loss(z, scvi_embedding, reduction='mean')
     return loss
@@ -102,7 +103,7 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         all_means = []
         all_labels = []
-        embedding_loss = []
+        embedd_loss = []
 
     for gen, label, scvi_embedding in dataloader:
         gen = gen.to(device)
@@ -127,7 +128,7 @@ for epoch in range(epochs):
         loss +=train_loss.data.cpu()
         acc_recgen_loss +=recon_loss.data.cpu()
         acc_kl_loss +=kl_div_loss.data.cpu()
-        embedding_loss +=scvi_embedding_loss.data.cpu()
+        embedd_loss +=scvi_embedding_loss.data.cpu()
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
@@ -135,7 +136,7 @@ for epoch in range(epochs):
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
     acc_kl_loss = acc_kl_loss / len(dataloader)
-    emb_loss =embedding_loss / len(dataloader)
+    emb_loss =embedd_loss / len(dataloader)
 
     print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f}".format
           (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
