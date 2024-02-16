@@ -72,8 +72,8 @@ if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
 z_dir = 'z_variables_GE'
-if not os.path.exists(latent_dir):
-    os.makedirs(latent_dir)
+if not os.path.exists(z_dir):
+    os.makedirs(z_dir)
 
 umap_dir = 'umap_GE'
 if not os.path.exists(umap_dir):
