@@ -139,7 +139,7 @@ for epoch in range(epochs):
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
-            all_z.extend(z.detach().cpu.numpy())
+            all_z.append(z.detach().cpu().numpy())
 
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
