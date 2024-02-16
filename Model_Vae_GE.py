@@ -49,7 +49,7 @@ class VAE_GE(nn.Module):
 
 
             nn.Linear(2048, self.input_shape),
-            nn.Sigmoid()
+            nn.ReLU()
 
         )
 
