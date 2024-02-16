@@ -115,7 +115,7 @@ for epoch in range(epochs):
 
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
-        scvi_embedding_loss = embedding_loss(z, scvi_embedding)
+        scvi_embedding_loss = embedding_loss(z, scvi_tensor)
         train_loss = recon_loss + (beta*kl_div_loss) + scvi_embedding_loss
 
         # Backward pass
