@@ -5,7 +5,7 @@ from torch._inductor.ir import View
 from torch.autograd import Variable
 
 class VAE_GE(nn.Module):
-    def __init__(self, input_shape=None, latent_dim=30):
+    def __init__(self, input_shape=None, latent_dim=50):
         super(VAE_GE, self).__init__()
         self.latent_dim = latent_dim
         self.input_shape = input_shape

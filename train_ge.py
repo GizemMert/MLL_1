@@ -10,9 +10,10 @@ import os
 from Model_Vae_GE import VAE_GE
 
 # Load data
-adata = anndata.read_h5ad('sdata_d.h5ad')
-X = adata.layers["scran_normalization"]  # normalized gene expression matrix
-
+adata = anndata.read_h5ad('s_data_tabula.h5ad')
+X = adata.X
+print("Maximum value in X:", X.max())
+print("Minimum value in X:", X.min())
 
 label_mapping = {label: index for index, label in enumerate(adata.obs['cell_ontology_class'].cat.categories)}
 numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
@@ -20,17 +21,17 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 150
-beta = 4
+beta = 1
 
 
 from torch.utils.data import Dataset
 
 
 class GeneExpressionDataset(Dataset):
-    def __init__(self, expressions, labels):
+    def __init__(self, expressions, labels, scvi_embeddings):
         self.expressions = expressions
         self.labels = labels
-        print("done")
+        self.scvi_embeddings = scvi_embeddings
 
     def __len__(self):
         return len(self.expressions)
@@ -38,17 +39,20 @@ class GeneExpressionDataset(Dataset):
     def __getitem__(self, idx):
         expression = self.expressions[idx]
         label = self.labels[idx]
-        return expression, label
+        scvi_embedding = self.scvi_embeddings[idx]
+        return expression, label, scvi_embedding
+
 
 
 # Convert to PyTorch tensors
 X_dense = X.toarray()  # Convert sparse matrix to dense
 X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
+scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
 
 torch.manual_seed(42)
 # Initialize dataset
-dataset = GeneExpressionDataset(X_tensor, label_tensor)
+dataset = GeneExpressionDataset(X_tensor, label_tensor, scvi_tensor)
 dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
 print("loading done")
 heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
@@ -57,7 +61,7 @@ heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_worker
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 input_shape = X.shape[1]  # number of genes
-model = VAE_GE(input_shape=input_shape, latent_dim=30).to(device)
+model = VAE_GE(input_shape=input_shape, latent_dim=50).to(device)
 
 
 optimizer = Adam(model.parameters(), lr=0.001)
@@ -76,12 +80,16 @@ result_file = os.path.join(result_dir, "training_results_GE.txt")
 
 def kl_loss(mu, logvar):
     kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    kl_loss /= batch_size * input_shape
+    # kl_loss /= batch_size * input_shape
     return kl_loss
 
 def rec_loss(recgen, gen):
     recon_loss = F.mse_loss(recgen, gen, reduction='mean')
     return recon_loss
+
+def embedding_loss(z, scvi_embedding):
+    loss = F.mse_loss(z, scvi_embedding, reduction='mean')
+    return loss
 # Training loop
 
 for epoch in range(epochs):
@@ -95,10 +103,10 @@ for epoch in range(epochs):
         all_means = []
         all_labels = []
 
-    for gen, label in dataloader:
-        gen = gen.float()
-        label = label.long().to(device)
+    for gen, label, scvi_embedding in dataloader:
         gen = gen.to(device)
+        label = label.to(device)
+        scvi_embedding = scvi_embedding.to(device)
         optimizer.zero_grad()
 
         # Forward pass
@@ -106,7 +114,8 @@ for epoch in range(epochs):
 
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
-        train_loss = recon_loss + (beta*kl_div_loss)
+        scvi_embedding_loss = embedding_loss(z, scvi_embedding)
+        train_loss = recon_loss + (beta*kl_div_loss) + scvi_embedding_loss
 
         # Backward pass
         train_loss.backward()
@@ -171,34 +180,41 @@ for epoch in range(epochs):
 
 model.eval()
 file_name = "heat_map/"
+accumulated_mae = np.zeros(input_shape)
+total_samples = 0
 
 if not os.path.exists(file_name):
     os.makedirs(file_name)
 
-for sample_index, (gen, label) in enumerate(heatmap_dataloader):
-    if sample_index >= 30:
-        break
-
+for gen, _ , _ in dataloader:
     gen = gen.to(device)
-    _, recgen, _, _ = model(gen)
+    with torch.no_grad():
+        _, recgen, _, _ = model(gen)
+
 
     recgen = recgen.detach().cpu().numpy()
     gen = gen.detach().cpu().numpy()
 
-    mae_per_feature = np.abs(gen.squeeze() - recgen.squeeze())
+    abs_errors = np.abs(gen - recgen)
+    accumulated_mae += abs_errors.sum(axis=0)
+    total_samples += gen.shape[0]
 
-    # Plotting the 1D heatmap for this sample
-    plt.figure(figsize=(50, 5))
-    heatmap_data = mae_per_feature[np.newaxis, :]
-    plt.imshow(heatmap_data, cmap='hot', aspect='auto')
-    plt.colorbar(label='MAE')
-    plt.xlabel('Features')
-    plt.xticks(range(len(mae_per_feature)), rotation=90)
-    plt.yticks([])
-    plt.title(f'MAE for Sample {sample_index + 1}')
+average_mae = accumulated_mae / total_samples
 
-    plt.savefig(os.path.join(file_name, f"heatmap-sample-{sample_index + 1}.jpg"))
-    plt.close()
+# Plotting the averaged 1D heatmap for all samples
+plt.figure(figsize=(50, 5))
+heatmap_data = average_mae[np.newaxis, :]
+plt.imshow(heatmap_data, cmap='hot', aspect='auto')
+plt.colorbar(label='MAE')
+plt.xlabel('Features')
+plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)),
+           rotation=90)
+plt.yticks([])
+plt.title('Average MAE Across All Samples')
+
+plt.savefig(os.path.join(file_name, f"heatmap_all_sample.jpg"))
+print("it is saved ")
+plt.close()
 
 
 
