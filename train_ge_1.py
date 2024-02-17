@@ -21,7 +21,7 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 160
-beta = 0.2
+beta = 1
 cff_rec = 0.4
 cff_emd = 0.4
 
@@ -130,7 +130,7 @@ for epoch in range(epochs):
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
         # scvi_embedding_loss = embedding_loss(z, scvi_embedding)
-        train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss)
+        train_loss = recon_loss + beta*kl_div_loss
 
 
         # Backward pass
