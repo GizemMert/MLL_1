@@ -109,6 +109,7 @@ for epoch in range(epochs):
     acc_kl_loss = 0.0
 
     model.train()
+    print("___training starting___")
 
     if epoch % 10 == 0:
         all_means = []
@@ -131,6 +132,7 @@ for epoch in range(epochs):
         kl_div_loss = kl_loss(mu, logvar)
         scvi_embedding_loss = embedding_loss(z, scvi_embedding)
         train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss) + (cff_emd*scvi_embedding_loss)
+        print("loss calculated")
 
         # Backward pass
         train_loss.backward()
