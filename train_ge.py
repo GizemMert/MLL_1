@@ -41,6 +41,9 @@ class GeneExpressionDataset(Dataset):
         expression = self.expressions[idx]
         label = self.labels[idx]
         scvi_embedding = self.scvi_embeddings[idx]
+
+        expression = expression.view(1, -1)
+
         return expression, label, scvi_embedding
 
 
