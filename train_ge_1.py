@@ -231,7 +231,7 @@ plt.xlabel('Features')
 plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)),
            rotation=90)
 plt.yticks([])
-plt.title('Average MAE Across All Samples')
+plt.title('Average MAE Across All Samples', fontsize=20)
 
 plt.savefig(os.path.join(file_name, f"heatmap_all_sample_1.jpg"))
 print("it is saved ")
