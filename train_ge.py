@@ -65,7 +65,7 @@ heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_worker
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 input_shape = X.shape[1]  # number of genes
-model = VAE_GE(input_shape=input_shape, latent_dim=50).to(device)
+model = VAE_GE(latent_dim=50).to(device)
 
 
 optimizer = Adam(model.parameters(), lr=0.001)
