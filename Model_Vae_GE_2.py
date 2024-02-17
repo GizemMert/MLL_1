@@ -5,16 +5,20 @@ from torch._inductor.ir import View
 from torch.autograd import Variable
 
 class VAE_GE(nn.Module):
-    def __init__(self, input_shape=None, latent_dim=30):
+    def __init__(self, input_shape=None, latent_dim=50):
         super(VAE_GE, self).__init__()
         self.latent_dim = latent_dim
         self.input_shape = input_shape
         self.encoder = nn.Sequential(
+            nn.Linear(self.input_shape, 2048),
+            nn.BatchNorm1d(2048),
+            nn.ReLU(),
 
-
-            nn.Linear(self.input_shape, 1024),
+            nn.Linear(2048, 1024),
             nn.BatchNorm1d(1024),
             nn.ReLU(),
+
+
 
             nn.Linear(1024, 512),
             nn.BatchNorm1d(512),
@@ -29,19 +33,23 @@ class VAE_GE(nn.Module):
 
         self.decoder = nn.Sequential(
             nn.Linear(self.latent_dim, 256),
-            nn.BatchNorm1d(256),
             nn.ReLU(),
+
 
             nn.Linear(256, 512),
-            nn.BatchNorm1d(512),
             nn.ReLU(),
+
 
             nn.Linear(512, 1024),
-            nn.BatchNorm1d(1024),
             nn.ReLU(),
 
-            nn.Linear(1024, self.input_shape),
-            nn.Sigmoid()
+
+            nn.Linear(1024, 2048),
+            nn.ReLU(),
+
+
+            nn.Linear(2048, self.input_shape),
+            nn.ReLU()
 
         )
 
