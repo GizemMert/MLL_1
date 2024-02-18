@@ -10,45 +10,50 @@ class VAE_GE(nn.Module):
         self.latent_dim = latent_dim
         self.input_shape = input_shape
         self.encoder = nn.Sequential(
-            nn.Linear(self.input_shape, 2048),
-            nn.BatchNorm1d(2048),
+            nn.Linear(self.input_shape, 20000),
+            nn.BatchNorm1d(20000),
             nn.ReLU(),
 
-            nn.Linear(2048, 1024),
-            nn.BatchNorm1d(1024),
+            nn.Linear(20000, 8000),
+            nn.BatchNorm1d(8000),
             nn.ReLU(),
 
 
 
-            nn.Linear(1024, 512),
-            nn.BatchNorm1d(512),
+            nn.Linear(8000, 2000),
+            nn.BatchNorm1d(2000),
             nn.ReLU(),
 
-            nn.Linear(512, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(2000, 1000),
+            nn.BatchNorm1d(1000),
             nn.ReLU(),
 
-            nn.Linear(256, 2 * self.latent_dim)
+            nn.Linear(1000, 500),
+            nn.ReLU(),
+
+            nn.Linear(500, 2 * self.latent_dim)
         )
 
         self.decoder = nn.Sequential(
-            nn.Linear(self.latent_dim, 256),
+            nn.Linear(self.latent_dim, 500),
             nn.ReLU(),
 
 
-            nn.Linear(256, 512),
+            nn.Linear(500, 1000),
+            nn.ReLU(),
+
+            nn.Linear(1000, 2000),
+            nn.ReLU(),
+
+            nn.Linear(2000, 8000),
             nn.ReLU(),
 
 
-            nn.Linear(512, 1024),
+            nn.Linear(8000, 20000),
             nn.ReLU(),
 
 
-            nn.Linear(1024, 2048),
-            nn.ReLU(),
-
-
-            nn.Linear(2048, self.input_shape),
+            nn.Linear(20000, self.input_shape),
             nn.ReLU()
 
         )
