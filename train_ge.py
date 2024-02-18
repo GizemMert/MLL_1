@@ -22,8 +22,8 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 batch_size = 128
 epochs = 120
 beta = 0.2
-cff_rec = 0.4
-cff_emd = 0.4
+cff_rec = 0.5
+cff_emd = 0.5
 
 from torch.utils.data import Dataset
 
@@ -124,13 +124,13 @@ for epoch in range(epochs):
         optimizer.zero_grad()
 
         # Forward pass
-        z, recgen, mu, logvar = model(gen)
+        z, recgen = model(gen)
 
         # print("z shape: ", z.shape)
         recon_loss = rec_loss(recgen, gen)
-        kl_div_loss = kl_loss(mu, logvar)
+        # kl_div_loss = kl_loss(mu, logvar)
         scvi_embedding_loss = embedding_loss(z, scvi_embedding)
-        train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss) + (cff_emd*scvi_embedding_loss)
+        train_loss = (cff_rec*recon_loss) + (cff_emd*scvi_embedding_loss)
 
 
         # Backward pass
@@ -139,28 +139,28 @@ for epoch in range(epochs):
 
         loss +=train_loss.data.cpu()
         acc_recgen_loss +=recon_loss.data.cpu()
-        acc_kl_loss +=kl_div_loss.data.cpu()
+        # acc_kl_loss +=kl_div_loss.data.cpu()
         embedd_loss +=scvi_embedding_loss.data.cpu()
         if epoch % 10 == 0:
-            all_means.append(mu.detach().cpu().numpy())
+            # all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
             all_z.append(z.detach().cpu().numpy())
 
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
-    acc_kl_loss = acc_kl_loss / len(dataloader)
+    # acc_kl_loss = acc_kl_loss / len(dataloader)
     emb_loss =embedd_loss / len(dataloader)
 
-    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f}".format
-          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
+    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, embed_loss = {:.6f}".format
+          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), emb_loss.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f} "
-                f"KL_Loss = {acc_kl_loss.item():.6f}, Embedd_Loss = {emb_loss.item():.6f} \n")
+                f"Embed_Loss = {emb_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
-        latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-        np.save(latent_filename, np.concatenate(all_means, axis=0))
+        # latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+        # np.save(latent_filename, np.concatenate(all_means, axis=0))
 
         z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
         np.save(z_filename, np.concatenate(all_z, axis=0))
@@ -169,7 +169,7 @@ for epoch in range(epochs):
 
     if epoch % 10 == 0:
         # Load all latent representations
-        latent_data = np.load(latent_filename)
+        latent_data = np.load(z_filename)
         latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
         print(latent_data_reshaped.shape)
         all_labels_array = np.array(all_labels)
@@ -210,7 +210,7 @@ if not os.path.exists(file_name):
 for gen, _ , _ in dataloader:
     gen = gen.to(device)
     with torch.no_grad():
-        _, recgen, _, _ = model(gen)
+        _, recgen = model(gen)
 
 
     recgen = recgen.detach().cpu().numpy()
