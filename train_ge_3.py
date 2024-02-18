@@ -184,7 +184,7 @@ total_samples = 0
 if not os.path.exists(file_name):
     os.makedirs(file_name)
 
-for gen, _ , _ in dataloader:
+for gen, _  in dataloader:
     gen = gen.to(device)
     with torch.no_grad():
         _, recgen, _, _ = model(gen)
