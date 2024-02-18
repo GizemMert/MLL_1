@@ -22,7 +22,7 @@ label_mapping = {label: index for index, label in enumerate(adata.obs['cell_onto
 numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
 
-batch_size = 128
+batch_size = 64
 epochs = 150
 beta = 4
 # Create dataset and dataloader
