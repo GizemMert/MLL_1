@@ -69,7 +69,7 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(input_shape=input_shape, latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.01)
+optimizer = Adam(model.parameters(), lr=0.00001)
 
 
 latent_dir = 'latent_variables_GE_2'
