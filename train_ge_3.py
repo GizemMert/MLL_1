@@ -22,18 +22,20 @@ label_mapping = {label: index for index, label in enumerate(adata.obs['cell_onto
 numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
 
-batch_size = 64
-epochs = 150
-beta = 4
+batch_size = 128
+epochs = 120
+beta = 0.2
+cff_rec = 0.4
+cff_emd = 0.4
 # Create dataset and dataloader
 from torch.utils.data import Dataset
 
 
 class GeneExpressionDataset(Dataset):
-    def __init__(self, expressions, labels):
+    def __init__(self, expressions, labels, scvi_embeddings):
         self.expressions = expressions
         self.labels = labels
-        print("done")
+        self.scvi_embeddings = scvi_embeddings
 
     def __len__(self):
         return len(self.expressions)
@@ -41,17 +43,21 @@ class GeneExpressionDataset(Dataset):
     def __getitem__(self, idx):
         expression = self.expressions[idx]
         label = self.labels[idx]
-        return expression, label
+        scvi_embedding = self.scvi_embeddings[idx]
+
+        expression = expression.view(1, -1)
+
+        return expression, label, scvi_embedding
 
 
 # Convert to PyTorch tensors
 X_dense = X.toarray()  # Convert sparse matrix to dense
 X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
+scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
 
-torch.manual_seed(42)
 # Initialize dataset
-dataset = GeneExpressionDataset(X_tensor, label_tensor)
+dataset = GeneExpressionDataset(X_tensor, label_tensor, scvi_tensor)
 dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
 print("loading done")
 heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
@@ -63,7 +69,7 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(input_shape=input_shape, latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.001)
+optimizer = Adam(model.parameters(), lr=0.0001)
 
 
 latent_dir = 'latent_variables_GE_2'
@@ -85,13 +91,16 @@ def kl_loss(mu, logvar):
 def rec_loss(recgen, gen):
     recon_loss = F.mse_loss(recgen, gen, reduction='mean')
     return recon_loss
-
+def embedding_loss(z, scvi_embedding):
+    loss = F.mse_loss(z, scvi_embedding, reduction='mean')
+    return loss
 # Training loop
 
 for epoch in range(epochs):
-    loss = 0
-    acc_recgen_loss  =0
-    acc_kl_loss = 0
+    loss = 0.0
+    embedd_loss = 0.0
+    acc_recgen_loss = 0.0
+    acc_kl_loss = 0.0
 
     model.train()
 
@@ -99,10 +108,11 @@ for epoch in range(epochs):
         all_means = []
         all_labels = []
 
-    for gen, label in dataloader:
-        gen = gen.float()
-        label = label.long().to(device)
+    for gen, label, scvi_embedding in dataloader:
         gen = gen.to(device)
+        label = label.to(device)
+        scvi_embedding = scvi_embedding.to(device)
+        # print("scvi shape:", scvi_embedding.shape)
         optimizer.zero_grad()
 
         # Forward pass
@@ -110,30 +120,33 @@ for epoch in range(epochs):
 
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
-        train_loss = recon_loss + (beta*kl_div_loss)
+        scvi_embedding_loss = embedding_loss(mu, scvi_embedding)
+        train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss) + (cff_emd*scvi_embedding_loss)
 
         # Backward pass
         train_loss.backward()
-        optimizer.step()
+        optimizer.step
 
-        loss +=train_loss.data.cpu()
-        acc_recgen_loss +=recon_loss.data.cpu()
-        acc_kl_loss +=kl_div_loss.data.cpu()
-
+        loss += train_loss.data.cpu()
+        acc_recgen_loss += recon_loss.data.cpu()
+        acc_kl_loss += kl_div_loss.data.cpu()
+        embedd_loss += scvi_embedding_loss.data.cpu()
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
 
+
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
     acc_kl_loss = acc_kl_loss / len(dataloader)
+    emb_loss = embedd_loss / len(dataloader)
 
-    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item()))
+    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f} ".format
+          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
 
     with open(result_file, "a") as f:
-        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f}, "
-                f"KL_Loss = {acc_kl_loss.item():.6f} \n")
+        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f} "
+                f"KL_Loss = {acc_kl_loss.item():.6f}\n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
@@ -150,16 +163,14 @@ for epoch in range(epochs):
         print("Labels array shape:", all_labels_array.shape)
 
 
-        pca = PCA(n_components=30).fit(latent_data_reshaped)
-        latent_data_pca = pca.transform(latent_data_reshaped)
+        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+            latent_data_reshaped)
 
-        # Now applying UMAP on PCA-transformed data
-        latent_data_umap = UMAP(n_neighbors=10, min_dist=0.1, n_components=2).fit_transform(latent_data_reshaped)
 
         plt.figure(figsize=(12, 10), dpi=150)
-        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='Spectral')
+        scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=all_labels_array, cmap='plasma')
 
-        color_map = plt.cm.Spectral(np.linspace(0, 1, len(set(all_labels_array))))
+        color_map = plt.cm.plasma(np.linspace(0, 1, len(set(all_labels_array))))
         class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
@@ -184,7 +195,7 @@ total_samples = 0
 if not os.path.exists(file_name):
     os.makedirs(file_name)
 
-for gen, _  in dataloader:
+for gen, _ , _ in dataloader:
     gen = gen.to(device)
     with torch.no_grad():
         _, recgen, _, _ = model(gen)
@@ -208,7 +219,7 @@ plt.xlabel('Features')
 plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)),
            rotation=90)
 plt.yticks([])
-plt.title('Average MAE Across All Samples')
+plt.title('Average MAE Across All Samples', fontsize=20)
 
 plt.savefig(os.path.join(file_name, f"heatmap_all_sample_2.jpg"))
 print("it is saved ")
