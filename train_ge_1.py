@@ -53,6 +53,8 @@ X_dense = X.toarray()  # Convert sparse matrix to dense
 X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
 scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
+print("Maximum value in ref latent:", scvi_tensor.max())
+print("Minimum value in ref latent:", scvi_tensor.min())
 
 # Initialize dataset
 dataset = GeneExpressionDataset(X_tensor, label_tensor, scvi_tensor)
@@ -67,7 +69,7 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.001)
+optimizer = Adam(model.parameters(), lr=0.0005)
 
 
 latent_dir = 'latent_variables_GE_1'
