@@ -45,7 +45,7 @@ class GeneExpressionDataset(Dataset):
         label = self.labels[idx]
         scvi_embedding = self.scvi_embeddings[idx]
 
-        expression = expression.view(1, -1)
+
 
         return expression, label, scvi_embedding
 
@@ -58,7 +58,7 @@ scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
 
 # Initialize dataset
 dataset = GeneExpressionDataset(X_tensor, label_tensor, scvi_tensor)
-dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 print("loading done")
 heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
 
