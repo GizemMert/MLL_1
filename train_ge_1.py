@@ -112,7 +112,7 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         all_means = []
         all_labels = []
-        all_z = []
+
 
 
     for gen, label, scvi_embedding in dataloader:
@@ -143,7 +143,7 @@ for epoch in range(epochs):
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
-            all_z.append(z.detach().cpu().numpy())
+            # all_z.append(z.detach().cpu().numpy())
 
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
@@ -161,8 +161,8 @@ for epoch in range(epochs):
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, np.concatenate(all_means, axis=0))
 
-        z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
-        np.save(z_filename, np.concatenate(all_z, axis=0))
+        # z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
+        # np.save(z_filename, np.concatenate(all_z, axis=0))
 
     model.eval()
 
