@@ -13,6 +13,7 @@
 #SBATCH --output=my_job_output_1.log
 #SBATCH --error=my_job_error_1.log
 
+source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
 # Run your job commands within the allocated resources
 python train_ge_1.py
