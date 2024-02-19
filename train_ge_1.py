@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from Model_Vae_GE import VAE_GE
+from torch.optim import RMSprop
 
 # Load data
 adata = anndata.read_h5ad('s_data_tabula.h5ad')
@@ -21,9 +22,9 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 120
-beta = 0.2
+beta = 0.1
 cff_rec = 0.4
-cff_emd = 0.4
+cff_emd = 0.5
 
 from torch.utils.data import Dataset
 
@@ -69,8 +70,9 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.0005)
+# optimizer = Adam(model.parameters(), lr=0.0005)
 
+optimizer = RMSprop(model.parameters(), lr=0.0005)
 
 latent_dir = 'latent_variables_GE_1'
 if not os.path.exists(latent_dir):
