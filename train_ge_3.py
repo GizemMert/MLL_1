@@ -24,9 +24,9 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 120
-beta = 0.2
-cff_rec = 0.4
-cff_emd = 0.4
+beta = 1
+cff_rec = 1
+cff_emd = 1
 # Create dataset and dataloader
 from torch.utils.data import Dataset
 
