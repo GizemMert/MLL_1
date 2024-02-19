@@ -119,7 +119,7 @@ for epoch in range(epochs):
         gen = gen.to(device)
         label = label.to(device)
         scvi_embedding = scvi_embedding.to(device)
-        print("scvi shape:", scvi_embedding.shape)
+        # print("scvi shape:", scvi_embedding.shape)
         optimizer.zero_grad()
 
         # Forward pass
