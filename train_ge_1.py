@@ -54,19 +54,14 @@ X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
 scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 # Initialize dataset
 dataset = GeneExpressionDataset(X_tensor, label_tensor, scvi_tensor)
-print(torch.cuda.memory_summary(device=device, abbreviated=False))
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
-print("After data loading and processing:")
-print(torch.cuda.memory_summary(device=device, abbreviated=False))
 print("loading done")
-# heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
+heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
 
 
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
@@ -107,8 +102,6 @@ def embedding_loss(z, scvi_embedding):
 # Training loop
 
 for epoch in range(epochs):
-    print(f"Before epoch {epoch}:")
-    print(torch.cuda.memory_summary(device=device, abbreviated=False))
     loss = 0.0
     embedd_loss = 0.0
     acc_recgen_loss = 0.0
@@ -119,8 +112,8 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         all_means = []
         all_labels = []
+        all_z = []
 
-    batch_count= 0
 
     for gen, label, scvi_embedding in dataloader:
         gen = gen.to(device)
@@ -142,11 +135,6 @@ for epoch in range(epochs):
         # Backward pass
         train_loss.backward()
         optimizer.step()
-        if batch_count % 10 == 0:  # Use the counter variable here
-            print(f"Batch {batch_count}: GPU Memory Summary")
-            print(torch.cuda.memory_summary(device=device, abbreviated=False))
-
-        batch_count += 1
 
         loss +=train_loss.data.cpu()
         acc_recgen_loss +=recon_loss.data.cpu()
@@ -155,15 +143,12 @@ for epoch in range(epochs):
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
-            # all_z.append(z.detach().cpu().numpy())
+            all_z.append(z.detach().cpu().numpy())
 
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
     acc_kl_loss = acc_kl_loss / len(dataloader)
     emb_loss =embedd_loss / len(dataloader)
-
-    print(f"After epoch {epoch}:")
-    print(torch.cuda.memory_summary(device=device, abbreviated=False))
 
     print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f} ".format
           (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
@@ -176,8 +161,8 @@ for epoch in range(epochs):
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, np.concatenate(all_means, axis=0))
 
-        # z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
-        # np.save(z_filename, np.concatenate(all_z, axis=0))
+        z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
+        np.save(z_filename, np.concatenate(all_z, axis=0))
 
     model.eval()
 
