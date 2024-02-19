@@ -71,7 +71,7 @@ class VAE_GE(nn.Module):
         mu = distributions[:, :self.latent_dim]
         logvar = distributions[:, self.latent_dim:]
         z = reparametrize(mu, logvar)
-        y = self.decoder(x)
+        y = self.decoder(z)
 
         return z, y, mu, logvar
 
