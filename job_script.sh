@@ -4,11 +4,11 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=160G
+#SBATCH --mem=200G
 #SBATCH --gres=gpu:1
 #SBATCH --time=48:00:00
 #SBATCH --nice=10000
-#SBATCH --qos=gpu_normal
+#SBATCH --qos=gpu_long
 #SBATCH --constraint=a100_80gb
 #SBATCH --output=my_job_output_1.log
 #SBATCH --error=my_job_error_1.log
