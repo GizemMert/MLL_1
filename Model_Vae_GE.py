@@ -34,16 +34,16 @@ class VAE_GE(nn.Module):
             # nn.BatchNorm1d(1),
             # nn.ReLU(),
             # nn.MaxPool1d(3, stride=3),
-            # nn.Flatten(),
+            nn.Flatten(),
 
 
         )
 
-        # self.fc_out = None
+        self.fc_out = None
 
         self.decoder = nn.Sequential(
-            # nn.Linear(latent_dim, 50),
-            # View((-1, 1, 50)),
+            nn.Linear(latent_dim, 50),
+            View((-1, 1, 50)),
             nn.ConvTranspose1d(1, 25, kernel_size=4, stride=4, output_padding=3),
             nn.ReLU(),
             nn.ConvTranspose1d(25, 50, kernel_size=4, stride=4, output_padding=3),
@@ -63,18 +63,17 @@ class VAE_GE(nn.Module):
 
 
     def forward(self, x):
-        z = self.encoder(x)
-        # if self.fc_out is None:
-
-            # self.fc_out = nn.Linear(x.shape[1], 2 * self.latent_dim).to(x.device)
-        # distributions = self.fc_out(x)
+        x = self.encoder(x)
+        if self.fc_out is None:
+            self.fc_out = nn.Linear(x.shape[1], 2 * self.latent_dim).to(x.device)
+        distributions = self.fc_out(x)
         # Split the distributions into mu and logvar
-        # mu = distributions[:, :self.latent_dim]
-        # logvar = distributions[:, self.latent_dim:]
-        # z = reparametrize(mu, logvar)
+        mu = distributions[:, :self.latent_dim]
+        logvar = distributions[:, self.latent_dim:]
+        z = reparametrize(mu, logvar)
         y = self.decoder(x)
 
-        return z, y
+        return z, y, mu, logvar
 
 class View(nn.Module):
     def __init__(self, size):
@@ -85,6 +84,6 @@ class View(nn.Module):
         return tensor.view(self.size)
 
 def reparametrize(mu, log_var):
-    std = torch.exp(0.5 * log_var)
-    eps = torch.randn_like(std)
-    return mu + eps * std
+    std = log_var.div(2).exp()
+    eps = Variable(std.data.new(std.size()).normal_())
+    return mu + std * eps
