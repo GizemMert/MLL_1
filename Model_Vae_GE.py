@@ -31,8 +31,8 @@ class VAE_GE(nn.Module):
             nn.ReLU(),
             # nn.MaxPool1d(3, stride=3),
             nn.Conv1d(25, 1, kernel_size=3, stride=2),
-            nn.BatchNorm1d(1),
-            nn.ReLU(),
+            # nn.BatchNorm1d(1),
+            # nn.ReLU(),
             # nn.MaxPool1d(3, stride=3),
             # nn.Flatten(),
 

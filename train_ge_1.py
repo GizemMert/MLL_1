@@ -21,7 +21,7 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 120
-beta = 1
+beta = 0.2
 cff_rec = 0.4
 cff_emd = 0.4
 
@@ -54,7 +54,6 @@ X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
 scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
 
-torch.manual_seed(42)
 # Initialize dataset
 dataset = GeneExpressionDataset(X_tensor, label_tensor, scvi_tensor)
 dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
@@ -68,7 +67,7 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.001)
+optimizer = Adam(model.parameters(), lr=0.0001)
 
 
 latent_dir = 'latent_variables_GE_1'
@@ -120,7 +119,7 @@ for epoch in range(epochs):
         gen = gen.to(device)
         label = label.to(device)
         scvi_embedding = scvi_embedding.to(device)
-        # print("scvi shape:", scvi_embedding.shape)
+        print("scvi shape:", scvi_embedding.shape)
         optimizer.zero_grad()
 
         # Forward pass
@@ -129,8 +128,8 @@ for epoch in range(epochs):
         # print("z shape: ", z.shape)
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
-        # scvi_embedding_loss = embedding_loss(z, scvi_embedding)
-        train_loss = recon_loss + beta*kl_div_loss
+        scvi_embedding_loss = embedding_loss(mu, scvi_embedding)
+        train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss) + (cff_emd*scvi_embedding_loss)
 
 
         # Backward pass
@@ -140,7 +139,7 @@ for epoch in range(epochs):
         loss +=train_loss.data.cpu()
         acc_recgen_loss +=recon_loss.data.cpu()
         acc_kl_loss +=kl_div_loss.data.cpu()
-        # embedd_loss +=scvi_embedding_loss.data.cpu()
+        embedd_loss +=scvi_embedding_loss.data.cpu()
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
@@ -149,10 +148,10 @@ for epoch in range(epochs):
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
     acc_kl_loss = acc_kl_loss / len(dataloader)
-    # emb_loss =embedd_loss / len(dataloader)
+    emb_loss =embedd_loss / len(dataloader)
 
-    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, ".format
-          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item()))
+    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f} ".format
+          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f} "
