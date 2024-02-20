@@ -70,7 +70,7 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.0001)
+optimizer = Adam(model.parameters(), lr=0.0005)
 
 # optimizer = RMSprop(model.parameters(), lr=0.0005)
 
