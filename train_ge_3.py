@@ -71,7 +71,7 @@ print(X.shape)
 model = VAE_GE(input_shape=input_s, latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.0001)
+optimizer = Adam(model.parameters(), lr=0.00001)
 
 # optimizer = RMSprop(model.parameters(), lr=0.0005)
 
