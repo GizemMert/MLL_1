@@ -42,7 +42,7 @@ class GeneExpressionDataset(Dataset):
 
     def __getitem__(self, idx):
         expression = self.expressions[idx]
-        n_expression = (expression - self.min) / (self.max - self.min)
+        # n_expression = (expression - self.min) / (self.max - self.min)
         # print(f"Item {idx}: Min value in normalized expression: {n_expression.min().item()}")
         # print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
         label = self.labels[idx]
@@ -50,7 +50,7 @@ class GeneExpressionDataset(Dataset):
 
         # expression = expression.view(1, -1)
 
-        return n_expression, label, scvi_embedding
+        return expression, label, scvi_embedding
 
 
 
@@ -233,8 +233,8 @@ for gen, _, _ in dataloader:
         _, recgen, _, _ = model(gen)
 
     # Scale back to original range [0, 10]
-    recgen = recgen.detach().cpu().numpy() * 10
-    gen = gen.detach().cpu().numpy() * 10
+    recgen = recgen.detach().cpu().numpy() # * 10
+    gen = gen.detach().cpu().numpy() # * 10
 
     min_recgen_value = min(min_recgen_value, recgen.min())
     max_recgen_value = max(max_recgen_value, recgen.max())
