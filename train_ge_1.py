@@ -70,9 +70,9 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
 
 
-# optimizer = Adam(model.parameters(), lr=0.0005)
+optimizer = Adam(model.parameters(), lr=0.0001)
 
-optimizer = RMSprop(model.parameters(), lr=0.0005)
+# optimizer = RMSprop(model.parameters(), lr=0.0005)
 
 latent_dir = 'latent_variables_GE_1'
 if not os.path.exists(latent_dir):
@@ -202,46 +202,6 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
 
-model.eval()
-file_name = "heat_map_1/"
-accumulated_mae = np.zeros(input_shape)
-total_samples = 0
-
-if not os.path.exists(file_name):
-    os.makedirs(file_name)
-
-for gen, _ , _ in dataloader:
-    gen = gen.to(device)
-    with torch.no_grad():
-        _, recgen, _, _ = model(gen)
-
-
-    recgen = recgen.detach().cpu().numpy()
-    gen = gen.detach().cpu().numpy()
-
-    abs_errors = np.abs(gen - recgen)
-    accumulated_mae += abs_errors.sum(axis=0)
-    total_samples += gen.shape[0]
-
-average_mae = accumulated_mae / total_samples
-
-# Plotting the averaged 1D heatmap for all samples
-plt.figure(figsize=(50, 5))
-heatmap_data = average_mae[np.newaxis, :]
-plt.imshow(heatmap_data, cmap='hot', aspect='auto')
-plt.colorbar(label='MAE')
-plt.xlabel('Features')
-plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)),
-           rotation=90)
-plt.yticks([])
-plt.title('Average MAE Across All Samples', fontsize=20)
-
-plt.savefig(os.path.join(file_name, f"heatmap_all_sample_1.jpg"))
-print("it is saved ")
-plt.close()
-
-
-
 script_dir = os.path.dirname(__file__)
 
 model_save_path = os.path.join(script_dir, 'trained_model_GE_1.pth')
@@ -250,3 +210,43 @@ print(f"Trained model saved to {model_save_path}")
 
 with open(result_file, "a") as f:
     f.write("Training completed.\n")
+
+model.eval()
+file_name = "heat_map_1/"
+accumulated_mae = np.zeros(input_shape)
+total_samples = 0
+
+if not os.path.exists(file_name):
+    os.makedirs(file_name)
+
+for gen, _ , _ in dataloader:  # label is not needed for MAE calculation
+    gen = gen.to(device)
+    with torch.no_grad():  # No gradients needed for inference
+        _, recgen, _, _ = model(gen)
+
+
+    recgen = recgen.detach().cpu().numpy()
+    gen = gen.detach().cpu().numpy()
+
+    abs_errors = np.abs(gen - recgen)
+    accumulated_mae += abs_errors.sum(axis=0)  # Sum across the batch, not mean, to accumulate errors
+    total_samples += gen.shape[0]
+
+average_mae = accumulated_mae / total_samples
+
+# Plotting the averaged 1D heatmap for all samples
+plt.figure(figsize=(50, 5))
+heatmap_data = average_mae[np.newaxis, :]
+im = plt.imshow(heatmap_data, cmap='hot', aspect='auto')
+cbar = plt.colorbar(im, label='MAE', fraction=0.2, pad=0.04)
+plt.xlabel('Features')
+plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)),
+           rotation=90)
+plt.yticks([])
+plt.title('Average MAE Across All Samples')
+
+plt.savefig(os.path.join(file_name, f"heatmap_all_sample.jpg"))
+print("Heatmap saved ")
+plt.close()
+
+
