@@ -7,7 +7,7 @@ from umap import UMAP
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from Model_Vae_GE import VAE_GE
+from Model_Vae_GE_cp import VAE_GE
 from torch.optim import RMSprop
 
 # Load data
@@ -70,7 +70,7 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.00001)
+optimizer = Adam(model.parameters(), lr=0.001)
 
 # optimizer = RMSprop(model.parameters(), lr=0.0005)
 
@@ -134,7 +134,6 @@ for epoch in range(epochs):
         kl_div_loss = kl_loss(mu, logvar)
         scvi_embedding_loss = embedding_loss(mu, scvi_embedding)
         train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss) + (cff_emd*scvi_embedding_loss)
-
 
         # Backward pass
         train_loss.backward()
@@ -211,9 +210,9 @@ total_samples = 0
 if not os.path.exists(file_name):
     os.makedirs(file_name)
 
-for gen, _ , _ in dataloader:  # label is not needed for MAE calculation
+for gen, _ , _ in dataloader:
     gen = gen.to(device)
-    with torch.no_grad():  # No gradients needed for inference
+    with torch.no_grad():
         _, recgen, _, _ = model(gen)
 
 
@@ -226,7 +225,7 @@ for gen, _ , _ in dataloader:  # label is not needed for MAE calculation
     max_gen_value = max(max_gen_value, recgen.max())
 
     abs_errors = np.abs(gen - recgen)
-    accumulated_mae += abs_errors.sum(axis=0)  # Sum across the batch, not mean, to accumulate errors
+    accumulated_mae += abs_errors.sum(axis=0)
     total_samples += gen.shape[0]
 
 average_mae = accumulated_mae / total_samples
