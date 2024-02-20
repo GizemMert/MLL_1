@@ -22,7 +22,7 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 300
-beta = 0.1
+beta = 0.0001
 cff_rec = 1
 cff_emd = 1
 
@@ -43,6 +43,8 @@ class GeneExpressionDataset(Dataset):
     def __getitem__(self, idx):
         expression = self.expressions[idx]
         # n_expression = (expression - self.min) / (self.max - self.min)
+        # print(f"Item {idx}: Min value in normalized expression: {n_expression.min().item()}")
+        # print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
         label = self.labels[idx]
         scvi_embedding = self.scvi_embeddings[idx]
 
