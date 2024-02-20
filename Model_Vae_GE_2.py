@@ -12,17 +12,17 @@ class VAE_GE(nn.Module):
         self.encoder = nn.Sequential(
             nn.Linear(self.input_shape, 800),
             # nn.BatchNorm1d(1500),
-            nn.ReLU(),
+            nn.LeakyReLU(),
 
             nn.Linear(800, 600),
             # nn.BatchNorm1d(1000),
-            nn.ReLU(),
+            nn.LeakyReLU(),
 
 
 
             nn.Linear(600, 200),
             # nn.BatchNorm1d(700),
-            nn.ReLU(),
+            nn.LeakyReLU(),
 
             # nn.Linear(700, 400),
             # nn.BatchNorm1d(400),
@@ -36,11 +36,11 @@ class VAE_GE(nn.Module):
 
         self.decoder = nn.Sequential(
             nn.Linear(self.latent_dim, 200),
-            nn.ReLU(),
+            nn.LeakyReLU(),
 
 
             nn.Linear(200, 600),
-            nn.ReLU(),
+            nn.LeakyReLU(),
 
             # nn.Linear(400, 700),
             # nn.ReLU(),
@@ -50,7 +50,7 @@ class VAE_GE(nn.Module):
 
 
             nn.Linear(600, 800),
-            nn.ReLU(),
+            nn.LeakyReLU(),
 
 
             nn.Linear(800, self.input_shape),
