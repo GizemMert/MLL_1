@@ -202,14 +202,6 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
 
-script_dir = os.path.dirname(__file__)
-
-model_save_path = os.path.join(script_dir, 'trained_model_GE_1.pth')
-torch.save(model.state_dict(), model_save_path)
-print(f"Trained model saved to {model_save_path}")
-
-with open(result_file, "a") as f:
-    f.write("Training completed.\n")
 
 model.eval()
 file_name = "heat_map_1/"
@@ -228,11 +220,19 @@ for gen, _ , _ in dataloader:  # label is not needed for MAE calculation
     recgen = recgen.detach().cpu().numpy()
     gen = gen.detach().cpu().numpy()
 
+    min_recgen_value = min(min_recgen_value, recgen.min())
+    max_recgen_value = max(max_recgen_value, recgen.max())
+    min_gen_value = min(min_gen_value, recgen.min())
+    max_gen_value = max(max_gen_value, recgen.max())
+
     abs_errors = np.abs(gen - recgen)
     accumulated_mae += abs_errors.sum(axis=0)  # Sum across the batch, not mean, to accumulate errors
     total_samples += gen.shape[0]
 
 average_mae = accumulated_mae / total_samples
+print(f"Range of reconstructions: {min_recgen_value} to {max_recgen_value}")
+print(f"Range of source: {min_gen_value} to {max_gen_value}")
+
 
 # Plotting the averaged 1D heatmap for all samples
 plt.figure(figsize=(50, 5))
@@ -248,5 +248,16 @@ plt.title('Average MAE Across All Samples')
 plt.savefig(os.path.join(file_name, f"heatmap_all_sample.jpg"))
 print("Heatmap saved ")
 plt.close()
+
+
+script_dir = os.path.dirname(__file__)
+
+model_save_path = os.path.join(script_dir, 'trained_model_GE_1.pth')
+torch.save(model.state_dict(), model_save_path)
+print(f"Trained model saved to {model_save_path}")
+
+with open(result_file, "a") as f:
+    f.write("Training completed.\n")
+
 
 
