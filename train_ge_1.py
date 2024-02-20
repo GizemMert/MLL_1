@@ -159,7 +159,7 @@ for epoch in range(epochs):
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f} "
-                f"KL_Loss = {acc_kl_loss.item():.6f}\n")
+                f"KL_Loss = {acc_kl_loss.item():.6f}, Embd _loss ={emb_loss.item():.6f} n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
