@@ -34,23 +34,23 @@ class GeneExpressionDataset(Dataset):
         self.expressions = expressions
         self.labels = labels
         self.scvi_embeddings = scvi_embeddings
-        # self.min = expressions.min()
-        # self.max = expressions.max()
+        self.min = expressions.min()
+        self.max = expressions.max()
 
     def __len__(self):
         return len(self.expressions)
 
     def __getitem__(self, idx):
         expression = self.expressions[idx]
-        # n_expression = (expression - self.min) / (self.max - self.min)
-        # print(f"Item {idx}: Min value in normalized expression: {n_expression.min().item()}")
-        # print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
+        n_expression = (expression - self.min) / (self.max - self.min)
+        print(f"Item {idx}: Min value in normalized expression: {n_expression.min().item()}")
+        print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
         label = self.labels[idx]
         scvi_embedding = self.scvi_embeddings[idx]
 
         # expression = expression.view(1, -1)
 
-        return expression, label, scvi_embedding
+        return n_expression, label, scvi_embedding
 
 
 
@@ -207,28 +207,39 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, dpi=300)
         plt.close()
 
+script_dir = os.path.dirname(__file__)
 
-model.eval()
-file_name = "heat_map_3/"
+model_save_path = os.path.join(script_dir, 'trained_model_GE_3.pth')
+torch.save(model.state_dict(), model_save_path)
+print(f"Trained model saved to {model_save_path}")
+
+with open(result_file, "a") as f:
+    f.write("Training completed.\n")
+
+
+
+file_name_1= "heat_map_3/"
 accumulated_mae = np.zeros(input_s)
 total_samples = 0
+min_recgen_value, max_recgen_value = float('inf'), float('-inf')
+min_gen_value, max_gen_value = float('inf'), float('-inf')
 
-if not os.path.exists(file_name):
-    os.makedirs(file_name)
+if not os.path.exists(file_name_1):
+    os.makedirs(file_name_1)
 
-for gen, _ , _ in dataloader:
+for gen, _, _ in dataloader:
     gen = gen.to(device)
     with torch.no_grad():
         _, recgen, _, _ = model(gen)
 
-
-    recgen = recgen.detach().cpu().numpy()
-    gen = gen.detach().cpu().numpy()
+    # Scale back to original range [0, 10]
+    recgen = recgen.detach().cpu().numpy() * 10
+    gen = gen.detach().cpu().numpy() * 10
 
     min_recgen_value = min(min_recgen_value, recgen.min())
     max_recgen_value = max(max_recgen_value, recgen.max())
-    min_gen_value = min(min_gen_value, recgen.min())
-    max_gen_value = max(max_gen_value, recgen.max())
+    min_gen_value = min(min_gen_value, gen.min())
+    max_gen_value = max(max_gen_value, gen.max())
 
     abs_errors = np.abs(gen - recgen)
     accumulated_mae += abs_errors.sum(axis=0)
@@ -238,28 +249,16 @@ average_mae = accumulated_mae / total_samples
 print(f"Range of reconstructions: {min_recgen_value} to {max_recgen_value}")
 print(f"Range of source: {min_gen_value} to {max_gen_value}")
 
-
 # Plotting the averaged 1D heatmap for all samples
 plt.figure(figsize=(50, 5))
 heatmap_data = average_mae[np.newaxis, :]
 im = plt.imshow(heatmap_data, cmap='hot', aspect='auto')
 cbar = plt.colorbar(im, label='MAE', fraction=0.2, pad=0.04)
 plt.xlabel('Features')
-plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)),
-           rotation=90)
+plt.xticks(np.arange(0, len(average_mae), step=max(len(average_mae) // 10, 1)), rotation=90)
 plt.yticks([])
 plt.title('Average MAE Across All Samples')
 
-plt.savefig(os.path.join(file_name, f"heatmap_all_sample.jpg"))
-print("Heatmap saved ")
+plt.savefig(os.path.join(file_name_1, "heatmap_all_sample.jpg"))
+print("Heatmap saved")
 plt.close()
-
-
-script_dir = os.path.dirname(__file__)
-
-model_save_path = os.path.join(script_dir, 'trained_model_GE_3.pth')
-torch.save(model.state_dict(), model_save_path)
-print(f"Trained model saved to {model_save_path}")
-
-with open(result_file, "a") as f:
-    f.write("Training completed.\n")

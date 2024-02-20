@@ -54,7 +54,7 @@ class VAE_GE(nn.Module):
 
 
             nn.Linear(800, self.input_shape),
-            nn.ReLU()
+            nn.Sigmoid
 
         )
 
@@ -63,6 +63,10 @@ class VAE_GE(nn.Module):
     def forward(self, x):
         distributions = self.encoder(x)
         mu = distributions[:, :self.latent_dim]
+        mu_tanh = torch.tanh(mu)
+        z_min_ref = -3.3010
+        z_max_ref = 3.8857
+        mu = ((mu_tanh + 1) * (z_max_ref - z_min_ref) / 2) + z_min_ref
         logvar = distributions[:, self.latent_dim:]
         z = reparametrize(mu, logvar)
         y = self.decoder(z)
