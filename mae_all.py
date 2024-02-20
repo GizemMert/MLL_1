@@ -8,31 +8,32 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from Model_Vae_GE import VAE_GE
+from torch.optim import RMSprop
 
 # Load data
-adata = anndata.read_h5ad('sdata_d.h5ad')
-X = adata.layers["scran_normalization"]  # normalized gene expression matrix
+adata = anndata.read_h5ad('s_data_tabula.h5ad')
+X = adata.X
 print("Maximum value in X:", X.max())
 print("Minimum value in X:", X.min())
-
 
 label_mapping = {label: index for index, label in enumerate(adata.obs['cell_ontology_class'].cat.categories)}
 numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
-epochs = 150
-beta = 4
-
+epochs = 120
+beta = 0.1
+cff_rec = 0.4
+cff_emd = 0.5
 
 from torch.utils.data import Dataset
 
 
 class GeneExpressionDataset(Dataset):
-    def __init__(self, expressions, labels):
+    def __init__(self, expressions, labels, scvi_embeddings):
         self.expressions = expressions
         self.labels = labels
-        print("done")
+        self.scvi_embeddings = scvi_embeddings
 
     def __len__(self):
         return len(self.expressions)
@@ -40,31 +41,39 @@ class GeneExpressionDataset(Dataset):
     def __getitem__(self, idx):
         expression = self.expressions[idx]
         label = self.labels[idx]
-        return expression, label
+        scvi_embedding = self.scvi_embeddings[idx]
+
+        expression = expression.view(1, -1)
+
+        return expression, label, scvi_embedding
 
 
-# Convert to PyTorch tensors
+
+
 X_dense = X.toarray()  # Convert sparse matrix to dense
 X_tensor = torch.tensor(X_dense, dtype=torch.float32)
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
+scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
+print("Maximum value in ref latent:", scvi_tensor.max())
+print("Minimum value in ref latent:", scvi_tensor.min())
 
-torch.manual_seed(42)
 # Initialize dataset
-dataset = GeneExpressionDataset(X_tensor, label_tensor)
-dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
+dataset = GeneExpressionDataset(X_tensor, label_tensor, scvi_tensor)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 print("loading done")
 heatmap_dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 input_shape = X.shape[1]  # number of genes
-model = VAE_GE(input_shape=input_shape, latent_dim=30).to(device)
-model_save_path = 'trained_model_GE.pth'
+model = VAE_GE(latent_dim=50).to(device)
+model_save_path = 'trained_model_GE_1.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
 
-file_name = "heat_map/"
+file_name = "heat_map_1/"
 accumulated_mae = np.zeros(input_shape)
 total_samples = 0
 
