@@ -20,7 +20,7 @@ label_mapping = {label: index for index, label in enumerate(adata.obs['cell_onto
 numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
 
-batch_size = 128
+batch_size = 64
 epochs = 300
 beta = 0.1
 cff_rec = 0.4
@@ -70,7 +70,7 @@ input_shape = X.shape[1]  # number of genes
 model = VAE_GE(latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.01)
+optimizer = Adam(model.parameters(), lr=0.000001)
 
 # optimizer = RMSprop(model.parameters(), lr=0.0005)
 
