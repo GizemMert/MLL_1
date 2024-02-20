@@ -44,17 +44,17 @@ class VAE_GE(nn.Module):
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 50),
             View((-1, 1, 50)),
-            nn.ConvTranspose1d(1, 25, kernel_size=4, stride=4, output_padding=3),
+            nn.ConvTranspose1d(1, 25, kernel_size=4, stride=3),
             nn.ReLU(),
-            nn.ConvTranspose1d(25, 50, kernel_size=4, stride=4, output_padding=3),
+            nn.ConvTranspose1d(25, 50, kernel_size=4, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose1d(50, 100, kernel_size=4, stride=4, padding=3, output_padding=3),
+            nn.ConvTranspose1d(50, 100, kernel_size=3, stride=2),
             nn.ReLU(),
-            nn.ConvTranspose1d(100, 128, kernel_size=3, stride=3, padding=2, output_padding=2),
+            nn.ConvTranspose1d(100, 64, kernel_size=3, stride=2, padding=2, output_padding=1),
             nn.ReLU(),
-            nn.ConvTranspose1d(128, 64, kernel_size=3, stride=3, padding=2, output_padding=2),
-            nn.ReLU(),
-            nn.ConvTranspose1d(64, 1, kernel_size=3, stride=2, padding=4, output_padding=1),
+            # nn.ConvTranspose1d(128, 64, kernel_size=2, stride=2),
+            # nn.ReLU(),
+            nn.ConvTranspose1d(64, 1, kernel_size=3, stride=2, padding=1, output_padding=1),
             # nn.ConvTranspose1d(1, 1, kernel_size=1, stride=1),
             # nn.Upsample(size=58604, mode='linear', align_corners=True),
             nn.ReLU()
@@ -67,7 +67,6 @@ class VAE_GE(nn.Module):
         if self.fc_out is None:
             self.fc_out = nn.Linear(x.shape[1], 2 * self.latent_dim).to(x.device)
         distributions = self.fc_out(x)
-        # Split the distributions into mu and logvar
         mu = distributions[:, :self.latent_dim]
         logvar = distributions[:, self.latent_dim:]
         z = reparametrize(mu, logvar)
