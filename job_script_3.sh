@@ -10,8 +10,8 @@
 #SBATCH --nice=10000
 #SBATCH --qos=gpu_normal
 #SBATCH --constraint=a100_80gb
-#SBATCH --output=my_job_output_2.log
-#SBATCH --error=my_job_error_2.log
+#SBATCH --output=my_job_output_3.log
+#SBATCH --error=my_job_error_3.log
 
 source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
