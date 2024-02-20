@@ -21,7 +21,7 @@ numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
-epochs = 300
+epochs = 150
 beta = 0.00001
 cff_rec = 1
 cff_emd = 1
@@ -71,7 +71,7 @@ print(X.shape)
 model = VAE_GE(input_shape=input_s, latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.01)
+optimizer = Adam(model.parameters(), lr=0.001)
 
 # optimizer = RMSprop(model.parameters(), lr=0.0005)
 
