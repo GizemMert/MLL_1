@@ -21,8 +21,8 @@ numeric_labels = adata.obs['cell_ontology_class'].map(label_mapping).to_numpy()
 inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
-epochs = 150
-beta = 0.00001
+epochs = 300
+beta = 0.1
 cff_rec = 1
 cff_emd = 1
 
@@ -34,12 +34,15 @@ class GeneExpressionDataset(Dataset):
         self.expressions = expressions
         self.labels = labels
         self.scvi_embeddings = scvi_embeddings
+        # self.min = expressions.min()
+        # self.max = expressions.max()
 
     def __len__(self):
         return len(self.expressions)
 
     def __getitem__(self, idx):
         expression = self.expressions[idx]
+        # n_expression = (expression - self.min) / (self.max - self.min)
         label = self.labels[idx]
         scvi_embedding = self.scvi_embeddings[idx]
 
