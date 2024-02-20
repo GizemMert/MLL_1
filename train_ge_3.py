@@ -22,9 +22,9 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 300
-beta = 0.1
-cff_rec = 0.4
-cff_emd = 0.5
+beta = 0.00001
+cff_rec = 1
+cff_emd = 1
 
 from torch.utils.data import Dataset
 
@@ -71,7 +71,7 @@ print(X.shape)
 model = VAE_GE(input_shape=input_s, latent_dim=50).to(device)
 
 
-optimizer = Adam(model.parameters(), lr=0.00001)
+optimizer = Adam(model.parameters(), lr=0.01)
 
 # optimizer = RMSprop(model.parameters(), lr=0.0005)
 
