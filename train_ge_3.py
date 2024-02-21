@@ -22,7 +22,7 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 300
-beta = 0.00001
+beta = 0.0000001
 cff_rec = 1
 cff_emd = 1
 
@@ -138,8 +138,8 @@ for epoch in range(epochs):
         # print("z shape: ", z.shape)
         recon_loss = rec_loss(recgen, gen)
         kl_div_loss = kl_loss(mu, logvar)
-        # scvi_embedding_loss = embedding_loss(mu, scvi_embedding)
-        train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss) #  + (cff_emd*scvi_embedding_loss)
+        scvi_embedding_loss = embedding_loss(mu, scvi_embedding)
+        train_loss = (cff_rec*recon_loss) + (beta*kl_div_loss) + (cff_emd*scvi_embedding_loss)
 
         # Backward pass
         train_loss.backward()
@@ -148,7 +148,7 @@ for epoch in range(epochs):
         loss +=train_loss.data.cpu()
         acc_recgen_loss +=recon_loss.data.cpu()
         acc_kl_loss +=kl_div_loss.data.cpu()
-        # embedd_loss +=scvi_embedding_loss.data.cpu()
+        embedd_loss +=scvi_embedding_loss.data.cpu()
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
@@ -157,14 +157,14 @@ for epoch in range(epochs):
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
     acc_kl_loss = acc_kl_loss / len(dataloader)
-    # emb_loss =embedd_loss / len(dataloader)
+    emb_loss =embedd_loss / len(dataloader)
 
-    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item())) # emb_loss.item()))
+    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f}".format
+          (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item(), emb_loss.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, rec_Loss = {acc_recgen_loss.item():.6f}, "
-                f"KL_Loss = {acc_kl_loss.item():.6f} \n")  # Embd _loss ={emb_loss.item():.6f} \n")
+                f"KL_Loss = {acc_kl_loss.item():.6f},  Embd _loss ={emb_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
