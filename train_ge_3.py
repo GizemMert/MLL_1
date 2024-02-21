@@ -88,6 +88,10 @@ z_dir = 'z_variables_GE_3'
 if not os.path.exists(z_dir):
     os.makedirs(z_dir)
 
+log_dir = 'log_GE_3'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
 umap_dir = 'umap_GE_3'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
@@ -124,7 +128,8 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         all_means = []
         all_labels = []
-        # all_z = []
+        all_z = []
+        all_log =[]
 
 
     for gen, label, scvi_embedding in dataloader:
@@ -154,7 +159,8 @@ for epoch in range(epochs):
         if epoch % 10 == 0:
             all_means.append(mu.detach().cpu().numpy())
             all_labels.extend(label.cpu().numpy())
-            # all_z.append(z.detach().cpu().numpy())
+            all_z.append(z.detach().cpu().numpy())
+            all_log.append(logvar.detach().cpu().numpy())
 
     loss = loss / len(dataloader)
     acc_recgen_loss = acc_recgen_loss / len(dataloader)
@@ -172,8 +178,11 @@ for epoch in range(epochs):
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         np.save(latent_filename, np.concatenate(all_means, axis=0))
 
-        # z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
-        # np.save(z_filename, np.concatenate(all_z, axis=0))
+        z_filename = os.path. join(z_dir, f'z_epoch_{epoch}.npy')
+        np.save(z_filename, np.concatenate(all_z, axis=0))
+
+        log_filename = os.path. join(log_dir, f'log_epoch_{epoch}.npy')
+        np.save(log_filename, np.concatenate(all_log, axis=0))
 
     model.eval()
 
