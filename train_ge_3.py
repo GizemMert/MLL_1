@@ -22,7 +22,7 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 300
-beta = 0.0001
+beta = 0.001
 cff_rec = 1
 cff_emd = 1
 
@@ -107,7 +107,9 @@ def rec_loss(recgen, gen):
 
 
 def embedding_loss(z, scvi_embedding):
-    loss = F.mse_loss(z, scvi_embedding, reduction='mean')
+    # loss = F.mse_loss(z, scvi_embedding, reduction='mean')
+    loss = 1 - F.cosine_similarity(z, scvi_embedding, dim=1).mean()
+    return loss
     return loss
 # Training loop
 
