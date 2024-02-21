@@ -44,7 +44,7 @@ class GeneExpressionDataset(Dataset):
         expression = self.expressions[idx]
         n_expression = (expression - self.min) / (self.max - self.min)
         # print(f"Item {idx}: Min value in normalized expression: {n_expression.min().item()}")
-        print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
+        # print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
         label = self.labels[idx]
         scvi_embedding = self.scvi_embeddings[idx]
 
