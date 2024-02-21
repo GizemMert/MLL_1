@@ -159,7 +159,7 @@ for epoch in range(epochs):
     acc_kl_loss = acc_kl_loss / len(dataloader)
     # emb_loss =embedd_loss / len(dataloader)
 
-    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}, embed_loss = {:.6f} ".format
+    print("epoch : {}/{}, loss = {:.6f}, rec_loss = {:.6f}, kl_div = {:.6f}".format
           (epoch + 1, epochs, loss.item(), acc_recgen_loss.item(), acc_kl_loss.item())) # emb_loss.item()))
 
     with open(result_file, "a") as f:
