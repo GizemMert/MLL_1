@@ -22,7 +22,7 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 300
-beta = 0.00001
+beta = 0.0001
 cff_rec = 1
 cff_emd = 1
 
