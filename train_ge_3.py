@@ -22,7 +22,7 @@ inverse_label_map = {v: k for k, v in label_mapping.items()}
 
 batch_size = 128
 epochs = 300
-beta = 0.0000001
+beta = 0.001
 cff_rec = 1
 cff_emd = 1
 
@@ -42,10 +42,10 @@ class GeneExpressionDataset(Dataset):
 
     def __getitem__(self, idx):
         expression = self.expressions[idx]
-        # n_expression = (expression - self.min) / (self.max - self.min)
+        n_expression = (expression - self.min) / (self.max - self.min)
         # print(f"Item {idx}: Min value in normalized expression: {n_expression.min().item()}")
-        # print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
-        label = self.labels[idx]
+        print(f"Item {idx}: Max value in normalized expression: {n_expression.max().item()}")
+        # label = self.labels[idx]
         scvi_embedding = self.scvi_embeddings[idx]
 
         # expression = expression.view(1, -1)
@@ -233,8 +233,8 @@ for gen, _, _ in dataloader:
         _, recgen, _, _ = model(gen)
 
     # Scale back to original range [0, 10]
-    recgen = recgen.detach().cpu().numpy() # * 10
-    gen = gen.detach().cpu().numpy() # * 10
+    recgen = recgen.detach().cpu().numpy() * 10
+    gen = gen.detach().cpu().numpy() * 10
 
     min_recgen_value = min(min_recgen_value, recgen.min())
     max_recgen_value = max(max_recgen_value, recgen.max())
