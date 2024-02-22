@@ -4,9 +4,9 @@ import os
 epoch = 290
 
 # Directories where the files are saved
-latent_dir = 'latent_data4cp2_new5_std'
-z_dir = 'z_data4cp2_new5_std'
-log_dir = 'log_data4cp2_new5_std'
+latent_dir = 'latent_variables_GE_3'
+z_dir = 'z_variables_GE_3'
+log_dir = 'log_GE_3'
 
 
 class_labels = [0, 1, 2]
