@@ -188,13 +188,16 @@ for epoch in range(epochs):
             class_z = all_z_np[class_mask]
             class_log = all_log_np[class_mask]
 
-            latent_filename = os.path.join(latent_dir, f'class_{class_label}_latent_epoch_{epoch}.npy')
+            mean_filename = os.path.join(latent_dir, f'class_{class_label}_mean_epoch_{epoch}.npy')
             z_filename = os.path.join(z_dir, f'class_{class_label}_z_epoch_{epoch}.npy')
             log_filename = os.path.join(log_dir, f'class_{class_label}_log_epoch_{epoch}.npy')
 
-            np.save(latent_filename, class_means)
+            np.save(mean_filename, class_means)
             np.save(z_filename, class_z)
             np.save(log_filename, class_log)
+
+            latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+            np.save(latent_filename, np.concatenate(all_means, axis=0))
 
             print(f"Data for class {class_label} saved for epoch {epoch}")
 
