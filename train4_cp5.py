@@ -8,12 +8,13 @@ from sklearn.metrics import f1_score
 from Dataloader_4 import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
+from matplotlib.colors import ListedColormap
 import os
 from mmd import MMDLoss, RBF
 import time
 import torchvision
 import cv2
-from mmd import MMDLoss, RBF
+from mmd_loss_2 import mmd
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 # import mrcnn.config
@@ -67,43 +68,43 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # custom_state_dict = torch.load(custom_weights_path)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
-cff_feat_rec = 0.25
-cff_im_rec = 0.50
-cff_kld = 0.10
-cff_mmd = 0.15
+cff_feat_rec = 0.20
+cff_im_rec = 0.40
+cff_kld = 0.20
+cff_mmd = 0.20
 
 
 beta = 4
 
-umap_dir = 'umap_figures4cp2_new5_std'
+umap_dir = 'umap_figures4cp2_new5_std_gen_2'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
-latent_dir = 'latent_data4cp2_new5_std'
+latent_dir = 'latent_data4cp2_new5_std_gen_2'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-z_dir = 'z_data4cp2_new5_std'
+z_dir = 'z_data4cp2_new5_std_gen_2'
 if not os.path.exists(z_dir):
     os.makedirs(z_dir)
 
-log_dir = 'log_data4cp2_new5_std'
+log_dir = 'log_data4cp2_new5_std_gen_2'
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
-label_dir = 'label_data4cp2_new5_std'
+label_dir = 'label_data4cp2_new5_std_gen_2'
 if not os.path.exists(label_dir):
     os.makedirs(label_dir)
 
-result_dir = "training_results4cp2_new5_std"
+result_dir = "training_results4cp2_new5_std_gen_2"
 os.makedirs(result_dir, exist_ok=True)
-result_file = os.path.join(result_dir, "training_results4cp2_new5_std.txt")
+result_file = os.path.join(result_dir, "training_results4cp2_new5_std_gen_2.txt")
 
-save_img_dir = "masked_images5_std"
+save_img_dir = "masked_images5_std_gen_2"
 if not os.path.exists(save_img_dir):
     os.makedirs(save_img_dir)
 
-save_mask_dir = "masks5_std"
+save_mask_dir = "masks5_std_gen_2"
 if not os.path.exists(save_mask_dir):
     os.makedirs(save_mask_dir)
 
@@ -202,7 +203,7 @@ for epoch in range(epochs):
         if neutrophil_mask.any():
             z_neutrophil = z_dist[neutrophil_mask]
             z_neutrophil = z_neutrophil.to(device)
-            mmd_loss_n = MMDLoss()(z_neutrophil, ref_z_class_2)
+            mmd_loss_n = mmd(z_neutrophil, ref_z_class_2)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd * mmd_loss_n)
 
         train_loss.backward()
@@ -270,6 +271,11 @@ for epoch in range(epochs):
             mask_filepath = os.path.join(save_mask_dir, mask_filename)
             cv2.imwrite(mask_filepath, mask_np * 255)
 
+    if epoch == epochs - 1:
+
+        final_z_neutrophil_np = z_neutrophil.cpu().detach().numpy() if z_neutrophil.is_cuda else z_neutrophil.detach().numpy()
+        np.save('final_z_neutrophil_gen_2.npy', final_z_neutrophil_np)
+
     model.eval()
 
     if epoch % 10 == 0:
@@ -293,7 +299,18 @@ for epoch in range(epochs):
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.7))
+        unique_labels = np.unique(filtered_labels)
+        n_unique_labels = len(unique_labels)
+
+
+        tab20 = plt.cm.tab20(np.linspace(0., 1, 20))
+        selected_colors = tab20[np.linspace(0, 19, n_unique_labels).astype(int)]
+
+        custom_cmap = ListedColormap(selected_colors)
+
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100,
+                             c=filtered_labels, cmap=custom_cmap)
+        # scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
         ax.set_aspect('equal')
 
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
@@ -329,11 +346,14 @@ for epoch in range(epochs):
         ax_legend.axis('off')  # Turn off the axis for the legend subplot
 
         unique_filtered_labels = np.unique(filtered_labels)
-        filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
-        color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+        filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if
+                                label in inverse_label_map]
+
+        colors_from_cmap = custom_cmap(np.linspace(0, 1, n_unique_labels))
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
-                                     markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
+                                     markerfacecolor=colors_from_cmap[i], markersize=18)
+                          for i in range(len(unique_filtered_labels))]
 
         ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
@@ -342,6 +362,60 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
         plt.close(fig)
 
+    final_z_neutrophil_filename = 'final_z_neutrophil_gen_2.npy'
+    ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
+
+    if epoch == epochs - 1:
+        if os.path.exists(final_z_neutrophil_filename):
+            final_z_neutrophil = np.load(final_z_neutrophil_filename)
+
+        # Proceed with UMAP visualization
+        combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=42)
+        umap_embedding = umap_reducer.fit_transform(combined_data)
+
+        split_point = final_z_neutrophil.shape[0]
+        umap_z_neutrophil = umap_embedding[:split_point, :]
+        umap_ref_z_class_2 = umap_embedding[split_point:, :]
+
+        plt.figure(figsize=(12, 6))
+        plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
+        plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
+        plt.title('UMAP Visualization of Neutrophil Latent Representations (Post-Training)')
+        plt.xlabel('UMAP Dimension 1')
+        plt.ylabel('UMAP Dimension 2')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
+        plt.close()
+
+    neutrophil_banded_label = 7
+    neutrophil_segmented_label = 8
+
+
+    file_name = "reconstructed-neutrophil_2/"
+    if not os.path.exists(file_name):
+        os.makedirs(file_name)
+
+    # Process and visualize only for specified neutrophil classes
+    for i in range(30):
+        ft, img, mask, lbl, _ = train_dataset[i]
+
+        # Check if the label is for neutrophil banded or segmented
+        if lbl in [neutrophil_banded_label, neutrophil_segmented_label]:
+            ft = np.expand_dims(ft, axis=0)
+            ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
+
+            _, _, im_out, _, _ = model(ft)
+            im_out = im_out.data.cpu().numpy().squeeze()
+            im_out = np.moveaxis(im_out, 0, 2)
+            img = np.moveaxis(img, 0, 2)
+            im = np.concatenate([img, im_out], axis=1)
+
+            if epoch % 10 == 0:
+                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+
+    """   
     for i in range(30):
         ft, img, mask, lbl, _ = train_dataset[i]
         ft = np.expand_dims(ft, axis=0)
@@ -360,10 +434,10 @@ for epoch in range(epochs):
             if os.path.exists(os.path.join(file_name)) is False:
                 os.makedirs(os.path.join(file_name))
             cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
-
+    """
 script_dir = os.path.dirname(__file__)
 
-model_save_path = os.path.join(script_dir, 'trained_model4cp2_new5_std.pth')
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new5_std_gen_2.pth')
 torch.save(model.state_dict(), model_save_path)
 print(f"Trained model saved to {model_save_path}")
 
