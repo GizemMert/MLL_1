@@ -9,7 +9,7 @@
 #SBATCH --time=10:00:00
 #SBATCH --nice=10000
 #SBATCH --qos=gpu_normal
-#SBATCH --constraint=a100_80gb
+
 #SBATCH --output=my_job_output_2.log
 #SBATCH --error=my_job_error_2.log
 
