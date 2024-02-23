@@ -273,21 +273,21 @@ for epoch in range(epochs):
     model.eval()
 
     if epoch % 10 == 0:
-        # Load all latent representations
         latent_data = np.load(latent_filename)
-        means = latent_data[:, :, 0]
-        print(means.shape)
+        # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+        print(latent_data.shape)
         all_labels_array = np.array(all_labels)
+        # print("Labels array shape:", all_labels_array.shape)
 
         # Filter out the 'erythroblast' class
         erythroblast_class_index = label_map['erythroblast']
         mask = all_labels_array != erythroblast_class_index
-        filtered_means = means[mask]
+        filtered_latent_data = latent_data[mask]
         filtered_labels = all_labels_array[mask]
 
         # UMAP for latent space
         latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-            filtered_means)
+            filtered_latent_data)
 
         fig = plt.figure(figsize=(12, 10), dpi=150)
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
