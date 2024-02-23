@@ -3,10 +3,12 @@ from torch import nn
 
 
 class RBF(nn.Module):
-
     def __init__(self, n_kernels=5, mul_factor=2.0, bandwidth=None):
         super().__init__()
-        self.bandwidth_multipliers = mul_factor ** (torch.arange(n_kernels) - n_kernels // 2)
+        # Initialize bandwidth_multipliers as None to set it later in the forward method
+        self.n_kernels = n_kernels
+        self.mul_factor = mul_factor
+        self.bandwidth_multipliers = None  # Will be initialized based on input device in forward()
         self.bandwidth = bandwidth
 
     def get_bandwidth(self, L2_distances):
@@ -17,8 +19,16 @@ class RBF(nn.Module):
         return self.bandwidth
 
     def forward(self, X):
+
+        if self.bandwidth_multipliers is None or self.bandwidth_multipliers.device != X.device:
+            self.bandwidth_multipliers = (self.mul_factor ** (torch.arange(self.n_kernels, device=X.device) - self.n_kernels // 2)).float()
+
         L2_distances = torch.cdist(X, X) ** 2
-        return torch.exp(-L2_distances[None, ...] / (self.get_bandwidth(L2_distances) * self.bandwidth_multipliers)[:, None, None]).sum(dim=0)
+        bandwidth = self.get_bandwidth(L2_distances)
+
+        bandwidth = bandwidth.to(X.device) if isinstance(bandwidth, torch.Tensor) else bandwidth
+        exp_component = -L2_distances[None, ...] / (bandwidth * self.bandwidth_multipliers[:, None, None])
+        return torch.exp(exp_component).sum(dim=0)
 
 
 class MMDLoss(nn.Module):
