@@ -93,13 +93,17 @@ if __name__ == '__main__':
         filtered_latent_data)
 
     plt.figure(figsize=(12, 10), dpi=150)
-    scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=filtered_labels, cmap='plasma')
+    scatter = plt.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=1, c=filtered_labels, cmap='Spectral')
 
     color_map = plt.cm.plasma(np.linspace(0, 1, len(set(filtered_labels))))
     class_names = [inverse_label_map[i] for i in range(len(inverse_label_map))]
 
-    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=class_names[i],
-                                 markerfacecolor=color_map[i], markersize=10) for i in range(len(class_names))]
+    unique_filtered_labels = np.unique(filtered_labels)
+    filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+    color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+
+    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                                 markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
     plt.legend(handles=legend_handles, loc='lower right', title='Cell Types')
 
     plt.title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
