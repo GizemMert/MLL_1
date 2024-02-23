@@ -59,7 +59,7 @@ if not os.path.exists(umap_dir):
 latent_dir = 'latent_data4cp2_new5_std'
 latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
 label_dir = 'label_data4cp2_new5_std'
-labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
+labels_path = os.path.join(label_dir, f'label_epoch_141.npy')
 
 # Load all latent representations
 latent_data = np.load(latents_path)
