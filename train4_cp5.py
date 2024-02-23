@@ -154,7 +154,7 @@ class SobelFilter(nn.Module):
         return edge
 
 edge_loss_fn = SobelFilter().to(device)
-
+ref_z_class_2 = ref_z_class_2.to(device)
 
 for epoch in range(epochs):
     loss = 0.0
