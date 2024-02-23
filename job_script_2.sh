@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=150G
 #SBATCH --gres=gpu:1
-#SBATCH --time=1:00:00
+#SBATCH --time=10:00:00
 #SBATCH --nice=10000
 #SBATCH --qos=gpu_normal
 
@@ -16,4 +16,4 @@
 source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
 
-python subtype_find.py
+python train4_cp5.py
