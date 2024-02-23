@@ -21,16 +21,16 @@ for class_label in class_labels:
     if os.path.exists(mean_filename):
         class_means = np.load(mean_filename)
         print(f"Epoch {epoch}, Class {class_label}, Mean file shape: {class_means.shape}")
-        mean_range = np.max(class_means) - np.min(class_means)
-        print(f"Epoch {epoch}, Class {class_label}, Mean range: {mean_range}")
+        # mean_range = np.max(class_means) - np.min(class_means)
+        print(f"Epoch {epoch}, Class {class_label}, Z max: {np.max(class_means)}, z min :{np.min(class_means)}")
     else:
         print(f"Mean file for epoch {epoch}, class {class_label} does not exist.")
 
     if os.path.exists(z_filename):
         class_z = np.load(z_filename)
         print(f"Epoch {epoch}, Class {class_label}, Z file shape: {class_z.shape}")
-        z_range = np.max(class_z) - np.min(class_z)
-        print(f"Epoch {epoch}, Class {class_label}, Z range: {z_range}")
+        # z_range = np.max(class_z) - np.min(class_z)
+        print(f"Epoch {epoch}, Class {class_label}, Z max: {np.max(class_z)}, z min :{np.min(class_z)}")
     else:
         print(f"Z file for epoch {epoch}, class {class_label} does not exist.")
 
