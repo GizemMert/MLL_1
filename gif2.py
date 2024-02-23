@@ -24,7 +24,7 @@ import geomstats.geometry.complex_manifold as cm
 
 normal = NormalDistributions(sample_dim=1)
 epoch = 140
-latent_dim = 30
+latent_dim = 50
 
 
 label_map = {
@@ -45,7 +45,7 @@ label_map = {
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = VariationalAutoencodermodel4(latent_dim=30)
+model = VariationalAutoencodermodel4(latent_dim=50)
 model_save_path = 'trained_model4cp2_new5_std.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
