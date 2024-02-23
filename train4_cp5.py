@@ -218,6 +218,7 @@ for epoch in range(epochs):
             all_means.append(mu.data.cpu().numpy())
             all_logvars.append(logvar.data.cpu().numpy())
             all_labels.extend(label.cpu().numpy())
+            all_z.append(z_dist.data.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
         # _, predicted = torch.max(class_pred.data, 1)
@@ -250,7 +251,7 @@ for epoch in range(epochs):
 
         label_filename = os.path.join(label_dir, f'label_epoch_{epoch+1}.npy')
         np.save(label_filename, np.array(all_labels))
-        print(f"Laten data is saved for epoch {epoch}")
+        print(f"Label data is saved for epoch {epoch}")
 
         z_filename = os.path.join(z_dir, f'z_epoch_{epoch}.npy')
         np.save(z_filename, np.concatenate(all_z, axis=0))
