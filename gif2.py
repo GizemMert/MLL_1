@@ -46,7 +46,7 @@ inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = VariationalAutoencodermodel4(latent_dim=30)
-model_save_path = 'trained_model4cp2_new5.pth'
+model_save_path = 'trained_model4cp2_new5_std.pth'
 model.load_state_dict(torch.load(model_save_path, map_location=device))
 model.to(device)
 model.eval()
@@ -56,9 +56,9 @@ if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
 # Load all latent representations
-latent_dir = 'latent_data4cp2_new5'
+latent_dir = 'latent_data4cp2_new5_std'
 latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-label_dir = 'label_data4cp2_new5'
+label_dir = 'label_data4cp2_new5_std'
 labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
 
 # Load all latent representations
@@ -169,5 +169,5 @@ fig = go.Figure(data=data, layout=layout)
 fig.show()
 
 # Save the figure to an HTML file
-fig.write_html("3d_umap_interpolation.html")
+fig.write_html("3d_umap_interpolation_gen.html")
 
