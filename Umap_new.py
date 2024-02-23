@@ -8,7 +8,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.patches as mpatches
-import geomstats.backend as gs
+# import geomstats.backend as gs
 import matplotlib.pyplot as plt
 from Beta_Visualization import Beta
 from geomstats.information_geometry.beta import BetaDistributions
@@ -33,11 +33,18 @@ beta_p = Beta()
 
 label_map = {
     'basophil': 0,
-
+    'eosinophil': 1,
+    'erythroblast': 2,
+    'myeloblast': 3,
+    'promyelocyte': 4,
+    'myelocyte': 5,
+    'metamyelocyte': 6,
     'neutrophil_banded': 7,
     'neutrophil_segmented': 8,
     'monocyte': 9,
-
+    'lymphocyte_typical': 10,
+    'lymphocyte_atypical': 11,
+    'smudge_cell': 12,
 }
 
 if __name__ == '__main__':
@@ -46,7 +53,7 @@ if __name__ == '__main__':
     num_classes = len(label_map)
     epoch = 140
 
-    umap_dir = 'umap_manifold_path'
+    umap_dir = 'umap_mmd_job2'
     if not os.path.exists(umap_dir):
         os.makedirs(umap_dir)
 
@@ -72,29 +79,20 @@ if __name__ == '__main__':
 
     # Load all latent representations
     latent_data = np.load(latents_path)
-    latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-    print("Latent data shape:", latent_data_reshaped.shape)
-
-    # Load all labels
-    all_labels_array = np.load(labels_path)
-    print("Labels array shape:", all_labels_array.shape)
-
+    print(latent_data.shape)
+    all_labels = np.load(labels_path)
+    all_labels_array = np.array(all_labels)
     # print("Labels array shape:", all_labels_array.shape)
 
-    neutrophilb_index = label_map['neutrophil_banded']
-    neutrophils_index = label_map['neutrophil_segmented']
-    basophil_index = label_map['basophil']
-    monocyte_index = label_map['monocyte']
-
-    # Create a mask for selecting only the desired classes
-    mask = (all_labels_array == neutrophilb_index) | \
-           (all_labels_array == neutrophils_index) | \
-           (all_labels_array == basophil_index) | \
-           (all_labels_array == monocyte_index)
-
-    # Apply the mask to filter both latent data and labels
-    filtered_latent_data = latent_data_reshaped[mask]
+    # Filter out the 'erythroblast' class
+    erythroblast_class_index = label_map['erythroblast']
+    mask = all_labels_array != erythroblast_class_index
+    filtered_latent_data = latent_data[mask]
     filtered_labels = all_labels_array[mask]
+
+    # UMAP for latent space
+    latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+        filtered_latent_data)
 
     # UMAP for latent space
     latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
@@ -114,7 +112,7 @@ if __name__ == '__main__':
     plt.xlabel('UMAP Dimension 1', fontsize=14)
     plt.ylabel('UMAP Dimension 2', fontsize=14)
 
-    umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
+    umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}_job2.png')
 
     # Save the UMAP figure
     plt.savefig(umap_figure_filename, dpi=300)
