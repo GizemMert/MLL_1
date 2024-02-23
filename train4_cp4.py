@@ -272,7 +272,7 @@ for epoch in range(epochs):
 
     if epoch == epochs - 1:
 
-        final_z_neutrophil_np = z_neutrophil.cpu().numpy() if z_neutrophil.is_cuda else z_neutrophil.numpy()
+        final_z_neutrophil_np = z_neutrophil.cpu().detach().numpy() if z_neutrophil.is_cuda else z_neutrophil.detach().numpy()
         np.save('final_z_neutrophil_gen.npy', final_z_neutrophil_np)
 
     model.eval()
@@ -298,7 +298,7 @@ for epoch in range(epochs):
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.7))
         ax.set_aspect('equal')
 
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
