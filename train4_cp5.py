@@ -197,10 +197,11 @@ for epoch in range(epochs):
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         mmd_loss_n = torch.tensor(0.0).to(device)
 
-        # Check for neutrophil samples and calculate MMD loss if present
+        # Check for neutrophil samples and calculate MMD loss if present in the batch
         neutrophil_mask = (label == 7) | (label == 8)
         if neutrophil_mask.any():
             z_neutrophil = z_dist[neutrophil_mask]
+            z_neutrophil = z_neutrophil.to(device)
             mmd_loss_n = MMDLoss()(z_neutrophil, ref_z_class_2)
         train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd * mmd_loss_n)
 
