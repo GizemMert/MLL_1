@@ -9,9 +9,11 @@ from Dataloader_4 import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 import os
+from mmd import MMDLoss, RBF
 import time
 import torchvision
 import cv2
+from mmd import MMDLoss, RBF
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 # import mrcnn.config
@@ -26,8 +28,25 @@ ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_classes = len(label_map)
-model = VariationalAutoencodermodel4(latent_dim=30)
+model = VariationalAutoencodermodel4(latent_dim=50)
 model_name = 'AE-CFE-'
+
+epoch_of_gen = 290
+latent_dir = 'latent_variables_GE_3'
+z_dir = 'z_variables_GE_3'
+
+class_labels_gen = [0, 1, 2]
+# monocyte : class 1
+# neutrophil : class 2
+# basophil : class 0
+
+class_label = 2
+
+mean_filename = os.path.join(latent_dir, f'class_{class_label}_mean_epoch_{epoch_of_gen}.npy')
+z_filename = os.path.join(z_dir, f'class_{class_label}_z_epoch_{epoch_of_gen}.npy')
+
+ref_mean_class_2 = torch.from_numpy(np.load(mean_filename)).float().to(device)
+ref_z_class_2 = torch.from_numpy(np.load(z_filename)).float().to(device)
 
 if ngpu > 1:
     model = nn.DataParallel(model)
@@ -49,9 +68,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
 cff_feat_rec = 0.25
-cff_im_rec = 0.55
-cff_kld = 0.20
-cff_edge = 0.20
+cff_im_rec = 0.50
+cff_kld = 0.10
+cff_mmd = 0.15
+
 
 beta = 4
 
@@ -62,6 +82,14 @@ if not os.path.exists(umap_dir):
 latent_dir = 'latent_data4cp2_new5_std'
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
+
+z_dir = 'z_data4cp2_new5_std'
+if not os.path.exists(z_dir):
+    os.makedirs(z_dir)
+
+log_dir = 'log_data4cp2_new5_std'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
 
 label_dir = 'label_data4cp2_new5_std'
 if not os.path.exists(label_dir):
@@ -129,10 +157,11 @@ edge_loss_fn = SobelFilter().to(device)
 
 
 for epoch in range(epochs):
-    loss = 0
-    acc_imrec_loss = 0
-    acc_featrec_loss = 0
-    kl_div_loss = 0
+    loss = 0.0
+    acc_imrec_loss = 0.0
+    acc_featrec_loss = 0.0
+    kl_div_loss = 0.0
+    mmd_loss = 0.0
     y_true = []
     y_pred = []
 
@@ -142,6 +171,7 @@ for epoch in range(epochs):
         all_means = []
         all_labels = []
         all_logvars = []
+        all_z =[]
 
     for feat, scimg, mask, label, _ in train_dataloader:
         feat = feat.float()
@@ -165,7 +195,14 @@ for epoch in range(epochs):
         feat_rec_loss = criterion(output, feat)
         recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss)  #(cff_edge * edge_loss)
+        mmd_loss_n = torch.tensor(0.0).to(device)
+
+        # Check for neutrophil samples and calculate MMD loss if present
+        neutrophil_mask = (label == 7) | (label == 8)
+        if neutrophil_mask.any():
+            z_neutrophil = z_dist[neutrophil_mask]
+            mmd_loss_n = MMDLoss()(z_neutrophil, ref_z_class_2)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd * mmd_loss_n)
 
         train_loss.backward()
         optimizer.step()
@@ -174,6 +211,7 @@ for epoch in range(epochs):
         acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += recon_loss.data.cpu()
         kl_div_loss += kld_loss.data.cpu()
+        mmd_loss += mmd_loss_n.data.cpu()
 
         if epoch % 10 == 0:
             all_means.append(mu.data.cpu().numpy())
@@ -188,26 +226,36 @@ for epoch in range(epochs):
     acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
+    mmd_loss = mmd_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}".format
-          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item()))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss = {:.6f}".format
+          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
-                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f} \n")
+                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
+                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
+                f"MMD_Loss = {mmd_loss.item():.6f} \n")
 
     if epoch % 10 == 0:
-        latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
-        latent_values = np.concatenate(latent_values_per_epoch, axis=0)
+        # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
+        # latent_values = np.concatenate(latent_values_per_epoch, axis=0)
 
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-        np.save(latent_filename, latent_values)
-        print(f"Latent data is saved for epoch {epoch + 1}, Shape: {latent_values.shape}")
+        concatenated_means = np.concatenate(all_means, axis=0)
+        np.save(latent_filename, concatenated_means)
+        print(f"Latent data is saved for epoch {epoch + 1}, Shape: {concatenated_means.shape}")
 
         label_filename = os.path.join(label_dir, f'label_epoch_{epoch+1}.npy')
         np.save(label_filename, np.array(all_labels))
         print(f"Laten data is saved for epoch {epoch}")
+
+        z_filename = os.path.join(z_dir, f'z_epoch_{epoch}.npy')
+        np.save(z_filename, np.concatenate(all_z, axis=0))
+
+        log_filename = os.path.join(log_dir, f'log_epoch_{epoch}.npy')
+        np.save(log_filename, np.concatenate(all_logvars, axis=0))
 
         for i, img in enumerate(masked_scimg):
             img_np = img.cpu().numpy().transpose(1, 2, 0)
