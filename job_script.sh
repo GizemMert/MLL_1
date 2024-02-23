@@ -16,4 +16,4 @@
 source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
 
-python subtype_find.py
+python train4_cp4.py

@@ -5,312 +5,432 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
-from Dataloader_2 import Dataloader, label_map
+from Dataloader_4 import Dataloader, label_map
 from SSIM import SSIM
 from model4 import VariationalAutoencodermodel4
 import os
+from mmd import MMDLoss, RBF
 import time
 import torchvision
 import cv2
+from mmd import MMDLoss, RBF
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 # import mrcnn.config
 # import mrcnn.model_feat_extract
 import numpy as np
 
-if __name__ == '__main__':
-    inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-    epochs = 10
-    batch_size = 30
-    ngpu = torch.cuda.device_count()
-    device = torch.device("cpu")
 
-    num_classes = len(label_map)
-    model = VariationalAutoencodermodel4(latent_dim=30)
-    model_name = 'AE-CFE-'
+inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
+epochs = 150
+batch_size = 128
+ngpu = torch.cuda.device_count()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    if ngpu > 1:
-        model = nn.DataParallel(model)
+num_classes = len(label_map)
+model = VariationalAutoencodermodel4(latent_dim=50)
+model_name = 'AE-CFE-'
 
-    model = model.to(device)
+epoch_of_gen = 290
+latent_dir = 'latent_variables_GE_3'
+z_dir = 'z_variables_GE_3'
 
-    # Load the dataset
-    train_dataset = Dataloader(split='train')
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
+class_labels_gen = [0, 1, 2]
+# monocyte : class 1
+# neutrophil : class 2
+# basophil : class 0
 
-    criterion = nn.MSELoss()
-    criterion_1 = SSIM(window_size=10, size_average=True)
-    class_criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+class_label = 2
 
-    # custom_weights_path = "/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5"
-    # custom_state_dict = torch.load(custom_weights_path)
-    # mask_rcnn_model.load_state_dict(custom_state_dict)
+mean_filename = os.path.join(latent_dir, f'class_{class_label}_mean_epoch_{epoch_of_gen}.npy')
+z_filename = os.path.join(z_dir, f'class_{class_label}_z_epoch_{epoch_of_gen}.npy')
 
-    cff_feat_rec = 0.20
-    cff_im_rec = 0.55
-    cff_kld = 0.15
-    cff_classification = 0.10
+ref_mean_class_2 = torch.from_numpy(np.load(mean_filename)).float().to(device)
+ref_z_class_2 = torch.from_numpy(np.load(z_filename)).float().to(device)
 
-    beta = 4
+if ngpu > 1:
+    model = nn.DataParallel(model)
 
-    umap_dir = 'umap_figures4cp2_new4'
-    if not os.path.exists(umap_dir):
-        os.makedirs(umap_dir)
+model = model.to(device)
 
-    latent_dir = 'latent_data4cp2_new4'
-    if not os.path.exists(latent_dir):
-        os.makedirs(latent_dir)
+# Load the dataset
+train_dataset = Dataloader(split='train')
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
-    label_dir = 'label_data4cp2_new4'
-    if not os.path.exists(label_dir):
-        os.makedirs(label_dir)
-
-    result_dir = "training_results4cp2_new4"
-    os.makedirs(result_dir, exist_ok=True)
-    result_file = os.path.join(result_dir, "training_results4cp2_new4.txt")
-
-    save_img_dir = "masked_images4"
-    if not os.path.exists(save_img_dir):
-        os.makedirs(save_img_dir)
-
-    save_mask_dir = "masks4"
-    if not os.path.exists(save_mask_dir):
-        os.makedirs(save_mask_dir)
+criterion = nn.MSELoss()
+criterion_1 = SSIM(window_size=10, size_average=True)
+class_criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 
-    def kl_divergence(mu, logvar):
-        batch_s = mu.size(0)
-        assert batch_s != 0
-        if mu.data.ndimension() == 4:
-            mu = mu.view(mu.size(0), mu.size(1))
-        if logvar.data.ndimension() == 4:
-            logvar = logvar.view(logvar.size(0), logvar.size(1))
+# custom_weights_path = "/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5"
+# custom_state_dict = torch.load(custom_weights_path)
+# mask_rcnn_model.load_state_dict(custom_state_dict)
 
-        klds = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())
-        total_kld = klds.sum(1).mean(0, True)
-        dimension_wise_kld = klds.mean(0)
-        mean_kld = klds.mean(1).mean(0, True)
-
-        return total_kld, dimension_wise_kld, mean_kld
+cff_feat_rec = 0.20
+cff_im_rec = 0.40
+cff_kld = 0.20
+cff_mmd = 0.20
 
 
-    def reconstruction_loss(scimg, im_out, distribution="gaussian"):
-        batch_s = scimg.size(0)
-        assert batch_s != 0
+beta = 4
 
-        if distribution == 'bernoulli':
-            recon_loss = F.binary_cross_entropy_with_logits(im_out, scimg, reduction="sum").div(batch_s)
-        elif distribution == 'gaussian':
-            recon_loss = F.mse_loss(im_out, scimg, reduction='sum').div(batch_size)
-        else:
-            recon_loss = None
+umap_dir = 'umap_figures4cp2_new5_std_gen'
+if not os.path.exists(umap_dir):
+    os.makedirs(umap_dir)
 
-        return recon_loss
+latent_dir = 'latent_data4cp2_new5_std_gen'
+if not os.path.exists(latent_dir):
+    os.makedirs(latent_dir)
 
-    class SobelFilter(nn.Module):
-        def __init__(self):
-            super(SobelFilter, self).__init__()
-            sobel_kernel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).view(1, 1, 3, 3)
-            sobel_kernel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).view(1, 1, 3, 3)
-            self.weight_x = nn.Parameter(data=sobel_kernel_x, requires_grad=False)
-            self.weight_y = nn.Parameter(data=sobel_kernel_y, requires_grad=False)
+z_dir = 'z_data4cp2_new5_std_gen'
+if not os.path.exists(z_dir):
+    os.makedirs(z_dir)
 
-        def forward(self, x):
-            x_gray = torch.mean(x, dim=1, keepdim=True)
-            edge_x = F.conv2d(x_gray, self.weight_x, padding=1)
-            edge_y = F.conv2d(x_gray, self.weight_y, padding=1)
-            edge = torch.sqrt(edge_x ** 2 + edge_y ** 2 + 1e-6)
+log_dir = 'log_data4cp2_new5_std_gen'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
 
-            return edge
+label_dir = 'label_data4cp2_new5_std_gen'
+if not os.path.exists(label_dir):
+    os.makedirs(label_dir)
 
-    edge_loss_fn = SobelFilter().to(device)
+result_dir = "training_results4cp2_new5_std_gen"
+os.makedirs(result_dir, exist_ok=True)
+result_file = os.path.join(result_dir, "training_results4cp2_new5_std_gen.txt")
 
-    for epoch in range(epochs):
-        loss = 0
-        acc_imrec_loss = 0
-        acc_featrec_loss = 0
-        kl_div_loss = 0
-        y_true = []
-        y_pred = []
+save_img_dir = "masked_images5_std_gen"
+if not os.path.exists(save_img_dir):
+    os.makedirs(save_img_dir)
 
-        model.train()
+save_mask_dir = "masks5_std_gen"
+if not os.path.exists(save_mask_dir):
+    os.makedirs(save_mask_dir)
+
+
+def kl_divergence(mu, logvar):
+    batch_s = mu.size(0)
+    assert batch_s != 0
+    if mu.data.ndimension() == 4:
+        mu = mu.view(mu.size(0), mu.size(1))
+    if logvar.data.ndimension() == 4:
+        logvar = logvar.view(logvar.size(0), logvar.size(1))
+
+    klds = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())
+    total_kld = klds.sum(1).mean(0, True)
+    dimension_wise_kld = klds.mean(0)
+    mean_kld = klds.mean(1).mean(0, True)
+
+    return total_kld, dimension_wise_kld, mean_kld
+
+
+def reconstruction_loss(scimg, im_out, distribution="gaussian"):
+    batch_s = scimg.size(0)
+    assert batch_s != 0
+
+    if distribution == 'bernoulli':
+        recon_loss = F.binary_cross_entropy_with_logits(im_out, scimg, reduction="sum").div(batch_s)
+    elif distribution == 'gaussian':
+        recon_loss = F.mse_loss(im_out, scimg, reduction='sum').div(batch_size)
+    else:
+        recon_loss = None
+
+    return recon_loss
+
+class SobelFilter(nn.Module):
+    def __init__(self):
+        super(SobelFilter, self).__init__()
+        sobel_kernel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+        sobel_kernel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).view(1, 1, 3, 3)
+        self.weight_x = nn.Parameter(data=sobel_kernel_x, requires_grad=False)
+        self.weight_y = nn.Parameter(data=sobel_kernel_y, requires_grad=False)
+
+    def forward(self, x):
+        x_gray = torch.mean(x, dim=1, keepdim=True)
+        edge_x = F.conv2d(x_gray, self.weight_x, padding=1)
+        edge_y = F.conv2d(x_gray, self.weight_y, padding=1)
+        edge = torch.sqrt(edge_x ** 2 + edge_y ** 2 + 1e-6)
+
+        return edge
+
+edge_loss_fn = SobelFilter().to(device)
+ref_z_class_2 = ref_z_class_2.to(device)
+
+for epoch in range(epochs):
+    loss = 0.0
+    acc_imrec_loss = 0.0
+    acc_featrec_loss = 0.0
+    kl_div_loss = 0.0
+    mmd_loss = 0.0
+    y_true = []
+    y_pred = []
+
+    model.train()
+
+    if epoch % 10 == 0:
+        all_means = []
+        all_labels = []
+        all_logvars = []
+        all_z =[]
+
+    for feat, scimg, mask, label, _ in train_dataloader:
+        feat = feat.float()
+        scimg = scimg.float()
+        label = label.long().to(device)
+        mask = mask.float().to(device)
+
+        feat, scimg = feat.to(device), scimg.to(device)
+
+        optimizer.zero_grad()
+
+        z_dist, output, im_out, mu, logvar = model(feat)
+
+        masked_scimg = scimg * mask
+        im_out_masked = im_out * mask
+
+        imgs_edges = edge_loss_fn(masked_scimg)
+        recon_edges = edge_loss_fn(im_out_masked)
+
+        # edge_loss = F.mse_loss(recon_edges, imgs_edges)
+        feat_rec_loss = criterion(output, feat)
+        recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
+        kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
+        mmd_loss_n = torch.tensor(0.0).to(device)
+
+        # Check for neutrophil samples and calculate MMD loss if present in the batch
+        neutrophil_mask = (label == 7) | (label == 8)
+        if neutrophil_mask.any():
+            z_neutrophil = z_dist[neutrophil_mask]
+            z_neutrophil = z_neutrophil.to(device)
+            mmd_loss_n = MMDLoss()(z_neutrophil, ref_z_class_2)
+        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd * mmd_loss_n)
+
+        train_loss.backward()
+        optimizer.step()
+
+        loss += train_loss.data.cpu()
+        acc_featrec_loss += feat_rec_loss.data.cpu()
+        acc_imrec_loss += recon_loss.data.cpu()
+        kl_div_loss += kld_loss.data.cpu()
+        mmd_loss += mmd_loss_n.data.cpu()
 
         if epoch % 10 == 0:
-            all_means = []
-            all_labels = []
+            all_means.append(mu.data.cpu().numpy())
+            all_logvars.append(logvar.data.cpu().numpy())
+            all_labels.extend(label.cpu().numpy())
+            all_z.append(z_dist.data.cpu().numpy())
 
-        for feat, scimg, mask, label, _ in train_dataloader:
-            feat = feat.float()
-            scimg = scimg.float()
-            label = label.long().to(device)
-            mask = mask.float().to(device)
+        # y_true.extend(label.cpu().numpy())
+        # _, predicted = torch.max(class_pred.data, 1)
+        # y_pred.extend(predicted.cpu().numpy())
 
-            feat, scimg = feat.to(device), scimg.to(device)
+    loss = loss / len(train_dataloader)
+    acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
+    acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
+    kl_div_loss = kl_div_loss / len(train_dataloader)
+    mmd_loss = mmd_loss / len(train_dataloader)
+    # f1 = f1_score(y_true, y_pred, average='weighted')
 
-            optimizer.zero_grad()
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss = {:.6f}".format
+          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss.item()))
 
-            z_dist, output, im_out, mu, logvar, class_pred = model(feat)
+    with open(result_file, "a") as f:
+        f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
+                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
+                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
+                f"MMD_Loss = {mmd_loss.item():.6f} \n")
 
-            masked_scimg = scimg * mask
-            im_out_masked = im_out * mask
+    if epoch % 10 == 0:
+        # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
+        # latent_values = np.concatenate(latent_values_per_epoch, axis=0)
 
-            feat_rec_loss = criterion(output, feat)
-            recon_loss = reconstruction_loss(masked_scimg, im_out_masked, distribution="gaussian")
-            kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
-            classification_loss = class_criterion(class_pred, label)
-            train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_classification * classification_loss)
+        latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+        concatenated_means = np.concatenate(all_means, axis=0)
+        np.save(latent_filename, concatenated_means)
+        print(f"Latent data is saved for epoch {epoch + 1}, Shape: {concatenated_means.shape}")
 
-            train_loss.backward()
-            optimizer.step()
+        label_filename = os.path.join(label_dir, f'label_epoch_{epoch+1}.npy')
+        np.save(label_filename, np.array(all_labels))
+        print(f"Label data is saved for epoch {epoch}")
 
-            loss += train_loss.data.cpu()
-            acc_featrec_loss += feat_rec_loss.data.cpu()
-            acc_imrec_loss += recon_loss.data.cpu()
-            kl_div_loss += kld_loss.data.cpu()
+        z_filename = os.path.join(z_dir, f'z_epoch_{epoch}.npy')
+        np.save(z_filename, np.concatenate(all_z, axis=0))
 
-            if epoch % 10 == 0:
-                all_means.append(mu.data.cpu().numpy())
-                all_labels.extend(label.cpu().numpy())
+        log_filename = os.path.join(log_dir, f'log_epoch_{epoch}.npy')
+        np.save(log_filename, np.concatenate(all_logvars, axis=0))
 
-            y_true.extend(label.cpu().numpy())
-            _, predicted = torch.max(class_pred.data, 1)
-            y_pred.extend(predicted.cpu().numpy())
+        for i, img in enumerate(masked_scimg):
+            img_np = img.cpu().numpy().transpose(1, 2, 0)
+            filename = f"{i}-{epoch}.jpg"
+            filepath = os.path.join(save_img_dir, filename)
+            cv2.imwrite(filepath, img_np * 255)
 
-        loss = loss / len(train_dataloader)
-        acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
-        acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
-        kl_div_loss = kl_div_loss / len(train_dataloader)
-        f1 = f1_score(y_true, y_pred, average='weighted')
+            mask_np = mask[i].cpu().numpy().squeeze()
+            mask_filename = f"{i}-{epoch}_mask.jpg"
+            mask_filepath = os.path.join(save_mask_dir, mask_filename)
+            cv2.imwrite(mask_filepath, mask_np * 255)
 
-        print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, Cls_F1_Score = {:.6f}".format
-              (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), f1.item()))
+    if epoch == epochs - 1:
 
-        with open(result_file, "a") as f:
-            f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
-                    f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
-                    f"Cls_F1_Score = {f1:.6f} \n")
-        if epoch % 10 == 0:
-            latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-            np.save(latent_filename, np.concatenate(all_means, axis=0))
+        final_z_neutrophil_np = z_neutrophil.cpu().numpy() if z_neutrophil.is_cuda else z_neutrophil.numpy()
+        np.save('final_z_neutrophil_gen.npy', final_z_neutrophil_np)
 
-            label_filename = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
-            np.save(label_filename, np.array(all_labels))
+    model.eval()
 
-            for i, img in enumerate(masked_scimg):
-                img_np = img.cpu().numpy().transpose(1, 2, 0)
-                filename = f"{i}-{epoch}.jpg"
-                filepath = os.path.join(save_img_dir, filename)
-                cv2.imwrite(filepath, img_np * 255)
+    if epoch % 10 == 0:
+        latent_data = np.load(latent_filename)
+        # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+        print(latent_data.shape)
+        all_labels_array = np.array(all_labels)
+        # print("Labels array shape:", all_labels_array.shape)
 
-                mask_np = mask[i].cpu().numpy().squeeze()
-                mask_filename = f"{i}-{epoch}_mask.jpg"
-                mask_filepath = os.path.join(save_mask_dir, mask_filename)
-                cv2.imwrite(mask_filepath, mask_np * 255)
+        # Filter out the 'erythroblast' class
+        erythroblast_class_index = label_map['erythroblast']
+        mask = all_labels_array != erythroblast_class_index
+        filtered_latent_data = latent_data[mask]
+        filtered_labels = all_labels_array[mask]
 
-        model.eval()
+        # UMAP for latent space
+        latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+            filtered_latent_data)
 
-        if epoch % 10 == 0:
-            # Load all latent representations
-            latent_data = np.load(latent_filename)
-            latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-            print(latent_data_reshaped.shape)
-            all_labels_array = np.array(all_labels)
-            # print("Labels array shape:", all_labels_array.shape)
+        fig = plt.figure(figsize=(12, 10), dpi=150)
+        gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
-            # Filter out the 'erythroblast' class
-            erythroblast_class_index = label_map['erythroblast']
-            mask = all_labels_array != erythroblast_class_index
-            filtered_latent_data = latent_data_reshaped[mask]
-            filtered_labels = all_labels_array[mask]
+        ax = fig.add_subplot(gs[0])
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.7))
+        ax.set_aspect('equal')
 
-            # UMAP for latent space
-            latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-                filtered_latent_data)
+        x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
+        y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
 
-            fig = plt.figure(figsize=(12, 10), dpi=150)
-            gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
+        zoom_factor = 0.40  # Smaller values mean more zoom
+        padding_factor = 0.3  # Adjust padding around the zoomed area
 
-            ax = fig.add_subplot(gs[0])  # add cc zero here
-            scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral', edgecolor=(1, 1, 1, 0.7))
-            ax.set_aspect('equal')
+        # Calculate the range for zooming in based on the zoom factor
+        x_range = (x_max - x_min) * zoom_factor
+        y_range = (y_max - y_min) * zoom_factor
 
-            x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
-            y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
+        # Calculate the center of the data
+        center_x = (x_max + x_min) / 2
+        center_y = (y_max + y_min) / 2
 
-            zoom_factor = 0.40  # Smaller values mean more zoom
-            padding_factor = 0.3  # Adjust padding around the zoomed area
+        # Calculate new limits around the center of the data
+        new_x_min = center_x - (x_range * (1 + padding_factor))
+        new_x_max = center_x + (x_range * (1 + padding_factor))
+        new_y_min = center_y - (y_range * (1 + padding_factor))
+        new_y_max = center_y + (y_range * (1 + padding_factor))
 
-            # Calculate the range for zooming in based on the zoom factor
-            x_range = (x_max - x_min) * zoom_factor
-            y_range = (y_max - y_min) * zoom_factor
+        # Apply the new limits to zoom in on the plot
+        ax.set_xlim(new_x_min, new_x_max)
+        ax.set_ylim(new_y_min, new_y_max)
 
-            # Calculate the center of the data
-            center_x = (x_max + x_min) / 2
-            center_y = (y_max + y_min) / 2
+        ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
+        ax.set_xlabel('UMAP Dimension 1', fontsize=16)
+        ax.set_ylabel('UMAP Dimension 2', fontsize=16)
 
-            # Calculate new limits around the center of the data
-            new_x_min = center_x - (x_range * (1 + padding_factor))
-            new_x_max = center_x + (x_range * (1 + padding_factor))
-            new_y_min = center_y - (y_range * (1 + padding_factor))
-            new_y_max = center_y + (y_range * (1 + padding_factor))
+        # Second subplot for the legend
+        ax_legend = fig.add_subplot(gs[1])
+        ax_legend.axis('off')  # Turn off the axis for the legend subplot
 
-            # Apply the new limits to zoom in on the plot
-            ax.set_xlim(new_x_min, new_x_max)
-            ax.set_ylim(new_y_min, new_y_max)
+        unique_filtered_labels = np.unique(filtered_labels)
+        filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+        color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
 
-            ax.set_title(f'Latent Space Representation - (Epoch {epoch})', fontsize=18)
-            ax.set_xlabel('UMAP Dimension 1', fontsize=16)
-            ax.set_ylabel('UMAP Dimension 2', fontsize=16)
+        legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                                     markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
 
-            # Second subplot for the legend
-            ax_legend = fig.add_subplot(gs[1])
-            ax_legend.axis('off')  # Turn off the axis for the legend subplot
+        ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
-            unique_filtered_labels = np.unique(filtered_labels)
-            filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
-            color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+        plt.tight_layout()
+        umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
+        plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
+        plt.close(fig)
 
-            legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
-                                         markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
+    final_z_neutrophil_filename = 'final_z_neutrophil_gen.npy'
+    ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
 
-            ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
+    if epoch == epochs - 1:
+        if os.path.exists(final_z_neutrophil_filename):
+            final_z_neutrophil = np.load(final_z_neutrophil_filename)
 
-            plt.tight_layout()
-            umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
-            plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
-            plt.close(fig)
+        # Proceed with UMAP visualization
+        combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=42)
+        umap_embedding = umap_reducer.fit_transform(combined_data)
 
-        for i in range(30):
-            ft, img, mask, lbl, _ = train_dataset[i]
+        split_point = final_z_neutrophil.shape[0]
+        umap_z_neutrophil = umap_embedding[:split_point, :]
+        umap_ref_z_class_2 = umap_embedding[split_point:, :]
+
+        plt.figure(figsize=(12, 6))
+        plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
+        plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
+        plt.title('UMAP Visualization of Neutrophil Latent Representations (Post-Training)')
+        plt.xlabel('UMAP Dimension 1')
+        plt.ylabel('UMAP Dimension 2')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
+        plt.close()
+
+    neutrophil_banded_label = 7
+    neutrophil_segmented_label = 8
+
+
+    file_name = "reconstructed-neutrophil/"
+    if not os.path.exists(file_name):
+        os.makedirs(file_name)
+
+    # Process and visualize only for specified neutrophil classes
+    for i in range(30):
+        ft, img, mask, lbl, _ = train_dataset[i]
+
+        # Check if the label is for neutrophil banded or segmented
+        if lbl in [neutrophil_banded_label, neutrophil_segmented_label]:
             ft = np.expand_dims(ft, axis=0)
-            ft = torch.tensor(ft)
-            ft = ft.to(device)
+            ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
 
-            _, _, im_out, _, _, _ = model(ft)
-            im_out = im_out.data.cpu().numpy()
-            im_out = np.squeeze(im_out)
+            _, _, im_out, _, _ = model(ft)
+            im_out = im_out.data.cpu().numpy().squeeze()
             im_out = np.moveaxis(im_out, 0, 2)
             img = np.moveaxis(img, 0, 2)
             im = np.concatenate([img, im_out], axis=1)
 
             if epoch % 10 == 0:
-                file_name = "reconsructed-images4_cp2_new4/"
-                if os.path.exists(os.path.join(file_name)) is False:
-                    os.makedirs(os.path.join(file_name))
-                cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
+                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
 
-    script_dir = os.path.dirname(__file__)
+    """   
+    for i in range(30):
+        ft, img, mask, lbl, _ = train_dataset[i]
+        ft = np.expand_dims(ft, axis=0)
+        ft = torch.tensor(ft)
+        ft = ft.to(device)
 
-    model_save_path = os.path.join(script_dir, 'trained_model4cp2_new4.pth')
-    torch.save(model.state_dict(), model_save_path)
-    print(f"Trained model saved to {model_save_path}")
+        _, _, im_out, _, _ = model(ft)
+        im_out = im_out.data.cpu().numpy()
+        im_out = np.squeeze(im_out)
+        im_out = np.moveaxis(im_out, 0, 2)
+        img = np.moveaxis(img, 0, 2)
+        im = np.concatenate([img, im_out], axis=1)
 
-    with open(result_file, "a") as f:
-        f.write("Training completed.\n")
-
-    """"
-    if os.path.exists(os.path.join('Model/')) is False:
-        os.makedirs(os.path.join('Model/'))
-    torch.save(model, "Model/" + model_name + time.strftime("%Y%m%d-%H%M%S") + ".mdl")
+        if epoch % 10 == 0:
+            file_name = "reconsructed-images4_cp2_new5_std/"
+            if os.path.exists(os.path.join(file_name)) is False:
+                os.makedirs(os.path.join(file_name))
+            cv2.imwrite(os.path.join(file_name, str(i) + "-" + str(epoch) + ".jpg"), im * 255)
     """
+script_dir = os.path.dirname(__file__)
+
+model_save_path = os.path.join(script_dir, 'trained_model4cp2_new5_std_gen.pth')
+torch.save(model.state_dict(), model_save_path)
+print(f"Trained model saved to {model_save_path}")
+
+with open(result_file, "a") as f:
+    f.write("Training completed.\n")
+
+""""
+if os.path.exists(os.path.join('Model/')) is False:
+    os.makedirs(os.path.join('Model/'))
+torch.save(model, "Model/" + model_name + time.strftime("%Y%m%d-%H%M%S") + ".mdl")
+"""
