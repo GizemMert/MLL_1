@@ -72,9 +72,9 @@ if __name__ == '__main__':
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=False, num_workers=1)
 
     # Load all latent representations
-    latent_dir = 'latent_data4cp2_new5'
+    latent_dir = 'latent_data4cp2_new5_std'
     latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-    label_dir = 'label_data4cp2_new5'
+    label_dir = 'label_data4cp2_new5_std'
     labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
 
     # Load all latent representations
