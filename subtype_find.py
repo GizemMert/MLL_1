@@ -22,7 +22,7 @@ for class_label in class_labels:
         class_means = np.load(mean_filename)
         print(f"Epoch {epoch}, Class {class_label}, Mean file shape: {class_means.shape}")
         # mean_range = np.max(class_means) - np.min(class_means)
-        print(f"Epoch {epoch}, Class {class_label}, Z max: {np.max(class_means)}, z min :{np.min(class_means)}")
+        print(f"Epoch {epoch}, Class {class_label}, mean max: {np.max(class_means)}, mean min :{np.min(class_means)}")
     else:
         print(f"Mean file for epoch {epoch}, class {class_label} does not exist.")
 
