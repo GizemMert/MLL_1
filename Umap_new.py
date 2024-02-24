@@ -42,6 +42,36 @@ label_map = {
 }
 
 if __name__ == '__main__':
+    final_z_neutrophil_filename = 'final_z_neutrophil_gen_2.npy'
+    umap_dir = 'umap_figures4cp2_new5_std_gen'
+    # ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
+
+
+    if os.path.exists(final_z_neutrophil_filename):
+        final_z_neutrophil = np.load(final_z_neutrophil_filename)
+
+    # Proceed with UMAP visualization
+    # combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
+    umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=42)
+    umap_embedding = umap_reducer.fit_transform(final_z_neutrophil)
+
+    # split_point = final_z_neutrophil.shape[0]
+    # umap_z_neutrophil = umap_embedding[:split_point, :]
+    # umap_ref_z_class_2 = umap_embedding[split_point:, :]
+
+    plt.figure(figsize=(12, 6))
+    # plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
+    plt.scatter(umap_embedding[:, 0], umap_embedding[:, 1], s=10, label='Model Neutrophil')
+    # plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
+    plt.title('UMAP Visualization of Neutrophil Latent Representations-Model')
+    plt.xlabel('UMAP Dimension 1')
+    plt.ylabel('UMAP Dimension 2')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
+    plt.close()
+
+"""
     inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
     batch_size = 128
     num_classes = len(label_map)
@@ -116,8 +146,6 @@ if __name__ == '__main__':
     plt.savefig(umap_figure_filename, dpi=300)
     print("it is saved")
     plt.close()
-
-"""
 
     geodesic_ab_fisher = normal.metric.geodesic(random_myeloblast_point, random_neutrophil_banded_point)
     n_points = 20
