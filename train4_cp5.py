@@ -165,6 +165,7 @@ for epoch in range(epochs):
     mmd_loss = 0.0
     y_true = []
     y_pred = []
+    neutrophil_z_vectors = []
 
     model.train()
 
@@ -272,9 +273,9 @@ for epoch in range(epochs):
             cv2.imwrite(mask_filepath, mask_np * 255)
 
     if epoch == epochs - 1:
-
-        final_z_neutrophil_np = z_neutrophil.cpu().detach().numpy() if z_neutrophil.is_cuda else z_neutrophil.detach().numpy()
-        np.save('final_z_neutrophil_gen_2.npy', final_z_neutrophil_np)
+        neutrophil_z_array = np.array(neutrophil_z_vectors)  # Convert list to numpy array
+        np.save(f'neutrophil_z_vectors_gen2.npy', neutrophil_z_array)  # Save numpy array to file
+        print(f"Saved {neutrophil_z_array.shape[0]} neutrophil z vectors for epoch {epoch}")
 
     model.eval()
 
@@ -362,16 +363,18 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
         plt.close(fig)
 
-    final_z_neutrophil_filename = 'final_z_neutrophil_gen_2.npy'
+    final_z_neutrophil_filename = 'neutrophil_z_vectors_gen2.npy'
     ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
 
     if epoch == epochs - 1:
         if os.path.exists(final_z_neutrophil_filename):
             final_z_neutrophil = np.load(final_z_neutrophil_filename)
+            print(f"Loaded final_z_neutrophil with shape: {final_z_neutrophil.shape}")
+
 
         # Proceed with UMAP visualization
         combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
-        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=42)
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
         umap_embedding = umap_reducer.fit_transform(combined_data)
 
         split_point = final_z_neutrophil.shape[0]
