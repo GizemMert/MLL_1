@@ -49,6 +49,7 @@ if __name__ == '__main__':
 
     if os.path.exists(final_z_neutrophil_filename):
         final_z_neutrophil = np.load(final_z_neutrophil_filename)
+        print(f"Loaded final_z_neutrophil with shape: {final_z_neutrophil.shape}")
 
     # Proceed with UMAP visualization
     # combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
