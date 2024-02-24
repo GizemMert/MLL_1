@@ -68,10 +68,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # custom_state_dict = torch.load(custom_weights_path)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
-cff_feat_rec = 0.20
+cff_feat_rec = 0.10
 cff_im_rec = 0.40
-cff_kld = 0.20
-cff_mmd = 0.20
+cff_kld = 0.25
+cff_mmd = 0.25
 
 
 beta = 4
@@ -382,7 +382,7 @@ for epoch in range(epochs):
 
         # Proceed with UMAP visualization
         combined_data = np.vstack([neutrophil_z_data, ref_z_class_2_cpu])
-        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=7)
         umap_embedding = umap_reducer.fit_transform(combined_data)
 
         split_point = neutrophil_z_data.shape[0]

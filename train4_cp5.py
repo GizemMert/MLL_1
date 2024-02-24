@@ -68,10 +68,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # custom_state_dict = torch.load(custom_weights_path)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
-cff_feat_rec = 0.20
+cff_feat_rec = 0.10
 cff_im_rec = 0.40
-cff_kld = 0.20
-cff_mmd = 0.20
+cff_kld = 0.25
+cff_mmd = 0.25
 
 
 beta = 4
@@ -215,11 +215,11 @@ for epoch in range(epochs):
         train_loss.backward()
         optimizer.step()
 
-        loss += train_loss.data.cpu()
-        acc_featrec_loss += feat_rec_loss.data.cpu()
-        acc_imrec_loss += recon_loss.data.cpu()
-        kl_div_loss += kld_loss.data.cpu()
-        mmd_loss += mmd_loss_n.data.cpu()
+        loss += train_loss.detach().cpu().item()
+        acc_featrec_loss += feat_rec_loss.detach().cpu().item()
+        acc_imrec_loss += recon_loss.detach().cpu().item()
+        kl_div_loss += kld_loss.detach().cpu().item()
+        mmd_loss += mmd_loss_n.detach().cpu().item()
 
         if epoch % 10 == 0:
             all_means.append(mu.data.cpu().numpy())
@@ -244,7 +244,6 @@ for epoch in range(epochs):
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
-                f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
                 f"MMD_Loss = {mmd_loss.item():.6f} \n")
 
@@ -383,7 +382,7 @@ for epoch in range(epochs):
 
         # Proceed with UMAP visualization
         combined_data = np.vstack([neutrophil_z_data, ref_z_class_2_cpu])
-        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=7)
         umap_embedding = umap_reducer.fit_transform(combined_data)
 
         split_point = neutrophil_z_data.shape[0]
