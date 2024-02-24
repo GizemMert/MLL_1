@@ -163,6 +163,7 @@ for epoch in range(epochs):
     acc_featrec_loss = 0.0
     kl_div_loss = 0.0
     mmd_loss = 0.0
+    total_neutrophil_samples = 0
     y_true = []
     y_pred = []
 
@@ -200,6 +201,7 @@ for epoch in range(epochs):
 
         # Check for neutrophil samples and calculate MMD loss if present in the batch
         neutrophil_mask = (label == 7) | (label == 8)
+        total_neutrophil_samples += neutrophil_mask.sum().item()
         if neutrophil_mask.any():
             z_neutrophil = z_dist[neutrophil_mask]
             z_neutrophil = z_neutrophil.to(device)
@@ -231,7 +233,7 @@ for epoch in range(epochs):
     kl_div_loss = kl_div_loss / len(train_dataloader)
     mmd_loss = mmd_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
-
+    print(f"Total neutrophil samples (banded or segmented): {total_neutrophil_samples}")
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss = {:.6f}".format
           (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss.item()))
 
