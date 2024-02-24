@@ -88,6 +88,10 @@ z_dir = 'z_data4cp2_new5_std_gen_2'
 if not os.path.exists(z_dir):
     os.makedirs(z_dir)
 
+neutrophil_z_dir = 'z_data4cp2_new5_std_gen_2'
+if not os.path.exists(neutrophil_z_dir):
+    os.makedirs(neutrophil_z_dir)
+
 log_dir = 'log_data4cp2_new5_std_gen_2'
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
@@ -165,7 +169,7 @@ for epoch in range(epochs):
     mmd_loss = 0.0
     y_true = []
     y_pred = []
-    neutrophil_z_vectors = []
+    # neutrophil_z_vectors = []
 
     model.train()
 
@@ -174,6 +178,7 @@ for epoch in range(epochs):
         all_labels = []
         all_logvars = []
         all_z =[]
+        all_z_neutrophil = []
 
     for feat, scimg, mask, label, _ in train_dataloader:
         feat = feat.float()
@@ -221,6 +226,7 @@ for epoch in range(epochs):
             all_logvars.append(logvar.data.cpu().numpy())
             all_labels.extend(label.cpu().numpy())
             all_z.append(z_dist.data.cpu().numpy())
+            all_z_neutrophil.append(z_neutrophil.data.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
         # _, predicted = torch.max(class_pred.data, 1)
@@ -261,9 +267,10 @@ for epoch in range(epochs):
         log_filename = os.path.join(log_dir, f'log_epoch_{epoch}.npy')
         np.save(log_filename, np.concatenate(all_logvars, axis=0))
 
-        neutrophil_z_array = np.array(neutrophil_z_vectors)
-        np.save(f'neutrophil_z_vectors_gen2.npy', neutrophil_z_array)
-        print(f"Saved {neutrophil_z_array.shape[0]} neutrophil z vectors for epoch {epoch}")
+        neutrophil_z_filename = os.path.join(neutrophil_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
+        # neutrophil_z_array = np.array(neutrophil_z_vectors)
+        np.save(neutrophil_z_filename, np.concatenate(all_z_neutrophil, axis=0))
+        # print(f"Saved {neutrophil_z_array.shape[0]} neutrophil z vectors for epoch {epoch}")
 
         for i, img in enumerate(masked_scimg):
             img_np = img.cpu().numpy().transpose(1, 2, 0)
@@ -365,21 +372,21 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
         plt.close(fig)
 
-    final_z_neutrophil_filename = 'neutrophil_z_vectors_gen2.npy'
-    ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
+    # final_z_neutrophil_filename = 'neutrophil_z_vectors_gen2.npy'
+        ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
 
-    if epoch == epochs - 1:
-        if os.path.exists(final_z_neutrophil_filename):
-            final_z_neutrophil = np.load(final_z_neutrophil_filename)
-            print(f"Loaded final_z_neutrophil with shape: {final_z_neutrophil.shape}")
+    # if epoch == epochs - 1:
+        neutrophil_z_data = np.load(neutrophil_z_filename)
+        # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+        print(f"Loaded neutrophil z data with shape: {neutrophil_z_data.shape}")
 
 
         # Proceed with UMAP visualization
-        combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
+        combined_data = np.vstack([neutrophil_z_data, ref_z_class_2_cpu])
         umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
         umap_embedding = umap_reducer.fit_transform(combined_data)
 
-        split_point = final_z_neutrophil.shape[0]
+        split_point = neutrophil_z_data.shape[0]
         umap_z_neutrophil = umap_embedding[:split_point, :]
         umap_ref_z_class_2 = umap_embedding[split_point:, :]
 
@@ -390,7 +397,7 @@ for epoch in range(epochs):
         plt.xlabel('UMAP Dimension 1')
         plt.ylabel('UMAP Dimension 2')
         plt.legend()
-        plt.grid(True)
+        plt.grid(False)
         plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
         plt.close()
 
