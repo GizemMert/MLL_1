@@ -261,6 +261,10 @@ for epoch in range(epochs):
         log_filename = os.path.join(log_dir, f'log_epoch_{epoch}.npy')
         np.save(log_filename, np.concatenate(all_logvars, axis=0))
 
+        neutrophil_z_array = np.array(neutrophil_z_vectors)
+        np.save(f'neutrophil_z_vectors_gen2.npy', neutrophil_z_array)
+        print(f"Saved {neutrophil_z_array.shape[0]} neutrophil z vectors for epoch {epoch}")
+
         for i, img in enumerate(masked_scimg):
             img_np = img.cpu().numpy().transpose(1, 2, 0)
             filename = f"{i}-{epoch}.jpg"
@@ -272,10 +276,8 @@ for epoch in range(epochs):
             mask_filepath = os.path.join(save_mask_dir, mask_filename)
             cv2.imwrite(mask_filepath, mask_np * 255)
 
-    if epoch == epochs - 1:
-        neutrophil_z_array = np.array(neutrophil_z_vectors)  # Convert list to numpy array
-        np.save(f'neutrophil_z_vectors_gen2.npy', neutrophil_z_array)  # Save numpy array to file
-        print(f"Saved {neutrophil_z_array.shape[0]} neutrophil z vectors for epoch {epoch}")
+    # if epoch == epochs - 1:
+
 
     model.eval()
 
