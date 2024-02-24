@@ -215,11 +215,11 @@ for epoch in range(epochs):
         train_loss.backward()
         optimizer.step()
 
-        loss += train_loss.detach().cpu().item()
-        acc_featrec_loss += feat_rec_loss.detach().cpu().item()
-        acc_imrec_loss += recon_loss.detach().cpu().item()
-        kl_div_loss += kld_loss.detach().cpu().item()
-        mmd_loss += mmd_loss_n.detach().cpu().item()
+        loss += train_loss.data.cpu()
+        acc_featrec_loss += feat_rec_loss.data.cpu()
+        acc_imrec_loss += recon_loss.data.cpu()
+        kl_div_loss += kld_loss.data.cpu()
+        mmd_loss += mmd_loss_n.data.cpu()
 
         if epoch % 10 == 0:
             all_means.append(mu.data.cpu().numpy())

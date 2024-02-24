@@ -9,7 +9,8 @@ def make_positive_definite(cov_matrix):
 
 def mmd(source, target):
     mseloss = nn.MSELoss()
-    kldiv = nn.KLDivLoss()
+    # kldiv = nn.KLDivLoss()
+    kldiv = nn.KLDivLoss(reduction='batchmean')
 
     source_mu = torch.mean(source, axis=0)
     target_mu = torch.mean(target, axis=0)
