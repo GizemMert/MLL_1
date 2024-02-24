@@ -166,6 +166,7 @@ for epoch in range(epochs):
     total_neutrophil_samples = 0
     y_true = []
     y_pred = []
+    neutrophil_z_vectors = []
 
     model.train()
 
@@ -233,7 +234,7 @@ for epoch in range(epochs):
     kl_div_loss = kl_div_loss / len(train_dataloader)
     mmd_loss = mmd_loss / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
-    print(f"Total neutrophil samples (banded or segmented): {total_neutrophil_samples}")
+    # print(f"Total neutrophil samples (banded or segmented): {total_neutrophil_samples}")
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss = {:.6f}".format
           (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss.item()))
 
@@ -274,9 +275,9 @@ for epoch in range(epochs):
             cv2.imwrite(mask_filepath, mask_np * 255)
 
     if epoch == epochs - 1:
-
-        final_z_neutrophil_np = z_neutrophil.cpu().detach().numpy() if z_neutrophil.is_cuda else z_neutrophil.detach().numpy()
-        np.save('final_z_neutrophil_gen.npy', final_z_neutrophil_np)
+        neutrophil_z_array = np.array(neutrophil_z_vectors)  # Convert list to numpy array
+        np.save(f'neutrophil_z_vectors.npy', neutrophil_z_array)  # Save numpy array to file
+        print(f"Saved {neutrophil_z_array.shape[0]} neutrophil z vectors for epoch {epoch}")
 
     model.eval()
 
@@ -364,16 +365,17 @@ for epoch in range(epochs):
         plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
         plt.close(fig)
 
-    final_z_neutrophil_filename = 'final_z_neutrophil_gen.npy'
+    final_z_neutrophil_filename = 'neutrophil_z_vectors.npy'
     ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
 
     if epoch == epochs - 1:
         if os.path.exists(final_z_neutrophil_filename):
             final_z_neutrophil = np.load(final_z_neutrophil_filename)
+            print(f"Loaded final_z_neutrophil with shape: {final_z_neutrophil.shape}")
 
         # Proceed with UMAP visualization
         combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
-        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=42)
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
         umap_embedding = umap_reducer.fit_transform(combined_data)
 
         split_point = final_z_neutrophil.shape[0]
