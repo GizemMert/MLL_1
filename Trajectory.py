@@ -278,3 +278,4 @@ plt.grid(False)
 plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_Trajectory.png'))
 plt.close()
 
+print("completed")
