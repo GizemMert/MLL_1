@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=ge_3
+#SBATCH --job-name=img_ge
 #SBATCH --partition=gpu_p
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=150G
 #SBATCH --gres=gpu:1
-#SBATCH --time=10:00:00
+#SBATCH --time=1:00:00
 #SBATCH --nice=10000
 #SBATCH --qos=gpu_normal
 
@@ -16,4 +16,4 @@
 source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
 
-python Umap_new.py
+python Trajectory.py
