@@ -183,6 +183,8 @@ def get_latent_vector(x):
     distributions = model_1.encoder(x)
     mu = distributions[:, :latent_dim]
     logvar = distributions[:, latent_dim:]
+    print(f"Mu shape: {mu.shape}")
+    print(f"Logvar shape: {logvar.shape}")
     z = reparametrize(mu, logvar)
     return z
 
@@ -193,7 +195,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, sh
 selected_features = get_images_from_different_classes(train_dataloader, label_map['neutrophil_banded'], label_map['neutrophil_segmented'])
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
-interpolate_gif_gpr("vae_interpolation_gpr_NEU", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
 # interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
