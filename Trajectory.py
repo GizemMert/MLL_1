@@ -62,7 +62,7 @@ if not os.path.exists(umap_dir):
 latent_dir = 'latent_data4cp2_new5_std_gen_2'
 latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
 label_dir = 'label_data4cp2_new5_std_gen_2'
-labels_path = os.path.join(label_dir, f'label_epoch_{epoch}.npy')
+labels_path = os.path.join(label_dir, f'label_epoch_151.npy')
 neutrophil_z_dir = 'z_data4cp2_new5_std_gen_2'
 neutrophil_z_path = os.path.join(neutrophil_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
 
