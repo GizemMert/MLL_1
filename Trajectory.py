@@ -187,6 +187,7 @@ def get_latent_vector(x):
     print(f"Mu shape: {mu.shape}")
     print(f"Logvar shape: {logvar.shape}")
     z = reparametrize(mu, logvar)
+    print("Shape of z:", z.shape)
     return z
 
 
