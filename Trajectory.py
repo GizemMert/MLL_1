@@ -182,8 +182,8 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
 def get_latent_vector(x):
     distributions = model_1.encoder(x)
     print(f"Distributions shape: {distributions.shape}")
-    mu = distributions[:, :latent_dim]
-    logvar = distributions[:, latent_dim:]
+    mu = distributions[:, :50]
+    logvar = distributions[:, 50:100]
     print(f"Mu shape: {mu.shape}")
     print(f"Logvar shape: {logvar.shape}")
     z = reparametrize(mu, logvar)
