@@ -17,6 +17,7 @@ from umap import UMAP
 import seaborn as sns
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.spatial.distance import pdist, squareform
 
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
@@ -225,17 +226,16 @@ plt.ylabel('Top 100 Genes')
 plt.savefig(os.path.join(umap_dir, 'GE_Top_100_HeatMap.png'))
 plt.close()
 
-gene_expression_with_variance = np.column_stack((gene_expression, gene_variances))
-sorted_indices = np.argsort(gene_variances)
-sorted_gene_expression = gene_expression_with_variance[sorted_indices]
-row_linkage = linkage(sorted_gene_expression, method='average')
-
+sorted_indices = np.argsort(gene_variances)[::-1]
+sorted_gene_expression = gene_expression[:, sorted_indices]
+row_linkage = linkage(squareform(pdist(sorted_gene_expression.T, 'euclidean')), method='average')
+variance_colors = sns.color_palette("viridis", as_cmap=True)(gene_variances[sorted_indices] / gene_variances.max())
 # Plotting
-sns.clustermap(gene_expression, row_linkage=row_linkage, col_cluster=False,
-               standard_scale=1,  # Standardize by columns (z-score)
-               cmap='viridis',    # Color mapping
-               figsize=(10, 10))
-plt.savefig(os.path.join(umap_dir, 'GE_Cluster_MAP.png'))
+sns.clustermap(sorted_gene_expression.T, row_linkage=row_linkage, col_cluster=False,
+               standard_scale=1, row_colors=variance_colors,
+               cmap='viridis', figsize=(10, 10))
+
+plt.savefig(os.path.join(umap_dir, 'GE_Cluster_MAP_with_Variance.png'))
 plt.close()
 
 
