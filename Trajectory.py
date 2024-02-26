@@ -137,7 +137,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
     return interpolated_latent_vectors
 
 
-def interpolate_gif_gpr(filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device='cpu'):
+def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(3, 3), device='cpu'):
     model_1.eval()  # Ensure the model is in evaluation mode
 
     # Compute interpolated latent vectors using GPR
@@ -200,7 +200,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=9, grid_size=(3, 3), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
