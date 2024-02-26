@@ -148,6 +148,7 @@ def interpolate_gif_gpr(filename, latent_start, latent_end, steps=100, grid_size
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model_1.decoder(z_tensor)
+            decoded_img = model_1.img_decoder(decoded_img)
         decoded_images.append(decoded_img.cpu())
 
     # Ensure the decoded images fit into the specified grid size
