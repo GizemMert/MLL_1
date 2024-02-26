@@ -97,7 +97,7 @@ basophil_indices = np.where(filtered_labels == label_map['basophil'])[0]
 eosinophil_indices = np.where(filtered_labels == label_map['eosinophil'])[0]
 monocyte_indices = np.where(filtered_labels == label_map['monocyte'])[0]
 
-# np.random.seed(7)
+np.random.seed(10)
 random_myeloblast_index = np.random.choice(myeloblast_indices)
 random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
 random_neutrophil_seg_index = np.random.choice(neutrophil_seg_indices)
@@ -107,8 +107,8 @@ random_monocyte_index = np.random.choice(monocyte_indices)
 
 random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 # You can replace filtered_laten_data with neutrophil_data
-random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
-random_neutrophil_seg_point = filtered_latent_data[random_neutrophil_seg_index]
+random_neutrophil_banded_point = neutrophil_data[random_neutrophil_banded_index]
+random_neutrophil_seg_point = neutrophil_data[random_neutrophil_seg_index]
 random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
