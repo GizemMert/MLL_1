@@ -114,7 +114,7 @@ random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
 # print("Point data shape:", random_myeloblast_point.shape)
 
-def interpolate_gpr(latent_start, latent_end, n_points=100):
+def interpolate_gpr(latent_start, latent_end, n_points=9):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
@@ -204,7 +204,7 @@ interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point,
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
-interpolated_latent_points = interpolate_gpr(start_latent, end_latent, n_points=100)
+interpolated_latent_points = interpolate_gpr(start_latent, end_latent, n_points=9)
 # Map each interpolated latent vector back to gene space
 gene_expression_profiles = []
 for latent_vector in interpolated_latent_points:
@@ -221,7 +221,7 @@ gene_expression_df.to_csv('top_100_genes_expression.csv', index=False)
 
 
 # Plot a heatmap for the top 100 genes
-sns.heatmap(gene_expression_df.T, cmap='viridis', yticklabels=True)
+sns.heatmap(gene_expression_df.T, cmap='viridis', yticklabels=False)
 plt.title('Gene Expression Changes Along Trajectory for Top 100 Genes')
 plt.xlabel('Points on Trajectory')
 plt.ylabel('Top 100 Genes')
