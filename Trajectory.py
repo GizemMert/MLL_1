@@ -114,7 +114,7 @@ random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
 # print("Point data shape:", random_myeloblast_point.shape)
 
-def interpolate_gpr(latent_start, latent_end, n_points=9):
+def interpolate_gpr(latent_start, latent_end, n_points=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
@@ -200,11 +200,11 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=9, grid_size=(3, 3), device=device)
+interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
-interpolated_latent_points = interpolate_gpr(start_latent, end_latent, n_points=9)
+interpolated_latent_points = interpolate_gpr(start_latent, end_latent, n_points=100)
 # Map each interpolated latent vector back to gene space
 gene_expression_profiles = []
 for latent_vector in interpolated_latent_points:
