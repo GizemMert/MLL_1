@@ -87,14 +87,20 @@ print("Labels array shape:", all_labels_array.shape)
 
 # Filter out the 'erythroblast' class
 erythroblast_class_index = label_map['erythroblast']
+neutrophil_banded_index = label_map['neutrophil_banded']
+segmented_index = label_map['neutrophil_segmented']
 mask = all_labels_array != erythroblast_class_index
+mask2 = (all_labels_array == neutrophil_banded_index) | (all_labels_array == segmented_index)
 filtered_latent_data = latent_data[mask]
 print("filtered data shape:", filtered_latent_data.shape)
 filtered_labels = all_labels_array[mask]
+filtered_labels_neutrophil = all_labels_array[mask2]
+
+print("filtered data shape:", filtered_labels_neutrophil.shape)
 
 myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
-neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
-neutrophil_seg_indices = np.where(filtered_labels == label_map['neutrophil_segmented'])[0]
+neutrophil_banded_indices = np.where(filtered_labels_neutrophil == label_map['neutrophil_banded'])[0]
+neutrophil_seg_indices = np.where(filtered_labels_neutrophil == label_map['neutrophil_segmented'])[0]
 basophil_indices = np.where(filtered_labels == label_map['basophil'])[0]
 eosinophil_indices = np.where(filtered_labels == label_map['eosinophil'])[0]
 monocyte_indices = np.where(filtered_labels == label_map['monocyte'])[0]
@@ -109,8 +115,8 @@ random_monocyte_index = np.random.choice(monocyte_indices)
 
 random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 # You can replace filtered_laten_data with neutrophil_data
-random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
-random_neutrophil_seg_point = filtered_latent_data[random_neutrophil_seg_index]
+random_neutrophil_banded_point = neutrophil_data[random_neutrophil_banded_index]
+random_neutrophil_seg_point = neutrophil_data[random_neutrophil_seg_index]
 random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
@@ -198,7 +204,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr("vae_interpolation_gpr_neutrophil", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
