@@ -18,6 +18,8 @@ import seaborn as sns
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
+from tslearn.clustering import KShape
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
@@ -209,7 +211,7 @@ for latent_vector in interpolated_latent_points:
 
 gene_expression = np.array(gene_expression_profiles)
 print("vis trajectory for each gene started")
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(12, 8))
 
 for i in range(gene_expression.shape[1]):  # Iterate over the number of genes
     plt.plot(gene_expression[:, i], label=f'Gene {i+1}')
@@ -218,7 +220,7 @@ plt.xlabel('Trajectory Points')
 plt.ylabel('Gene Expression')
 plt.title('Gene Expression Over Trajectory')
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.tight_layout(rect=(0.0, 0.0, 0.75, 1.0))
+plt.tight_layout(rect=(0.0, 0.1, 0.75, 0.9))
 plt.savefig(os.path.join(umap_dir, 'gene_expression_trajectory.png'))
 plt.close()
 print("trajectory is saved")
@@ -237,10 +239,37 @@ plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.tight_layout(rect=(0.0, 0.0, 0.75, 1.0))
+plt.tight_layout(rect=(0.0, 0.1, 0.75, 0.9))
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory.png'))
 plt.close()
 print("fold change is saved")
+
+#clustering
+
+scaled_fold_changes = TimeSeriesScalerMeanVariance().fit_transform(fold_changes)
+
+n_clusters = 3
+ks = KShape(n_clusters=n_clusters, n_init=10, random_state=0)
+clusters = ks.fit_predict(scaled_fold_changes)
+
+# Plot the clusters
+plt.figure(figsize=(20, 10))
+
+colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+
+for cluster_idx in range(n_clusters):
+    time_series_in_cluster = scaled_fold_changes[clusters == cluster_idx]
+
+    for ts in time_series_in_cluster:
+        plt.plot(ts.ravel(), label=f'Cluster {cluster_idx + 1}', color=colors[cluster_idx % len(colors)])
+
+plt.xlabel('Trajectory Points')
+plt.ylabel('Fold Change (scaled)')
+plt.title('Fold Change of Gene Expression Over Trajectory (KShape Clusters)')
+# plt.legend()
+plt.savefig(os.path.join(umap_dir, 'fold_change_cluster_3.png'))
+plt.close()
+
 
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
