@@ -223,6 +223,25 @@ plt.savefig(os.path.join(umap_dir, 'gene_expression_trajectory.png'))
 plt.close()
 print("trajectory is saved")
 
+print("Calculate fold change")
+fold_changes = gene_expression / gene_expression[0]
+
+# fold_changes = np.log2(fold_changes)
+
+plt.figure(figsize=(20, 10))
+
+for i in range(fold_changes.shape[1]):
+    plt.plot(fold_changes[:, i], label=f'Gene {i+1}')
+
+plt.xlabel('Trajectory Points')
+plt.ylabel('Fold Change')
+plt.title('Fold Change of Gene Expression Over Trajectory')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout(rect=(0.0, 0.0, 0.75, 1.0))
+plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory.png'))
+plt.close()
+print("fold change is saved")
+
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
 gene_expression_df = pd.DataFrame(gene_expression[:, top_genes_indices])
