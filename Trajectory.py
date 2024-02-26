@@ -18,7 +18,7 @@ import seaborn as sns
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
-from scipy.interpolate import interp1d
+
 
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
@@ -98,7 +98,7 @@ basophil_indices = np.where(filtered_labels == label_map['basophil'])[0]
 eosinophil_indices = np.where(filtered_labels == label_map['eosinophil'])[0]
 monocyte_indices = np.where(filtered_labels == label_map['monocyte'])[0]
 
-np.random.seed(10)
+# np.random.seed(10)
 random_myeloblast_index = np.random.choice(myeloblast_indices)
 random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
 random_neutrophil_seg_index = np.random.choice(neutrophil_seg_indices)
@@ -298,13 +298,14 @@ x = umap_path[:, 0]
 y = umap_path[:, 1]
 spline = interp1d(x, y, kind='cubic')
 
+# Generate new smoother x values
 x_smooth = np.linspace(x.min(), x.max(), 500)
 y_smooth = spline(x_smooth)
 
 plt.figure(figsize=(12, 6))
 plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
 plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
-plt.plot(x_smooth, y_smooth, 'r-', label='Trajectory')
+plt.plot(umap_path[:, 0], umap_path[:, 1], 'r-', label='Trajectory')
 plt.title('UMAP Visualization of Neutrophil Latent Representations (Post-Training) and Trajectory')
 plt.xlabel('UMAP Dimension 1')
 plt.ylabel('UMAP Dimension 2')
