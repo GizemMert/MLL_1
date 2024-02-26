@@ -18,6 +18,7 @@ import seaborn as sns
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
+from scipy.interpolate import interp1d
 
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
@@ -107,8 +108,8 @@ random_monocyte_index = np.random.choice(monocyte_indices)
 
 random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 # You can replace filtered_laten_data with neutrophil_data
-random_neutrophil_banded_point = neutrophil_data[random_neutrophil_banded_index]
-random_neutrophil_seg_point = neutrophil_data[random_neutrophil_seg_index]
+random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
+random_neutrophil_seg_point = filtered_latent_data[random_neutrophil_seg_index]
 random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
@@ -293,11 +294,17 @@ split_point = neutrophil_data.shape[0]
 umap_z_neutrophil = umap_embedding[:split_point, :]
 umap_ref_z_class_2 = umap_embedding[split_point:, :]
 
+x = umap_path[:, 0]
+y = umap_path[:, 1]
+spline = interp1d(x, y, kind='cubic')
+
+x_smooth = np.linspace(x.min(), x.max(), 500)
+y_smooth = spline(x_smooth)
 
 plt.figure(figsize=(12, 6))
 plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
 plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
-plt.plot(umap_path[:, 0], umap_path[:, 1], 'r-', label='Trajectory')
+plt.plot(x_smooth, y_smooth, 'r-', label='Trajectory')
 plt.title('UMAP Visualization of Neutrophil Latent Representations (Post-Training) and Trajectory')
 plt.xlabel('UMAP Dimension 1')
 plt.ylabel('UMAP Dimension 2')
