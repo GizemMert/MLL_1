@@ -253,7 +253,7 @@ plt.close()
 sns.clustermap(sorted_gene_expression.T,
                row_linkage=row_linkage,
                col_cluster=False,
-               # standard_scale=1,
+               standard_scale=1,
                row_colors=variance_colors,
                cmap='viridis',
                figsize=(10, 10))
