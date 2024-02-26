@@ -269,7 +269,7 @@ plt.title('Fold Change of Gene Expression Over Trajectory (KShape Clusters)')
 # plt.legend()
 plt.savefig(os.path.join(umap_dir, 'fold_change_cluster_3.png'))
 plt.close()
-
+print("cluster saved")
 
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
