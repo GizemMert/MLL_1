@@ -140,10 +140,8 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
 def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(3, 3), device='cpu'):
     model_1.eval()  # Ensure the model is in evaluation mode
 
-    # Compute interpolated latent vectors using GPR
     interpolated_latents = interpolate_gpr(latent_start, latent_end, steps)
 
-    # Decode the interpolated latent vectors to generate images
     decoded_images = []
     for z in interpolated_latents:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
@@ -152,12 +150,10 @@ def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(
             decoded_img = model_1.img_decoder(decoded_img)
         decoded_images.append(decoded_img.cpu())
 
-    # Ensure the decoded images fit into the specified grid size
     while len(decoded_images) < grid_size[0] * grid_size[1]:
         decoded_images.append(torch.zeros_like(decoded_images[0]))
     decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
-    # Arrange images in a grid and save
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
@@ -204,14 +200,28 @@ interpolate_gif_gpr("vae_interpolation_gpr_NEU", random_neutrophil_banded_point,
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
-interpolated_latent_points = interpolate_gpr(start_latent, end_latent, n_points=100)
-# Map each interpolated latent vector back to gene space
+interpolated_latent_points = interpolate_gpr(random_neutrophil_banded_point, random_neutrophil_seg_point, n_points=100)
+
 gene_expression_profiles = []
 for latent_vector in interpolated_latent_points:
     gene_expression = model_2.decoder(torch.from_numpy(latent_vector).float().to(device))
     gene_expression_profiles.append(gene_expression.detach().cpu().numpy())
 
 gene_expression = np.array(gene_expression_profiles)
+print("vis trajectory for each gene started")
+plt.figure(figsize=(10, 6))
+
+for i in range(gene_expression.shape[1]):  # Iterate over the number of genes
+    plt.plot(gene_expression[:, i], label=f'Gene {i+1}')
+
+plt.xlabel('Trajectory Points')
+plt.ylabel('Gene Expression')
+plt.title('Gene Expression Over Trajectory')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout(rect=(0.0, 0.0, 0.75, 1.0))
+plt.savefig(os.path.join(umap_dir, 'gene_expression_trajectory.png'))
+plt.close()
+print("trajectory is saved")
 
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
@@ -230,7 +240,7 @@ plt.close()
 
 sorted_indices = np.argsort(gene_variances)[::-1]
 sorted_gene_expression = gene_expression[:, sorted_indices]
-gene_distances = pdist(sorted_gene_expression.T, 'euclidean')  # 'T' to transpose for gene-wise distances
+gene_distances = pdist(sorted_gene_expression.T, 'euclidean')
 row_linkage = linkage(gene_distances, method='average')
 
 norm_variances = gene_variances[sorted_indices] / gene_variances[sorted_indices].max()
@@ -282,8 +292,6 @@ z_reference_filename = os.path.join(z_dir, f'class_{class_label}_z_epoch_{epoch_
 ref_mean_class_2 = np.load(mean_filename)
 ref_z_class_2 = np.load(z_reference_filename)
 
-
-# Proceed with UMAP visualization
 combined_data = np.vstack([neutrophil_data, ref_z_class_2])
 umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
 umap_embedding = umap_reducer.fit_transform(combined_data)
