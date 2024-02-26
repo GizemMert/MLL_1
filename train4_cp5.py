@@ -308,18 +308,7 @@ for epoch in range(epochs):
         gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
         ax = fig.add_subplot(gs[0])
-        unique_labels = np.unique(filtered_labels)
-        n_unique_labels = len(unique_labels)
-
-
-        tab20 = plt.cm.tab20(np.linspace(0., 1, 20))
-        selected_colors = tab20[np.linspace(0, 19, n_unique_labels).astype(int)]
-
-        custom_cmap = ListedColormap(selected_colors)
-
-        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100,
-                             c=filtered_labels, cmap=custom_cmap)
-        # scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
+        scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
         ax.set_aspect('equal')
 
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
@@ -355,14 +344,11 @@ for epoch in range(epochs):
         ax_legend.axis('off')  # Turn off the axis for the legend subplot
 
         unique_filtered_labels = np.unique(filtered_labels)
-        filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if
-                                label in inverse_label_map]
-
-        colors_from_cmap = custom_cmap(np.linspace(0, 1, n_unique_labels))
+        filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+        color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
 
         legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
-                                     markerfacecolor=colors_from_cmap[i], markersize=18)
-                          for i in range(len(unique_filtered_labels))]
+                                     markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
 
         ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
 
