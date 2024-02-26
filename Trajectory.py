@@ -228,12 +228,20 @@ plt.close()
 
 sorted_indices = np.argsort(gene_variances)[::-1]
 sorted_gene_expression = gene_expression[:, sorted_indices]
-row_linkage = linkage(squareform(pdist(sorted_gene_expression.T, 'euclidean')), method='average')
-variance_colors = sns.color_palette("viridis", as_cmap=True)(gene_variances[sorted_indices] / gene_variances.max())
-# Plotting
-sns.clustermap(sorted_gene_expression.T, row_linkage=row_linkage, col_cluster=False,
-               standard_scale=1, row_colors=variance_colors,
-               cmap='viridis', figsize=(10, 10))
+gene_distances = pdist(sorted_gene_expression.T, 'euclidean')  # 'T' to transpose for gene-wise distances
+row_linkage = linkage(gene_distances, method='average')
+
+norm_variances = gene_variances[sorted_indices] / gene_variances[sorted_indices].max()
+variance_colors = plt.cm.viridis(norm_variances)
+
+# Plotting the clustermap
+sns.clustermap(sorted_gene_expression.T,
+               row_linkage=row_linkage,
+               col_cluster=False,
+               standard_scale=1,
+               row_colors=variance_colors,
+               cmap='viridis',
+               figsize=(10, 10))
 
 plt.savefig(os.path.join(umap_dir, 'GE_Cluster_MAP_with_Variance.png'))
 plt.close()
