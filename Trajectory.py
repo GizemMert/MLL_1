@@ -286,7 +286,7 @@ ref_z_class_2 = np.load(z_reference_filename)
 
 # Proceed with UMAP visualization
 combined_data = np.vstack([neutrophil_data, ref_z_class_2])
-umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=7)
+umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
 umap_embedding = umap_reducer.fit_transform(combined_data)
 umap_path = umap_reducer.transform(interpolated_latent_points)
 
