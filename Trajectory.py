@@ -97,7 +97,7 @@ basophil_indices = np.where(filtered_labels == label_map['basophil'])[0]
 eosinophil_indices = np.where(filtered_labels == label_map['eosinophil'])[0]
 monocyte_indices = np.where(filtered_labels == label_map['monocyte'])[0]
 
-np.random.seed(7)
+# np.random.seed(7)
 random_myeloblast_index = np.random.choice(myeloblast_indices)
 random_neutrophil_banded_index = np.random.choice(neutrophil_banded_indices)
 random_neutrophil_seg_index = np.random.choice(neutrophil_seg_indices)
@@ -218,8 +218,10 @@ top_genes_indices = np.argsort(gene_variances)[-100:]
 gene_expression_df = pd.DataFrame(gene_expression[:, top_genes_indices])
 gene_expression_df.to_csv('top_100_genes_expression.csv', index=False)
 
+
+
 # Plot a heatmap for the top 100 genes
-sns.heatmap(gene_expression_df.T, cmap='viridis', yticklabels=False)
+sns.heatmap(gene_expression_df.T, cmap='viridis', yticklabels=True)
 plt.title('Gene Expression Changes Along Trajectory for Top 100 Genes')
 plt.xlabel('Points on Trajectory')
 plt.ylabel('Top 100 Genes')
@@ -234,18 +236,31 @@ row_linkage = linkage(gene_distances, method='average')
 norm_variances = gene_variances[sorted_indices] / gene_variances[sorted_indices].max()
 variance_colors = plt.cm.viridis(norm_variances)
 
+
+plt.figure(figsize=(10, 10))
+sns.heatmap(
+    gene_expression.T,
+    cmap='viridis',
+    yticklabels=True
+)
+plt.title('Gene Expression Changes Along Trajectory')
+plt.xlabel('Points on Trajectory')
+plt.ylabel('Genes')
+plt.savefig(os.path.join(umap_dir, 'Gene_Expression_HeatMap.png'))
+plt.close()
+"""
 # Plotting the clustermap
 sns.clustermap(sorted_gene_expression.T,
                row_linkage=row_linkage,
                col_cluster=False,
-               standard_scale=1,
+               # standard_scale=1,
                row_colors=variance_colors,
                cmap='viridis',
                figsize=(10, 10))
 
 plt.savefig(os.path.join(umap_dir, 'GE_Cluster_MAP_with_Variance.png'))
 plt.close()
-
+"""
 
 # Visualization Trajectory
 
