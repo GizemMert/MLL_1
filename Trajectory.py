@@ -19,7 +19,6 @@ import pandas as pd
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
 
-
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
 
@@ -294,13 +293,7 @@ split_point = neutrophil_data.shape[0]
 umap_z_neutrophil = umap_embedding[:split_point, :]
 umap_ref_z_class_2 = umap_embedding[split_point:, :]
 
-x = umap_path[:, 0]
-y = umap_path[:, 1]
-spline = interp1d(x, y, kind='cubic')
 
-# Generate new smoother x values
-x_smooth = np.linspace(x.min(), x.max(), 500)
-y_smooth = spline(x_smooth)
 
 plt.figure(figsize=(12, 6))
 plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
