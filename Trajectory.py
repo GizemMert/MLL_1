@@ -236,7 +236,7 @@ row_linkage = linkage(gene_distances, method='average')
 norm_variances = gene_variances[sorted_indices] / gene_variances[sorted_indices].max()
 variance_colors = plt.cm.viridis(norm_variances)
 
-
+"""  
 plt.figure(figsize=(10, 10))
 sns.heatmap(
     gene_expression.T,
@@ -260,7 +260,7 @@ sns.clustermap(sorted_gene_expression.T,
 
 plt.savefig(os.path.join(umap_dir, 'GE_Cluster_MAP_with_Variance.png'))
 plt.close()
-"""
+
 
 # Visualization Trajectory
 
