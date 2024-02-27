@@ -83,12 +83,12 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # custom_state_dict = torch.load(custom_weights_path)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
-cff_feat_rec = 0.20
-cff_im_rec = 0.35
-cff_kld = 0.15
-cff_mmd_n = 0.1
-cff_mmd_m = 0.1
-cff_mmd_myle = 0.1
+cff_feat_rec = 0.15
+cff_im_rec = 0.30
+cff_kld = 0.10
+cff_mmd_n = 0.15
+cff_mmd_m = 0.15
+cff_mmd_myle = 0.15
 
 
 beta = 4
@@ -449,7 +449,7 @@ for epoch in range(epochs):
         # if epoch == epochs - 1:
         monocyte_z_data = np.load(monocyte_z_filename)
         # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-        print(f"Loaded neutrophil z data with shape: {monocyte_z_data.shape}")
+        print(f"Loaded monocyte z data with shape: {monocyte_z_data.shape}")
 
         # Proceed with UMAP visualization
         combined_data = np.vstack([monocyte_z_data, ref_z_class_1_cpu])
@@ -476,7 +476,7 @@ for epoch in range(epochs):
         # if epoch == epochs - 1:
         myle_z_data = np.load(myle_z_filename)
         # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-        print(f"Loaded neutrophil z data with shape: {myle_z_data.shape}")
+        print(f"Loaded myeloblast z data with shape: {myle_z_data.shape}")
 
         # Proceed with UMAP visualization
         combined_data = np.vstack([myle_z_data, ref_z_class_2_cpu])
