@@ -46,7 +46,7 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_1 = VariationalAutoencodermodel4(latent_dim=50)
-model_save_path = 'trained_model4cp2_new5_std_gen_2.pth'
+model_save_path = 'trained_model4cp2_new5_std_gen.pth'
 model_1.load_state_dict(torch.load(model_save_path, map_location=device))
 model_1.to(device)
 model_1.eval()
@@ -57,16 +57,16 @@ model_2.load_state_dict(torch.load(model_save_path_2, map_location=device))
 model_2.to(device)
 model_2.eval()
 
-umap_dir = 'umap_trajectory'
+umap_dir = 'umap_trajectory_oldmmd'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
 # Load all latent representations
-latent_dir = 'latent_data4cp2_new5_std_gen_2'
+latent_dir = 'latent_data4cp2_new5_std_gen'
 latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-label_dir = 'label_data4cp2_new5_std_gen_2'
+label_dir = 'label_data4cp2_new5_std_gen'
 labels_path = os.path.join(label_dir, f'label_epoch_151.npy')
-neutrophil_z_dir = 'z_data4cp2_new5_std_gen_2'
+neutrophil_z_dir = 'z_data4cp2_new5_std_gen'
 neutrophil_z_path = os.path.join(neutrophil_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
 
 # Load all latent representations
@@ -204,7 +204,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_neutrophil", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr("vae_interpolation_gpr_neutrophil_mmd", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
@@ -281,17 +281,26 @@ plt.tight_layout()
 plt.close()
 
 colors = ['blue', 'green', 'red', 'cyan', 'magenta']
+ks = KShape(n_clusters=5, verbose=True)
+y_pred = ks.fit_predict(fold_changes.T)
 
+# Count the number of genes in each cluster
+n_genes_in_clusters = {i: np.sum(y_pred == i) for i in range(5)}
+for cluster, count in n_genes_in_clusters.items():
+    print(f"Number of genes in cluster {cluster}: {count}")
+
+# Plot the clusters
 plt.figure(figsize=(10, 8))
-
-for i in range(fold_changes.T.shape[0]):
+for i in range(fold_changes.shape[1]):  # Assuming fold_changes shape is (n_points, n_genes)
     cluster_label = y_pred[i]
-    plt.plot(fold_changes[i, :], color=colors[cluster_label], alpha=0.5)
+    if cluster_label < len(colors):  # Ensure we have a color defined for the cluster
+        plt.plot(fold_changes[:, i], color=colors[cluster_label], alpha=0.5)
 
-# Add labels and title as needed
-plt.xlabel('Time Points')
+plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
-plt.title('Fold Change of Genes Colored by Cluster')
+plt.title('Fold Change of Gene Expression Over Trajectory')
+plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_clusters.png'))
+plt.close()
 
 """
 plt.title("Gene Expression Profiles by Cluster")
