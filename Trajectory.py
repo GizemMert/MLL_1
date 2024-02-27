@@ -252,31 +252,27 @@ print("fold change is saved")
 
 #clustering
 
-scaled_fold_changes = TimeSeriesScalerMeanVariance().fit_transform(fold_changes)
+X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes)
+sz = X_train.shape[1]
 
-n_clusters = 3
-ks = KShape(n_clusters=n_clusters, n_init=10, random_state=0)
-clusters = ks.fit_predict(fold_changes)
+# kShape clustering
+ks = KShape(n_clusters=3, verbose=True)
+y_pred = ks.fit_predict(X_train)
 
-# Plot the clusters
-plt.figure(figsize=(20, 10))
+plt.figure()
+for yi in range(3):
+    plt.subplot(3, 1, 1 + yi)
+    for xx in X_train[y_pred == yi]:
+        plt.plot(xx.ravel(), "k-", alpha=.2)
+    plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
+    plt.xlim(0, sz)
+    plt.ylim(-4, 4)
+    plt.title("Cluster %d" % (yi + 1))
+    plt.tight_layout()
+    plt.savefig(os.path.join(umap_dir, f'fold_change_cluster_{yi+1}.png'))
+    plt.close()
 
-colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
-trajectory_points = np.arange(fold_changes.shape[1])
-
-for cluster_idx in range(n_clusters):
-    time_series_in_cluster = fold_changes[clusters == cluster_idx]
-
-    for ts in time_series_in_cluster:
-        plt.plot(trajectory_points, ts.ravel(), label=f'Cluster {cluster_idx + 1}', color=colors[cluster_idx % len(colors)])
-
-plt.xlabel('Trajectory Points')
-plt.ylabel('Fold Change (scaled)')
-plt.title('Fold Change of Gene Expression Over Trajectory (KShape Clusters)')
-# plt.legend()
-plt.savefig(os.path.join(umap_dir, 'fold_change_cluster_3.png'))
-plt.close()
-print("cluster saved")
+print("clusters saved")
 
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
