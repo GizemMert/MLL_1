@@ -275,7 +275,7 @@ for i, (key, cluster) in enumerate(clusters.items()):
 
     plt.plot(time_points, mean_profile, label=f"Cluster {i + 1}")
 
-    plt.fill_between(time_points, mean_profile - std_profile, mean_profile + std_profile, alpha=0.2)
+    # plt.fill_between(time_points, mean_profile - std_profile, mean_profile + std_profile, alpha=0.2)
 
 plt.title("Gene Expression Profiles by Cluster")
 plt.xlabel("Time")
