@@ -259,10 +259,6 @@ for epoch in range(epochs):
         train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd_n * mmd_loss_neutrophil) + (cff_mmd_m * mmd_loss_monocyte) + (cff_mmd_myle * mmd_loss_myle))
 
         train_loss.backward()
-        for name, param in model.named_parameters():
-            if param.grad is not None:
-                grad_norm = param.grad.norm()
-                print(f"Epoch: {epoch}, Layer: {name}, Gradient Norm: {grad_norm}")
         optimizer.step()
 
         loss += train_loss.data.cpu()
