@@ -213,7 +213,7 @@ interpolated_latent_points = interpolate_gpr(start_latent, end_latent, n_points=
 gene_expression_profiles = []
 for latent_vector in interpolated_latent_points:
     gene_expression = model_2.decoder(torch.from_numpy(latent_vector).float().to(device))
-    gene_expression_profiles.append(gene_expression.detach().cpu().numpy() * 10)
+    gene_expression_profiles.append(gene_expression.detach().cpu().numpy())
 
 gene_expression = np.array(gene_expression_profiles)
 print(" ge shape :", gene_expression.shape)
