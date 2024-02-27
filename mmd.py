@@ -5,10 +5,10 @@ from torch import nn
 class RBF(nn.Module):
     def __init__(self, n_kernels=5, mul_factor=2.0, bandwidth=None):
         super().__init__()
-        # Initialize bandwidth_multipliers as None to set it later in the forward method
+
         self.n_kernels = n_kernels
         self.mul_factor = mul_factor
-        self.bandwidth_multipliers = None  # Will be initialized based on input device in forward()
+        self.bandwidth_multipliers = None
         self.bandwidth = bandwidth
 
     def get_bandwidth(self, L2_distances):
