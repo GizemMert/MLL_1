@@ -11,7 +11,7 @@ from Model_Vae_GE_2 import VAE_GE
 from torch.optim import RMSprop
 
 # Load data
-adata = anndata.read_h5ad('s_data_feature.h5ad')
+adata = anndata.read_h5ad('s_data_feature_pancreas.h5ad')
 X = adata.X
 print("Maximum value in X:", X.max())
 print("Minimum value in X:", X.min())
@@ -187,6 +187,8 @@ for epoch in range(epochs):
             class_means = all_means_np[class_mask]
             class_z = all_z_np[class_mask]
             class_log = all_log_np[class_mask]
+
+            print(f"Shape of z for class {class_label}: {class_z.shape}")
 
             mean_filename = os.path.join(latent_dir, f'class_{class_label}_mean_epoch_{epoch}.npy')
             z_filename = os.path.join(z_dir, f'class_{class_label}_z_epoch_{epoch}.npy')
