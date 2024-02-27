@@ -24,7 +24,7 @@ import numpy as np
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 160
-batch_size = 512
+batch_size = 256
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -216,9 +216,9 @@ for epoch in range(epochs):
         scimg = scimg.float()
         label = label.long().to(device)
         mask = mask.float().to(device)
-        mmd_loss_neutrophil = torch.tensor(0.0).to(device)
-        mmd_loss_monocyte = torch.tensor(0.0).to(device)
-        mmd_loss_myle = torch.tensor(0.0).to(device)
+        # mmd_loss_neutrophil = torch.tensor(0.0).to(device)
+        # mmd_loss_monocyte = torch.tensor(0.0).to(device)
+        # mmd_loss_myle = torch.tensor(0.0).to(device)
 
         feat, scimg = feat.to(device), scimg.to(device)
 
@@ -259,6 +259,10 @@ for epoch in range(epochs):
         train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd_n * mmd_loss_neutrophil) + (cff_mmd_m * mmd_loss_monocyte) + (cff_mmd_myle * mmd_loss_myle))
 
         train_loss.backward()
+        for name, param in model.named_parameters():
+            if param.grad is not None:
+                grad_norm = param.grad.norm()
+                print(f"Epoch: {epoch}, Layer: {name}, Gradient Norm: {grad_norm}")
         optimizer.step()
 
         loss += train_loss.data.cpu()
