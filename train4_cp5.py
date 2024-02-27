@@ -76,7 +76,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_s
 criterion = nn.MSELoss()
 criterion_1 = SSIM(window_size=10, size_average=True)
 class_criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-3)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-6)
 
 
 # custom_weights_path = "/lustre/groups/aih/raheleh.salehi/MASKRCNN-STORAGE/MRCNN-leukocyte/logs/cells20220215T1028/mask_rcnn_cells_0004.h5"
@@ -85,10 +85,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-3)
 
 cff_feat_rec = 0.15
 cff_im_rec = 0.40
-cff_kld = 0.15
-cff_mmd_n = 0.10
-cff_mmd_m = 0.10
-cff_mmd_myle = 0.10
+cff_kld = 0.10
+cff_mmd_n = 0.20
+cff_mmd_m = 0.20
+cff_mmd_myle = 0.20
 
 
 beta = 4
