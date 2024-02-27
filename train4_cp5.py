@@ -84,9 +84,11 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
 cff_feat_rec = 0.20
-cff_im_rec = 0.40
-cff_kld = 0.20
-cff_mmd = 0.20
+cff_im_rec = 0.35
+cff_kld = 0.15
+cff_mmd_n = 0.1
+cff_mmd_m = 0.1
+cff_mmd_myle = 0.1
 
 
 beta = 4
@@ -251,8 +253,7 @@ for epoch in range(epochs):
             z_myle = z_dist[myeloblast_mask]
             z_myle = z_myle.to(device)
             mmd_loss_myle = mmd(z_mono, ref_z_class_2)
-        train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) +
-                      (cff_mmd * mmd_loss_neutrophil) + (cff_mmd * mmd_loss_monocyte) + (cff_mmd * mmd_loss_myle))
+        train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd_n * mmd_loss_neutrophil) + (cff_mmd_m * mmd_loss_monocyte) + (cff_mmd_myle * mmd_loss_myle))
 
         train_loss.backward()
         optimizer.step()

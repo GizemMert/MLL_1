@@ -66,7 +66,7 @@ class VariationalAutoencodermodel4(nn.Module):
 
     def forward(self, x):
         distributions = self.encoder(x)
-        print(f"Distributions shape: {distributions.shape}")
+        # print(f"Distributions shape: {distributions.shape}")
         mu = distributions[:, :self.latent_dim]
         logvar = distributions[:, self.latent_dim:]
         # print(f"Mu shape: {mu.shape}")
