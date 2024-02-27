@@ -96,7 +96,7 @@ print("filtered data shape:", filtered_latent_data.shape)
 filtered_labels = all_labels_array[mask]
 filtered_labels_neutrophil = all_labels_array[mask2]
 
-print("filtered data shape:", filtered_labels_neutrophil.shape)
+print("filtered neutrophil label shape:", filtered_labels_neutrophil.shape)
 
 myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
 neutrophil_banded_indices = np.where(filtered_labels_neutrophil == label_map['neutrophil_banded'])[0]
@@ -256,18 +256,19 @@ scaled_fold_changes = TimeSeriesScalerMeanVariance().fit_transform(fold_changes)
 
 n_clusters = 3
 ks = KShape(n_clusters=n_clusters, n_init=10, random_state=0)
-clusters = ks.fit_predict(scaled_fold_changes)
+clusters = ks.fit_predict(fold_changes)
 
 # Plot the clusters
 plt.figure(figsize=(20, 10))
 
 colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+trajectory_points = np.arange(fold_changes.shape[1])
 
 for cluster_idx in range(n_clusters):
-    time_series_in_cluster = scaled_fold_changes[clusters == cluster_idx]
+    time_series_in_cluster = fold_changes[clusters == cluster_idx]
 
     for ts in time_series_in_cluster:
-        plt.plot(ts.ravel(), label=f'Cluster {cluster_idx + 1}', color=colors[cluster_idx % len(colors)])
+        plt.plot(trajectory_points, ts.ravel(), label=f'Cluster {cluster_idx + 1}', color=colors[cluster_idx % len(colors)])
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change (scaled)')
