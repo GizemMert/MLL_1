@@ -33,8 +33,8 @@ model = VariationalAutoencodermodel4(latent_dim=50)
 model_name = 'AE-CFE-'
 
 epoch_of_gen = 290
-latent_dir = 'latent_variables_GE_3'
-z_dir = 'z_variables_GE_3'
+latent_dir_ge = 'latent_variables_GE_3'
+z_dir_ge = 'z_variables_GE_3'
 
 class_labels_gen = [0, 1, 2, 3]
 # monocyte : class 1
@@ -46,14 +46,14 @@ class_label_n = 3
 class_label_m = 1
 class_label_myeloid = 2
 
-mean_filename = os.path.join(latent_dir, f'class_{class_label_n}_mean_epoch_{epoch_of_gen}.npy')
-z_filename = os.path.join(z_dir, f'class_{class_label_n}_z_epoch_{epoch_of_gen}.npy')
+mean_filename = os.path.join(latent_dir_ge, f'class_{class_label_n}_mean_epoch_{epoch_of_gen}.npy')
+z_filename = os.path.join(z_dir_ge, f'class_{class_label_n}_z_epoch_{epoch_of_gen}.npy')
 
-mean_filename_m = os.path.join(latent_dir, f'class_{class_label_m}_mean_epoch_{epoch_of_gen}.npy')
-z_filename_m = os.path.join(z_dir, f'class_{class_label_m}_z_epoch_{epoch_of_gen}.npy')
+mean_filename_m = os.path.join(latent_dir_ge, f'class_{class_label_m}_mean_epoch_{epoch_of_gen}.npy')
+z_filename_m = os.path.join(z_dir_ge, f'class_{class_label_m}_z_epoch_{epoch_of_gen}.npy')
 
-mean_filename_myeloid = os.path.join(latent_dir, f'class_{class_label_myeloid}_mean_epoch_{epoch_of_gen}.npy')
-z_filename_myeloid = os.path.join(z_dir, f'class_{class_label_myeloid}_z_epoch_{epoch_of_gen}.npy')
+mean_filename_myeloid = os.path.join(latent_dir_ge, f'class_{class_label_myeloid}_mean_epoch_{epoch_of_gen}.npy')
+z_filename_myeloid = os.path.join(z_dir_ge, f'class_{class_label_myeloid}_z_epoch_{epoch_of_gen}.npy')
 
 ref_mean_class_3 = torch.from_numpy(np.load(mean_filename)).float().to(device)
 ref_z_class_3 = torch.from_numpy(np.load(z_filename)).float().to(device)
