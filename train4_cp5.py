@@ -208,7 +208,7 @@ for epoch in range(epochs):
         all_logvars = []
         all_z =[]
         all_z_neutrophil = []
-        all_z_monocyte = []
+        # all_z_monocyte = []
         all_z_myeloblast = []
 
     for feat, scimg, mask, label, _ in train_dataloader:
@@ -323,9 +323,9 @@ for epoch in range(epochs):
         # neutrophil_z_array = np.array(neutrophil_z_vectors)
         np.save(neutrophil_z_filename, np.concatenate(all_z_neutrophil, axis=0))
 
-        monocyte_z_filename = os.path.join(monocyte_z_dir, f'monocyte_z_eopch_{epoch}.npy')
+        # monocyte_z_filename = os.path.join(monocyte_z_dir, f'monocyte_z_eopch_{epoch}.npy')
         # neutrophil_z_array = np.array(neutrophil_z_vectors)
-        np.save(monocyte_z_filename, np.concatenate(all_z_monocyte, axis=0))
+        # np.save(monocyte_z_filename, np.concatenate(all_z_monocyte, axis=0))
 
         myle_z_filename = os.path.join(myle_z_dir, f'myle_z_eopch_{epoch}.npy')
         # neutrophil_z_array = np.array(neutrophil_z_vectors)
