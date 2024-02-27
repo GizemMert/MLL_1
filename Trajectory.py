@@ -259,7 +259,7 @@ sz = X_train.shape[1]
 
 # Perform kShape clustering
 ks = KShape(n_clusters=5, verbose=True)
-y_pred = ks.fit_predict(fold_changes.T)
+y_pred = ks.fit_predict(X_train)
 n_genes_in_clusters = {i: sum(y_pred == i) for i in range(5)}
 
 for cluster, count in n_genes_in_clusters.items():
@@ -280,27 +280,6 @@ for yi in range(5):
 plt.tight_layout()
 plt.close()
 
-colors = ['blue', 'green', 'red', 'cyan', 'magenta']
-ks = KShape(n_clusters=5, verbose=True)
-y_pred = ks.fit_predict(fold_changes.T)
-
-# Count the number of genes in each cluster
-n_genes_in_clusters = {i: np.sum(y_pred == i) for i in range(5)}
-for cluster, count in n_genes_in_clusters.items():
-    print(f"Number of genes in cluster {cluster}: {count}")
-
-# Plot the clusters
-plt.figure(figsize=(10, 8))
-for i in range(fold_changes.shape[1]):  # Assuming fold_changes shape is (n_points, n_genes)
-    cluster_label = y_pred[i]
-    if cluster_label < len(colors):  # Ensure we have a color defined for the cluster
-        plt.plot(fold_changes[:, i], color=colors[cluster_label], alpha=0.5)
-
-plt.xlabel('Trajectory Points')
-plt.ylabel('Fold Change')
-plt.title('Fold Change of Gene Expression Over Trajectory')
-plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_clusters.png'))
-plt.close()
 
 """
 plt.title("Gene Expression Profiles by Cluster")
