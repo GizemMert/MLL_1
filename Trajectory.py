@@ -234,7 +234,7 @@ print("trajectory is saved")
 print("Calculate fold change")
 fold_changes = gene_expression / gene_expression[0]
 
-fold_changes = np.log2(fold_changes)
+# fold_changes = np.log2(fold_changes)
 
 plt.figure(figsize=(20, 10))
 
