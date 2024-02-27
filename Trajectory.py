@@ -46,7 +46,7 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_1 = VariationalAutoencodermodel4(latent_dim=50)
-model_save_path = 'trained_model4cp2_new5_std_gen.pth'
+model_save_path = 'trained_model4cp2_new5_std_gen_2.pth'
 model_1.load_state_dict(torch.load(model_save_path, map_location=device))
 model_1.to(device)
 model_1.eval()
@@ -57,16 +57,16 @@ model_2.load_state_dict(torch.load(model_save_path_2, map_location=device))
 model_2.to(device)
 model_2.eval()
 
-umap_dir = 'umap_trajectory_oldmmd'
+umap_dir = 'umap_trajectory'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
 # Load all latent representations
-latent_dir = 'latent_data4cp2_new5_std_gen'
+latent_dir = 'latent_data4cp2_new5_std_gen_2'
 latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
-label_dir = 'label_data4cp2_new5_std_gen'
+label_dir = 'label_data4cp2_new5_std_gen_2'
 labels_path = os.path.join(label_dir, f'label_epoch_151.npy')
-neutrophil_z_dir = 'z_data4cp2_new5_std_gen'
+neutrophil_z_dir = 'z_data4cp2_new5_std_gen_2'
 neutrophil_z_path = os.path.join(neutrophil_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
 
 # Load all latent representations
