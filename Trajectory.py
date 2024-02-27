@@ -257,16 +257,16 @@ X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
 # Perform kShape clustering
-ks = KShape(n_clusters=3, verbose=True)
+ks = KShape(n_clusters=5, verbose=True)
 y_pred = ks.fit_predict(fold_changes.T)
-n_genes_in_clusters = {i: sum(y_pred == i) for i in range(3)}
+n_genes_in_clusters = {i: sum(y_pred == i) for i in range(5)}
 
 for cluster, count in n_genes_in_clusters.items():
     print(f"Number of genes in cluster {cluster}: {count}")
 plt.figure()
 
-for yi in range(3):
-    plt.subplot(3, 1, 1 + yi)
+for yi in range(5):
+    plt.subplot(5, 1, 1 + yi)
     for xx in X_train[y_pred == yi]:
         plt.plot(xx.ravel(), "k-", alpha=.2)
     plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
