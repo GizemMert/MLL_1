@@ -444,7 +444,7 @@ for epoch in range(epochs):
         plt.ylabel('UMAP Dimension 2')
         plt.legend()
         plt.grid(False)
-        plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
+        plt.savefig(os.path.join(umap_dir, f'umap_neutrophil_comparison_{epoch}.png'))
         plt.close()
 
         """
@@ -499,7 +499,7 @@ for epoch in range(epochs):
         plt.ylabel('UMAP Dimension 2')
         plt.legend()
         plt.grid(False)
-        plt.savefig(os.path.join(umap_dir, 'umap_myeloblast_comparison_training.png'))
+        plt.savefig(os.path.join(umap_dir, f'umap_myeloblast_comparison_{epoch}.png'))
         plt.close()
 
     neutrophil_banded_label = 7
