@@ -84,11 +84,11 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # mask_rcnn_model.load_state_dict(custom_state_dict)
 
 cff_feat_rec = 0.15
-cff_im_rec = 0.30
-cff_kld = 0.10
-cff_mmd_n = 0.15
-cff_mmd_m = 0.15
-cff_mmd_myle = 0.15
+cff_im_rec = 0.40
+cff_kld = 0.15
+cff_mmd_n = 0.10
+cff_mmd_m = 0.10
+cff_mmd_myle = 0.10
 
 
 beta = 4
