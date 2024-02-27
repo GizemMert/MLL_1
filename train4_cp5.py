@@ -36,18 +36,33 @@ epoch_of_gen = 290
 latent_dir = 'latent_variables_GE_3'
 z_dir = 'z_variables_GE_3'
 
-class_labels_gen = [0, 1, 2]
+class_labels_gen = [0, 1, 2, 3]
 # monocyte : class 1
-# neutrophil : class 2
+# myeloblast : class 2
 # basophil : class 0
+# neutrophil : class 3
 
-class_label = 2
+class_label_n = 3
+class_label_m = 1
+class_label_myeloid = 2
 
-mean_filename = os.path.join(latent_dir, f'class_{class_label}_mean_epoch_{epoch_of_gen}.npy')
-z_filename = os.path.join(z_dir, f'class_{class_label}_z_epoch_{epoch_of_gen}.npy')
+mean_filename = os.path.join(latent_dir, f'class_{class_label_n}_mean_epoch_{epoch_of_gen}.npy')
+z_filename = os.path.join(z_dir, f'class_{class_label_n}_z_epoch_{epoch_of_gen}.npy')
 
-ref_mean_class_2 = torch.from_numpy(np.load(mean_filename)).float().to(device)
-ref_z_class_2 = torch.from_numpy(np.load(z_filename)).float().to(device)
+mean_filename_m = os.path.join(latent_dir, f'class_{class_label_m}_mean_epoch_{epoch_of_gen}.npy')
+z_filename_m = os.path.join(z_dir, f'class_{class_label_m}_z_epoch_{epoch_of_gen}.npy')
+
+mean_filename_myeloid = os.path.join(latent_dir, f'class_{class_label_myeloid}_mean_epoch_{epoch_of_gen}.npy')
+z_filename_myeloid = os.path.join(z_dir, f'class_{class_label_myeloid}_z_epoch_{epoch_of_gen}.npy')
+
+ref_mean_class_3 = torch.from_numpy(np.load(mean_filename)).float().to(device)
+ref_z_class_3 = torch.from_numpy(np.load(z_filename)).float().to(device)
+
+ref_mean_class_1 = torch.from_numpy(np.load(mean_filename_m)).float().to(device)
+ref_z_class_1 = torch.from_numpy(np.load(z_filename_m)).float().to(device)
+
+ref_mean_class_2 = torch.from_numpy(np.load(mean_filename_myeloid)).float().to(device)
+ref_z_class_2 = torch.from_numpy(np.load(z_filename_myeloid)).float().to(device)
 
 if ngpu > 1:
     model = nn.DataParallel(model)
@@ -91,6 +106,14 @@ if not os.path.exists(z_dir):
 neutrophil_z_dir = 'z_data4cp2_new5_std_gen_2'
 if not os.path.exists(neutrophil_z_dir):
     os.makedirs(neutrophil_z_dir)
+
+monocyte_z_dir = 'z_data4cp2_new5_std_gen_2'
+if not os.path.exists(monocyte_z_dir):
+    os.makedirs(monocyte_z_dir)
+
+myle_z_dir = 'z_data4cp2_new5_std_gen_2'
+if not os.path.exists(myle_z_dir):
+    os.makedirs(myle_z_dir)
 
 log_dir = 'log_data4cp2_new5_std_gen_2'
 if not os.path.exists(log_dir):
@@ -160,13 +183,17 @@ class SobelFilter(nn.Module):
 
 edge_loss_fn = SobelFilter().to(device)
 ref_z_class_2 = ref_z_class_2.to(device)
+ref_z_class_1 = ref_z_class_1.to(device)
+ref_z_class_3 = ref_z_class_3.to(device)
 
 for epoch in range(epochs):
     loss = 0.0
     acc_imrec_loss = 0.0
     acc_featrec_loss = 0.0
     kl_div_loss = 0.0
-    mmd_loss = 0.0
+    mmd_loss_n = 0.0
+    mmd_loss_m = 0.0
+    mmd_loss_myleblast = 0.0
     y_true = []
     y_pred = []
     # neutrophil_z_vectors = []
@@ -179,6 +206,8 @@ for epoch in range(epochs):
         all_logvars = []
         all_z =[]
         all_z_neutrophil = []
+        all_z_monocyte = []
+        all_z_myeloblast = []
 
     for feat, scimg, mask, label, _ in train_dataloader:
         feat = feat.float()
@@ -204,13 +233,26 @@ for epoch in range(epochs):
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
         mmd_loss_n = torch.tensor(0.0).to(device)
 
-        # Check for neutrophil samples and calculate MMD loss if present in the batch
+        # Check for class samples and calculate MMD loss if present in the batch
         neutrophil_mask = (label == 7) | (label == 8)
         if neutrophil_mask.any():
             z_neutrophil = z_dist[neutrophil_mask]
             z_neutrophil = z_neutrophil.to(device)
-            mmd_loss_n = mmd(z_neutrophil, ref_z_class_2)
-        train_loss = (cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd * mmd_loss_n)
+            mmd_loss_neutrophil = mmd(z_neutrophil, ref_z_class_3)
+
+        monocyte_mask = (label == 9)
+        if monocyte_mask.any():
+            z_mono = z_dist[monocyte_mask]
+            z_mono = z_mono.to(device)
+            mmd_loss_monocyte = mmd(z_mono, ref_z_class_1)
+
+        myeloblast_mask = (label == 3)
+        if myeloblast_mask.any():
+            z_myle = z_dist[myeloblast_mask]
+            z_myle = z_myle.to(device)
+            mmd_loss_myle = mmd(z_mono, ref_z_class_2)
+        train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) +
+                      (cff_mmd * mmd_loss_neutrophil) + (cff_mmd * mmd_loss_monocyte) + (cff_mmd * mmd_loss_myle))
 
         train_loss.backward()
         optimizer.step()
@@ -219,7 +261,9 @@ for epoch in range(epochs):
         acc_featrec_loss += feat_rec_loss.data.cpu()
         acc_imrec_loss += recon_loss.data.cpu()
         kl_div_loss += kld_loss.data.cpu()
-        mmd_loss += mmd_loss_n.data.cpu()
+        mmd_loss_n += mmd_loss_neutrophil.data.cpu()
+        mmd_loss_m += mmd_loss_monocyte.data.cpu()
+        mmd_loss_myleblast += mmd_loss_myle.data.cpu()
 
         if epoch % 10 == 0:
             all_means.append(mu.data.cpu().numpy())
@@ -227,6 +271,8 @@ for epoch in range(epochs):
             all_labels.extend(label.cpu().numpy())
             all_z.append(z_dist.data.cpu().numpy())
             all_z_neutrophil.append(z_neutrophil.data.cpu().numpy())
+            all_z_monocyte.append(z_mono.data.cpu().numpy())
+            all_z_myeloblast.append(z_myle.data.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
         # _, predicted = torch.max(class_pred.data, 1)
@@ -236,16 +282,19 @@ for epoch in range(epochs):
     acc_featrec_loss = acc_featrec_loss / len(train_dataloader)
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
-    mmd_loss = mmd_loss / len(train_dataloader)
+    mmd_loss_n = mmd_loss_n / len(train_dataloader)
+    mmd_loss_m = mmd_loss_m / len(train_dataloader)
+    mmd_loss_myleblast = mmd_loss_myleblast / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss = {:.6f}".format
-          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss.item()))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss_n = {:.6f}, mmd_loss_m = {:.6f}, mmd_loss_myle = {:.6f} ".format
+          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss_n.item(), mmd_loss_m.item(), mmd_loss_myleblast.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
-                f"MMD_Loss = {mmd_loss.item():.6f} \n")
+                f"MMD_Loss_n = {mmd_loss_n.item():.6f}, MMD_Loss_m = {mmd_loss_m.item():.6f}, "
+                f"MMD_Loss_myle = {mmd_loss_myleblast.item():.6f} \n")
 
     if epoch % 10 == 0:
         # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
@@ -269,6 +318,14 @@ for epoch in range(epochs):
         neutrophil_z_filename = os.path.join(neutrophil_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
         # neutrophil_z_array = np.array(neutrophil_z_vectors)
         np.save(neutrophil_z_filename, np.concatenate(all_z_neutrophil, axis=0))
+
+        monocyte_z_filename = os.path.join(monocyte_z_dir, f'monocyte_z_eopch_{epoch}.npy')
+        # neutrophil_z_array = np.array(neutrophil_z_vectors)
+        np.save(monocyte_z_filename, np.concatenate(all_z_monocyte, axis=0))
+
+        myle_z_filename = os.path.join(myle_z_dir, f'myle_z_eopch_{epoch}.npy')
+        # neutrophil_z_array = np.array(neutrophil_z_vectors)
+        np.save(myle_z_filename, np.concatenate(all_z_myeloblast, axis=0))
         # print(f"Saved {neutrophil_z_array.shape[0]} neutrophil z vectors for epoch {epoch}")
 
         for i, img in enumerate(masked_scimg):
@@ -358,7 +415,7 @@ for epoch in range(epochs):
         plt.close(fig)
 
     # final_z_neutrophil_filename = 'neutrophil_z_vectors_gen2.npy'
-        ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
+        ref_z_class_3_cpu = ref_z_class_3.cpu().numpy() if ref_z_class_3.is_cuda else ref_z_class_3.numpy()
 
     # if epoch == epochs - 1:
         neutrophil_z_data = np.load(neutrophil_z_filename)
@@ -367,23 +424,77 @@ for epoch in range(epochs):
 
 
         # Proceed with UMAP visualization
-        combined_data = np.vstack([neutrophil_z_data, ref_z_class_2_cpu])
-        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=7)
+        combined_data = np.vstack([neutrophil_z_data, ref_z_class_3_cpu])
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
         umap_embedding = umap_reducer.fit_transform(combined_data)
 
         split_point = neutrophil_z_data.shape[0]
         umap_z_neutrophil = umap_embedding[:split_point, :]
-        umap_ref_z_class_2 = umap_embedding[split_point:, :]
+        umap_ref_z_class_3 = umap_embedding[split_point:, :]
 
         plt.figure(figsize=(12, 6))
         plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
-        plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
+        plt.scatter(umap_ref_z_class_3[:, 0], umap_ref_z_class_3[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
         plt.title('UMAP Visualization of Neutrophil Latent Representations (Post-Training)')
         plt.xlabel('UMAP Dimension 1')
         plt.ylabel('UMAP Dimension 2')
         plt.legend()
         plt.grid(False)
         plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
+        plt.close()
+
+        ref_z_class_1_cpu = ref_z_class_1.cpu().numpy() if ref_z_class_1.is_cuda else ref_z_class_1.numpy()
+
+        # if epoch == epochs - 1:
+        monocyte_z_data = np.load(monocyte_z_filename)
+        # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+        print(f"Loaded neutrophil z data with shape: {monocyte_z_data.shape}")
+
+        # Proceed with UMAP visualization
+        combined_data = np.vstack([monocyte_z_data, ref_z_class_1_cpu])
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
+        umap_embedding = umap_reducer.fit_transform(combined_data)
+
+        split_point = monocyte_z_data.shape[0]
+        umap_z_mono = umap_embedding[:split_point, :]
+        umap_ref_z_class_1 = umap_embedding[split_point:, :]
+
+        plt.figure(figsize=(12, 6))
+        plt.scatter(umap_z_mono[:, 0], umap_z_mono[:, 1], s=10, label='Model monocyte')
+        plt.scatter(umap_ref_z_class_1[:, 0], umap_ref_z_class_1[:, 1], s=10, label='Reference Monocyte', alpha=0.6)
+        plt.title('UMAP Visualization of Monocyte Latent Representations (Post-Training)')
+        plt.xlabel('UMAP Dimension 1')
+        plt.ylabel('UMAP Dimension 2')
+        plt.legend()
+        plt.grid(False)
+        plt.savefig(os.path.join(umap_dir, 'umap_monocyte_comparison_training.png'))
+        plt.close()
+
+        ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
+
+        # if epoch == epochs - 1:
+        myle_z_data = np.load(myle_z_filename)
+        # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+        print(f"Loaded neutrophil z data with shape: {myle_z_data.shape}")
+
+        # Proceed with UMAP visualization
+        combined_data = np.vstack([myle_z_data, ref_z_class_2_cpu])
+        umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
+        umap_embedding = umap_reducer.fit_transform(combined_data)
+
+        split_point = myle_z_data.shape[0]
+        umap_z_myle = umap_embedding[:split_point, :]
+        umap_ref_z_class_2 = umap_embedding[split_point:, :]
+
+        plt.figure(figsize=(12, 6))
+        plt.scatter(umap_z_myle[:, 0], umap_z_myle[:, 1], s=10, label='Model Myeloblast')
+        plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Myeloblast', alpha=0.6)
+        plt.title('UMAP Visualization of Myeloblast Latent Representations (Post-Training)')
+        plt.xlabel('UMAP Dimension 1')
+        plt.ylabel('UMAP Dimension 2')
+        plt.legend()
+        plt.grid(False)
+        plt.savefig(os.path.join(umap_dir, 'umap_myeloblast_comparison_training.png'))
         plt.close()
 
     neutrophil_banded_label = 7
@@ -411,6 +522,57 @@ for epoch in range(epochs):
 
             if epoch % 10 == 0:
                 cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+
+    monocyte_label = 9
+
+
+    file_name = "reconstructed-monocyte_2/"
+    if not os.path.exists(file_name):
+        os.makedirs(file_name)
+
+    # Process and visualize only for specified neutrophil classes
+    for i in range(30):
+        ft, img, mask, lbl, _ = train_dataset[i]
+
+        # Check if the label is for neutrophil banded or segmented
+        if lbl in [monocyte_label]:
+            ft = np.expand_dims(ft, axis=0)
+            ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
+
+            _, _, im_out, _, _ = model(ft)
+            im_out = im_out.data.cpu().numpy().squeeze()
+            im_out = np.moveaxis(im_out, 0, 2)
+            img = np.moveaxis(img, 0, 2)
+            im = np.concatenate([img, im_out], axis=1)
+
+            if epoch % 10 == 0:
+                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+
+    myeloblast_label = 3
+
+
+    file_name = "reconstructed-myeloblast_2/"
+    if not os.path.exists(file_name):
+        os.makedirs(file_name)
+
+    # Process and visualize only for specified neutrophil classes
+    for i in range(30):
+        ft, img, mask, lbl, _ = train_dataset[i]
+
+        # Check if the label is for neutrophil banded or segmented
+        if lbl in [myeloblast_label]:
+            ft = np.expand_dims(ft, axis=0)
+            ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
+
+            _, _, im_out, _, _ = model(ft)
+            im_out = im_out.data.cpu().numpy().squeeze()
+            im_out = np.moveaxis(im_out, 0, 2)
+            img = np.moveaxis(img, 0, 2)
+            im = np.concatenate([img, im_out], axis=1)
+
+            if epoch % 10 == 0:
+                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+
 
     """   
     for i in range(30):
