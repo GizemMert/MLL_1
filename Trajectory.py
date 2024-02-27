@@ -204,11 +204,11 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_neutrophil", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr("vae_interpolation_gpr_neutrophil", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
-interpolated_latent_points = interpolate_gpr(start_latent, end_latent, n_points=100)
+interpolated_latent_points = interpolate_gpr(random_neutrophil_banded_point, random_neutrophil_seg_point, n_points=100)
 
 gene_expression_profiles = []
 for latent_vector in interpolated_latent_points:
