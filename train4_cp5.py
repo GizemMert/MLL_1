@@ -216,6 +216,9 @@ for epoch in range(epochs):
         scimg = scimg.float()
         label = label.long().to(device)
         mask = mask.float().to(device)
+        mmd_loss_neutrophil = torch.tensor(0.0).to(device)
+        mmd_loss_monocyte = torch.tensor(0.0).to(device)
+        mmd_loss_myle = torch.tensor(0.0).to(device)
 
         feat, scimg = feat.to(device), scimg.to(device)
 
@@ -252,7 +255,7 @@ for epoch in range(epochs):
         if myeloblast_mask.any():
             z_myle = z_dist[myeloblast_mask]
             z_myle = z_myle.to(device)
-            mmd_loss_myle = mmd(z_mono, ref_z_class_2)
+            mmd_loss_myle = mmd(z_myle, ref_z_class_2)
         train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd_n * mmd_loss_neutrophil) + (cff_mmd_m * mmd_loss_monocyte) + (cff_mmd_myle * mmd_loss_myle))
 
         train_loss.backward()
