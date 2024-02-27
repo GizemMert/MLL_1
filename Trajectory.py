@@ -216,6 +216,7 @@ for latent_vector in interpolated_latent_points:
     gene_expression_profiles.append(gene_expression.detach().cpu().numpy() * 10)
 
 gene_expression = np.array(gene_expression_profiles)
+print(" ge shape :", gene_expression.shape)
 print("vis trajectory for each gene started")
 plt.figure(figsize=(12, 8))
 
@@ -251,28 +252,38 @@ plt.close()
 print("fold change is saved")
 
 #clustering
-
-X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes)
+X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
-# kShape clustering
-ks = KShape(n_clusters=3, verbose=True)
+# Perform kShape clustering
+ks = KShape(n_clusters=3, verbose=True, random_state=0)
 y_pred = ks.fit_predict(X_train)
 
-plt.figure()
-for yi in range(3):
-    plt.subplot(3, 1, 1 + yi)
-    for xx in X_train[y_pred == yi]:
-        plt.plot(xx.ravel(), "k-", alpha=.2)
-    plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
-    plt.xlim(0, sz)
-    plt.ylim(-4, 4)
-    plt.title("Cluster %d" % (yi + 1))
-    plt.tight_layout()
-    plt.savefig(os.path.join(umap_dir, f'fold_change_cluster_{yi+1}.png'))
-    plt.close()
+cluster_centers = ks.cluster_centers_
+clusters = {i: X_train[y_pred == i] for i in range(3)}
 
-print("clusters saved")
+plt.figure(figsize=(12, 6))
+for i, (key, cluster) in enumerate(clusters.items()):
+
+    mean_profile = cluster.mean(axis=0).ravel()
+    std_profile = cluster.std(axis=0).ravel()
+
+    time_points = np.arange(sz)
+
+    for series in cluster:
+        plt.plot(time_points, series.ravel(), "k-", alpha=0.1, color='grey')
+
+    plt.plot(time_points, mean_profile, label=f"Cluster {i + 1}")
+
+    plt.fill_between(time_points, mean_profile - std_profile, mean_profile + std_profile, alpha=0.2)
+
+plt.title("Gene Expression Profiles by Cluster")
+plt.xlabel("Time")
+plt.ylabel("Fold Change")
+plt.legend()
+plt.tight_layout()
+plt.savefig(os.path.join(umap_dir, 'gene_expression_clusters.png'))
+plt.close()
 
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
