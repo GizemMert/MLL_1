@@ -85,10 +85,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-6)
 
 cff_feat_rec = 0.15
 cff_im_rec = 0.40
-cff_kld = 0.10
-cff_mmd_n = 0.20
+cff_kld = 0.15
+cff_mmd_n = 0.15
 cff_mmd_m = 0.20
-cff_mmd_myle = 0.20
+cff_mmd_myle = 0.15
 
 
 beta = 4
@@ -245,18 +245,19 @@ for epoch in range(epochs):
             z_neutrophil = z_neutrophil.to(device)
             mmd_loss_neutrophil = mmd(z_neutrophil, ref_z_class_3)
 
+        """
         monocyte_mask = (label == 9)
         if monocyte_mask.any():
             z_mono = z_dist[monocyte_mask]
             z_mono = z_mono.to(device)
             mmd_loss_monocyte = mmd(z_mono, ref_z_class_1)
-
+        """
         myeloblast_mask = (label == 3)
         if myeloblast_mask.any():
             z_myle = z_dist[myeloblast_mask]
             z_myle = z_myle.to(device)
             mmd_loss_myle = mmd(z_myle, ref_z_class_2)
-        train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd_n * mmd_loss_neutrophil) + (cff_mmd_m * mmd_loss_monocyte) + (cff_mmd_myle * mmd_loss_myle))
+        train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd_n * mmd_loss_neutrophil) + (cff_mmd_myle * mmd_loss_myle)) # (cff_mmd_m * mmd_loss_monocyte)
 
         train_loss.backward()
         optimizer.step()
@@ -266,7 +267,7 @@ for epoch in range(epochs):
         acc_imrec_loss += recon_loss.data.cpu()
         kl_div_loss += kld_loss.data.cpu()
         mmd_loss_n += mmd_loss_neutrophil.data.cpu()
-        mmd_loss_m += mmd_loss_monocyte.data.cpu()
+        # mmd_loss_m += mmd_loss_monocyte.data.cpu()
         mmd_loss_myleblast += mmd_loss_myle.data.cpu()
 
         if epoch % 10 == 0:
@@ -275,7 +276,7 @@ for epoch in range(epochs):
             all_labels.extend(label.cpu().numpy())
             all_z.append(z_dist.data.cpu().numpy())
             all_z_neutrophil.append(z_neutrophil.data.cpu().numpy())
-            all_z_monocyte.append(z_mono.data.cpu().numpy())
+            # all_z_monocyte.append(z_mono.data.cpu().numpy())
             all_z_myeloblast.append(z_myle.data.cpu().numpy())
 
         # y_true.extend(label.cpu().numpy())
@@ -287,18 +288,17 @@ for epoch in range(epochs):
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
     mmd_loss_n = mmd_loss_n / len(train_dataloader)
-    mmd_loss_m = mmd_loss_m / len(train_dataloader)
-    mmd_loss_myleblast = mmd_loss_myleblast / len(train_dataloader)
+    # mmd_loss_m = mmd_loss_m / len(train_dataloader)
+    mmd_loss_myleblast_ = mmd_loss_myleblast / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
-    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss_n = {:.6f}, mmd_loss_m = {:.6f}, mmd_loss_myle = {:.6f} ".format
-          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss_n.item(), mmd_loss_m.item(), mmd_loss_myleblast.item()))
+    print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss_n = {:.6f}, mmd_loss_myle = {:.6f} ".format
+          (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss_n.item(), mmd_loss_myleblast_.item()))
 
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
-                f"MMD_Loss_n = {mmd_loss_n.item():.6f}, MMD_Loss_m = {mmd_loss_m.item():.6f}, "
-                f"MMD_Loss_myle = {mmd_loss_myleblast.item():.6f} \n")
+                f"MMD_Loss_n = {mmd_loss_n.item():.6f}, MMD_Loss_myle = {mmd_loss_myleblast.item():.6f} \n")
 
     if epoch % 10 == 0:
         # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
@@ -447,6 +447,7 @@ for epoch in range(epochs):
         plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
         plt.close()
 
+        """
         ref_z_class_1_cpu = ref_z_class_1.cpu().numpy() if ref_z_class_1.is_cuda else ref_z_class_1.numpy()
 
         # if epoch == epochs - 1:
@@ -473,7 +474,7 @@ for epoch in range(epochs):
         plt.grid(False)
         plt.savefig(os.path.join(umap_dir, 'umap_monocyte_comparison_training.png'))
         plt.close()
-
+        """
         ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
 
         # if epoch == epochs - 1:
@@ -527,6 +528,7 @@ for epoch in range(epochs):
             if epoch % 10 == 0:
                 cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
 
+    """
     monocyte_label = 9
 
 
@@ -551,6 +553,7 @@ for epoch in range(epochs):
 
             if epoch % 10 == 0:
                 cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+    """
 
     myeloblast_label = 3
 
