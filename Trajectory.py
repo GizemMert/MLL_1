@@ -57,7 +57,7 @@ model_2.load_state_dict(torch.load(model_save_path_2, map_location=device))
 model_2.to(device)
 model_2.eval()
 
-umap_dir = 'umap_trajectory'
+umap_dir = 'umap_trajectory_myeloblast_nsegmented'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
@@ -68,6 +68,8 @@ label_dir = 'label_data4cp2_new5_std_gen_2'
 labels_path = os.path.join(label_dir, f'label_epoch_151.npy')
 neutrophil_z_dir = 'z_data4cp2_new5_std_gen_2'
 neutrophil_z_path = os.path.join(neutrophil_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
+myeloblast_z_dir = 'z_data4cp2_new5_std_gen_2'
+myeloblast_z_path = os.path.join(neutrophil_z_dir, f'myle_z_eopch_{epoch}.npy')
 
 # Load all latent representations
 latent_data = np.load(latents_path)
@@ -76,6 +78,10 @@ print("Latent data shape:", latent_data.shape)
 
 # Load all neutrophil latent representations
 neutrophil_data = np.load(neutrophil_z_path)
+# latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+print("Latent data shape:", latent_data.shape)
+
+neutrophil_data = np.load(myeloblast_z_path)
 # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
 print("Latent data shape:", latent_data.shape)
 
@@ -99,8 +105,8 @@ filtered_labels_neutrophil = all_labels_array[mask2]
 print("filtered neutrophil label shape:", filtered_labels_neutrophil.shape)
 
 myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
-neutrophil_banded_indices = np.where(filtered_labels_neutrophil == label_map['neutrophil_banded'])[0]
-neutrophil_seg_indices = np.where(filtered_labels_neutrophil == label_map['neutrophil_segmented'])[0]
+neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
+neutrophil_seg_indices = np.where(filtered_labels == label_map['neutrophil_segmented'])[0]
 basophil_indices = np.where(filtered_labels == label_map['basophil'])[0]
 eosinophil_indices = np.where(filtered_labels == label_map['eosinophil'])[0]
 monocyte_indices = np.where(filtered_labels == label_map['monocyte'])[0]
@@ -115,8 +121,8 @@ random_monocyte_index = np.random.choice(monocyte_indices)
 
 random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 # You can replace filtered_laten_data with neutrophil_data
-random_neutrophil_banded_point = neutrophil_data[random_neutrophil_banded_index]
-random_neutrophil_seg_point = neutrophil_data[random_neutrophil_seg_index]
+random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
+random_neutrophil_seg_point = filtered_latent_data[random_neutrophil_seg_index]
 random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
@@ -204,11 +210,11 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_neutrophil_mmd", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr("vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 
-interpolated_latent_points = interpolate_gpr(random_neutrophil_banded_point, random_neutrophil_seg_point, n_points=100)
+interpolated_latent_points = interpolate_gpr(random_myeloblast_point, random_neutrophil_seg_point, n_points=100)
 
 gene_expression_profiles = []
 for latent_vector in interpolated_latent_points:
