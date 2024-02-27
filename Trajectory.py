@@ -233,7 +233,8 @@ plt.close()
 print("trajectory is saved")
 
 print("Calculate fold change")
-fold_changes = gene_expression / gene_expression[0]
+small_const = 1e-6
+fold_changes = gene_expression / (gene_expression[0] + small_const)
 
 # fold_changes = np.log2(fold_changes)
 
@@ -278,6 +279,19 @@ for yi in range(5):
 
 plt.tight_layout()
 plt.close()
+
+colors = ['blue', 'green', 'red', 'cyan', 'magenta']
+
+plt.figure(figsize=(10, 8))
+
+for i in range(fold_changes.T.shape[0]):
+    cluster_label = y_pred[i]
+    plt.plot(fold_changes[i, :], color=colors[cluster_label], alpha=0.5)
+
+# Add labels and title as needed
+plt.xlabel('Time Points')
+plt.ylabel('Fold Change')
+plt.title('Fold Change of Genes Colored by Cluster')
 
 """
 plt.title("Gene Expression Profiles by Cluster")
