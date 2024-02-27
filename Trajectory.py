@@ -245,6 +245,7 @@ for i in range(fold_changes.shape[1]):
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
+plt.xlim(left=0, right=fold_changes.shape[0] - 1)
 # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 # plt.tight_layout(rect=(0.0, 0.1, 0.75, 0.9))
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory.png'))
@@ -256,27 +257,29 @@ X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
 # Perform kShape clustering
-ks = KShape(n_clusters=3, verbose=True, random_state=0)
-y_pred = ks.fit_predict(X_train)
+ks = KShape(n_clusters=3, verbose=True)
+y_pred = ks.fit_predict(fold_changes.T)
+n_genes_in_clusters = {i: sum(y_pred == i) for i in range(3)}
 
-cluster_centers = ks.cluster_centers_
-clusters = {i: X_train[y_pred == i] for i in range(3)}
+for cluster, count in n_genes_in_clusters.items():
+    print(f"Number of genes in cluster {cluster}: {count}")
+plt.figure()
 
-plt.figure(figsize=(12, 6))
-for i, (key, cluster) in enumerate(clusters.items()):
+for yi in range(3):
+    plt.subplot(3, 1, 1 + yi)
+    for xx in X_train[y_pred == yi]:
+        plt.plot(xx.ravel(), "k-", alpha=.2)
+    plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
+    plt.xlim(0, sz)
+    plt.ylim(-4, 4)
+    plt.title("Cluster %d" % (yi + 1))
+    plt.tight_layout()
+    plt.savefig(os.path.join(umap_dir, f'gene_expression_clusters_{yi + 1}.png'))
 
-    mean_profile = cluster.mean(axis=0).ravel()
-    std_profile = cluster.std(axis=0).ravel()
+plt.tight_layout()
+plt.close()
 
-    time_points = np.arange(sz)
-
-    for series in cluster:
-        plt.plot(time_points, series.ravel(), "k-", alpha=0.1, color='grey')
-
-    plt.plot(time_points, mean_profile, label=f"Cluster {i + 1}")
-
-    # plt.fill_between(time_points, mean_profile - std_profile, mean_profile + std_profile, alpha=0.2)
-
+"""
 plt.title("Gene Expression Profiles by Cluster")
 plt.xlabel("Time")
 plt.ylabel("Fold Change")
@@ -284,6 +287,7 @@ plt.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(umap_dir, 'gene_expression_clusters.png'))
 plt.close()
+"""
 
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
