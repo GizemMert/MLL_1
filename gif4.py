@@ -16,6 +16,8 @@ from Model_Vae_GE_2 import VAE_GE
 from umap import UMAP
 import seaborn as sns
 import pandas as pd
+from torchvision.transforms.functional import to_pil_image
+import imageio
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
 from tslearn.clustering import KShape
@@ -133,9 +135,9 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
 
     latent_vectors = np.vstack([latent_start, latent_end])
 
-    kernel = C(5.0, (1e-1, 1e1)) * RBF(5.0, (1e-1, 1e1))
+    kernel = C(1.0, (1e-1, 1e1)) * RBF(1e-1, (1e-1, 1e1))
 
-    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+    gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=50)
     gpr.fit(indices, latent_vectors)
 
     index_range = np.linspace(0, 1, n_points).reshape(-1, 1)
@@ -145,31 +147,34 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
     return interpolated_latent_vectors
 
 
-def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(3, 3), device='cpu'):
-    model_1.eval()  # Ensure the model is in evaluation mode
 
-    interpolated_latents = interpolate_gpr(latent_start, latent_end, steps)
 
-    decoded_images = []
+def interpolate_gif_gpr(filename, latent_1, latent_2, latent_3, steps=200, grid_size=(20, 10),
+                        device='cpu'):
+
+
+    model_1.eval()
+    # Compute interpolated latent vectors using GPR
+    interpolated_latent_1 = interpolate_gpr(latent_1, latent_2, steps)
+    interpolated_latent_2 = interpolate_gpr(latent_2, latent_3, steps)
+
+    interpolated_latents = np.vstack((interpolated_latent_1[:-1], interpolated_latent_2))
+
+    frames = []
     for z in interpolated_latents:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model_1.decoder(z_tensor)
             decoded_img = model_1.img_decoder(decoded_img)
-        decoded_images.append(decoded_img.cpu())
+        img_np = np.array(to_pil_image(decoded_img.squeeze(0)))
+        frames.append(img_np)
+    imageio.mimsave(filename + '.gif', frames, fps=20)
+    print("GIF saved successfully")
 
-    while len(decoded_images) < grid_size[0] * grid_size[1]:
-        decoded_images.append(torch.zeros_like(decoded_images[0]))
-    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
-    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
-    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
-    grid_image = ToPILImage()(grid_image)
-    grid_image.save(filename + '.jpg', quality=300)
-    print("Grid Image saved successfully")
 
-def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
-    feature_1, feature_2 = None, None
+def get_images_from_different_classes(dataloader, class_1_label, class_2_label, class_3_label):
+    feature_1, feature_2, feature_3 = None, None, None
 
     for feature, _, _, labels, _ in dataloader:
         if feature_1 is not None and feature_2 is not None:
@@ -182,29 +187,29 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
             if label.item() == class_2_label and feature_2 is None:
                 feature_2 = feature[i].unsqueeze(0)
 
-    return [feature_1, feature_2]
+            if label.item() == class_3_label and feature_3 is None:
+                feature_3 = feature[i].unsqueeze(0)
+
+    return [feature_1, feature_2, feature_3]
 
 
 def get_latent_vector(x):
     distributions = model_1.encoder(x)
-    print(f"Distributions shape: {distributions.shape}")
-    mu = distributions[:, :50]
-    logvar = distributions[:, 50:100]
-    print(f"Mu shape: {mu.shape}")
-    print(f"Logvar shape: {logvar.shape}")
+    mu = distributions[:, :latent_dim]
+    logvar = distributions[:, latent_dim:]
     z = reparametrize(mu, logvar)
-    print("Shape of z:", z.shape)
     return z
 
 
 train_dataset = Dataloader(split='train')
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=False, num_workers=1)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_features = get_images_from_different_classes(train_dataloader, label_map['neutrophil_banded'], label_map['neutrophil_segmented'])
+selected_features = get_images_from_different_classes(train_dataloader, label_map['myeloblast'], label_map['neutrophil_banded'], label_map['neutrophil_segmented'])
 
-start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
-# interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_neutrophil_kernel", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
+start_latent, middle_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
+
+interpolate_gif_gpr("vae_interpolation_gif_mnn", start_latent, middle_latent, end_latent, steps=200, grid_size=(20, 10))
+
 
 
 
