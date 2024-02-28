@@ -151,10 +151,14 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
     return interpolated_latent_vectors
 
 
-def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(3, 3), device='cpu'):
+def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(3, 3), device=device'):
     model_1.eval()  # Ensure the model is in evaluation mode
 
     interpolated_latents = interpolate_gpr(latent_start, latent_end, steps)
+    
+    file_path = 'interpolation'
+    torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
+    print(f"Interpolated latent points saved to {filename}_latent_points.pt")
 
     decoded_images = []
     for z in interpolated_latents:
@@ -264,7 +268,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, n=100, grid_size=(10, 10))
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 interpolated_points = torch.load('interpolation_latent_points.pt')
