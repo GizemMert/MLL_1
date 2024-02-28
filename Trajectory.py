@@ -127,7 +127,8 @@ random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
 # print("Point data shape:", random_myeloblast_point.shape)
-"""
+
+
 def interpolate_gpr(latent_start, latent_end, n_points=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
@@ -151,17 +152,17 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
     return interpolated_latent_vectors
 
 
-def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(3, 3), device=device'):
-    model_1.eval()  # Ensure the model is in evaluation mode
+def interpolate_gif_gpr(filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device=device):
+    model_1.eval()
 
-    interpolated_latents = interpolate_gpr(latent_start, latent_end, steps)
+    interpolated_latent_points = interpolate_gpr(latent_start, latent_end, n_points=steps)
     
     file_path = 'interpolation'
     torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
     print(f"Interpolated latent points saved to {filename}_latent_points.pt")
 
     decoded_images = []
-    for z in interpolated_latents:
+    for z in interpolated_latent_points:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model_1.decoder(z_tensor)
@@ -177,6 +178,8 @@ def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=300)
     print("Grid Image saved successfully")
+
+
 """
 
 
@@ -235,7 +238,7 @@ def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_s
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=95)
     print("Grid image saved successfully")
-
+"""
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
@@ -273,7 +276,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, n=100, grid_size=(10, 10))
+interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10))
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 interpolated_points = torch.load('interpolation_latent_points.pt')
