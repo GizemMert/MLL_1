@@ -293,7 +293,12 @@ X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
 # Perform kShape clustering
-ks = KShape(n_clusters=5, verbose=True)
+ks = KShape(n_clusters=7, verbose=True)
+y_pred = ks.fit_predict(X_train)
+n_genes_in_clusters = {i: sum(y_pred == i) for i in range(5)}
+
+# Perform kShape clustering
+ks = KShape(n_clusters=7, verbose=True)
 y_pred = ks.fit_predict(X_train)
 n_genes_in_clusters = {i: sum(y_pred == i) for i in range(5)}
 
@@ -301,13 +306,13 @@ for cluster, count in n_genes_in_clusters.items():
     print(f"Number of genes in cluster {cluster}: {count}")
 plt.figure()
 
-for yi in range(5):
-    plt.subplot(5, 1, 1 + yi)
+for yi in range(7):
+    plt.subplot(7, 1, 1 + yi)
     for xx in X_train[y_pred == yi]:
         plt.plot(xx.ravel(), "k-", alpha=.2)
     plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
     plt.xlim(0, sz)
-    plt.ylim(-4, 4)
+    plt.ylim(-20, 20)
     plt.title("Cluster %d" % (yi + 1))
     plt.tight_layout()
     plt.savefig(os.path.join(umap_dir, f'gene_expression_clusters_{yi + 1}.png'))
