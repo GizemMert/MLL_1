@@ -221,18 +221,17 @@ def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_s
         decoded_images = decoded_images.cpu()
 
     total_slots = grid_size[0] * grid_size[1]
-    if len(decoded_images) < total_slots:
-        padding = total_slots - len(decoded_images)
-        decoded_images = torch.cat([decoded_images, torch.zeros(padding, *decoded_images.shape[1:])], dim=0)
+    if decoded_images.size(0) < total_slots:
+        padding = total_slots - decoded_images.size(0)
+        padding_tensor = torch.zeros(padding, *decoded_images.shape[1:], device='cpu')  # Match the shape and device
+        decoded_images = torch.cat([decoded_images, padding_tensor], dim=0)
 
-
-
-    # Trim the list to match the grid size exactly
+    # No need to stack 'decoded_images' as it's already a single tensor from the decoder
+    # Trim or pad the tensor to match the grid size exactly
     decoded_images = decoded_images[:total_slots]
 
     # Arrange images in a grid and save
-    tensor_grid = torch.stack(decoded_images).squeeze(1)
-    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = make_grid(decoded_images, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=95)
     print("Grid image saved successfully")
