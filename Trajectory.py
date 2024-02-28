@@ -249,7 +249,6 @@ filtered_gen_expression = gen_expression[:, variable_genes_indices]
 print(type(filtered_gen_expression))
 print(filtered_gen_expression.shape)
 
-assert isinstance(filtered_gen_expression, np.ndarray), "filtered_gen_expression must be a NumPy array"
 plt.figure(figsize=(12, 8))
 
 for i, gene_idx in enumerate(variable_genes_indices):
@@ -266,7 +265,9 @@ print("trajectory is saved")
 
 print("Calculate fold change")
 small_const = 1e-10
-fold_changes = filtered_gen_expression / (filtered_gen_expression[0] + small_const)
+mean_expression = np.mean(filtered_gen_expression, axis=0)
+
+fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 # fold_changes = np.log2(fold_changes)
 
