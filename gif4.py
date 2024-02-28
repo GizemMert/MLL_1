@@ -150,7 +150,7 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
 
 
 def interpolate_gif_gpr(filename, latent_1, latent_2, latent_3, steps=200, grid_size=(20, 10),
-                        device='cpu'):
+                        device=device):
 
 
     model_1.eval()
