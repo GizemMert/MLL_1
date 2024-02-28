@@ -230,7 +230,7 @@ with torch.no_grad():
     for latent_vector in interpolated_points:
         latent_vector_tensor = torch.from_numpy(latent_vector).float().to(device).unsqueeze(0)
         gene_expression = model_2.decoder(latent_vector_tensor)
-        gene_expression_profiles.append(gene_expression.squeeze(0).cpu().numpy())
+        gene_expression_profiles.append(gene_expression.squeeze(0))
 
 gen_expression = torch.stack(gene_expression_profiles).cpu().numpy()
 print("gene expression shape:", gene_expression.shape)
