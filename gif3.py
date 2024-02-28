@@ -304,7 +304,8 @@ n_genes_in_clusters = {i: sum(y_pred == i) for i in range(5)}
 
 for cluster, count in n_genes_in_clusters.items():
     print(f"Number of genes in cluster {cluster}: {count}")
-plt.figure()
+fig_width, fig_height = 20, 15  # Width, Height in inches
+plt.figure(figsize=(fig_width, fig_height))
 
 for yi in range(7):
     plt.subplot(7, 1, 1 + yi)
@@ -312,7 +313,7 @@ for yi in range(7):
         plt.plot(xx.ravel(), "k-", alpha=.2)
     plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
     plt.xlim(0, sz)
-    plt.ylim(-20, 20)
+    plt.ylim(-6, 6)
     plt.title("Cluster %d" % (yi + 1))
     plt.tight_layout()
     plt.savefig(os.path.join(umap_dir, f'gene_expression_clusters_{yi + 1}.png'))
