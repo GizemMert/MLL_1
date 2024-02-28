@@ -129,7 +129,7 @@ random_monocyte_point = filtered_latent_data[random_monocyte_index]
 # print("Point data shape:", random_myeloblast_point.shape)
 
 
-def interpolate_gpr(latent_start, latent_end, n_points=100):
+def interpolate_gpr(latent_start, latent_end, steps=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
     if isinstance(latent_end, torch.Tensor):
@@ -145,17 +145,17 @@ def interpolate_gpr(latent_start, latent_end, n_points=100):
     gpr = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
     gpr.fit(indices, latent_vectors)
 
-    index_range = np.linspace(0, 1, n_points).reshape(-1, 1)
+    index_range = np.linspace(0, 1, steps).reshape(-1, 1)
 
     interpolated_latent_vectors = gpr.predict(index_range)
 
     return interpolated_latent_vectors
 
 
-def interpolate_gif_gpr(filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device=device):
+def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device=device):
     model_1.eval()
 
-    interpolated_latent_points = interpolate_gpr(latent_start, latent_end, n_points=steps)
+    interpolated_latent_points = interpolate_gpr(latent_start, latent_end, steps=steps)
     
     file_path = 'interpolation'
     torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
