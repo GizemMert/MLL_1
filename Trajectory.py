@@ -185,6 +185,8 @@ def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_s
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    start_latent = torch.from_numpy(start_latent).float().to(device)
+    end_latent = torch.from_numpy(end_latent).float().to(device)
 
     def slerp(val, low, high):
         low_norm = low / torch.norm(low)
@@ -199,9 +201,11 @@ def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_s
 
     # Generate interpolated points
     for t in np.linspace(0, 1, n)[1:-1]:
-        z_interp = slerp(torch.tensor(t, device=device), start_latent, end_latent).unsqueeze(0)
+        t_tensor = torch.tensor(t, device=device)
+        z_interp = slerp(t_tensor, start_latent, end_latent).unsqueeze(0)
         interpolated_latent_points.append(z_interp)
 
+    # Ensure end_latent is also correctly reshaped and added
     interpolated_latent_points.append(end_latent.unsqueeze(0))
 
     interpolated_latent_points = torch.cat(interpolated_latent_points, dim=0)
