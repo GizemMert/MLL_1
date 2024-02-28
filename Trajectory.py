@@ -212,11 +212,13 @@ def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_s
 
     file_path = 'interpolation'
     torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
-    print(f"Interpolated latent points saved to {filename}_latent_points.pt")
+    print(f"Interpolated latent points saved to {file_path}_latent_points.pt")
 
     with torch.no_grad():
-        decoded_images = model.decoder(interpolated_latent_points).cpu()
-        decoded_images = model.img_decoder(decoded_images).cpu()
+        decoded_images = model.decoder(interpolated_latent_points)
+        decoded_images = model.img_decoder(decoded_images)
+
+        decoded_images = decoded_images.cpu()
 
     total_slots = grid_size[0] * grid_size[1]
     if len(decoded_images) < total_slots:
