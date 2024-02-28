@@ -241,7 +241,7 @@ final_expression = gen_expression[-1, :]
 abs_diff_per_gene = np.abs(final_expression - initial_expression)
 
 ptp_values = np.ptp(gen_expression, axis=0)
-threshold = np.max(ptp_values) * 0.7
+threshold = np.max(ptp_values) * 0.4
 
 
 variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
@@ -291,7 +291,7 @@ X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
 # Perform kShape clustering
-ks = KShape(n_clusters=7, verbose=True)
+ks = KShape(n_clusters=3, verbose=True)
 y_pred = ks.fit_predict(X_train)
 n_genes_in_clusters = {i: sum(y_pred == i) for i in range(5)}
 
@@ -300,8 +300,8 @@ for cluster, count in n_genes_in_clusters.items():
 fig_width, fig_height = 20, 15  # Width, Height in inches
 plt.figure(figsize=(fig_width, fig_height))
 
-for yi in range(7):
-    plt.subplot(7, 1, 1 + yi)
+for yi in range(3):
+    plt.subplot(3, 1, 1 + yi)
     for xx in X_train[y_pred == yi]:
         plt.plot(xx.ravel(), "k-", alpha=.2)
     plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
