@@ -127,7 +127,7 @@ random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
 # print("Point data shape:", random_myeloblast_point.shape)
-
+"""
 def interpolate_gpr(latent_start, latent_end, n_points=100):
     if isinstance(latent_start, torch.Tensor):
         latent_start = latent_start.detach().cpu().numpy()
@@ -173,6 +173,60 @@ def interpolate_gif_gpr(filename, latent_start, latent_end, steps=3, grid_size=(
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=300)
     print("Grid Image saved successfully")
+"""
+
+
+
+def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_size=(10, 10)):
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+    def slerp(val, low, high):
+        low_norm = low / torch.norm(low)
+        high_norm = high / torch.norm(high)
+        omega = torch.acos((low_norm * high_norm).sum().clamp(-1, 1))
+        so = torch.sin(omega)
+        res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
+        return res.where(so != 0, low)
+
+    # Interpolate between the latent vectors
+    interpolated_latent_points = [start_latent.unsqueeze(0)]
+
+    # Generate interpolated points
+    for t in np.linspace(0, 1, n)[1:-1]:
+        z_interp = slerp(torch.tensor(t, device=device), start_latent, end_latent).unsqueeze(0)
+        interpolated_latent_points.append(z_interp)
+
+    interpolated_latent_points.append(end_latent.unsqueeze(0))
+
+    interpolated_latent_points = torch.cat(interpolated_latent_points, dim=0)
+
+    file_path = 'interpolation'
+    torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
+    print(f"Interpolated latent points saved to {filename}_latent_points.pt")
+
+    with torch.no_grad():
+        decoded_images = model.decoder(interpolated_latent_points).cpu()
+        decoded_images = model.img_decoder(decoded_images).cpu()
+
+    total_slots = grid_size[0] * grid_size[1]
+    if len(decoded_images) < total_slots:
+        padding = total_slots - len(decoded_images)
+        decoded_images = torch.cat([decoded_images, torch.zeros(padding, *decoded_images.shape[1:])], dim=0)
+
+
+
+    # Trim the list to match the grid size exactly
+    decoded_images = decoded_images[:total_slots]
+
+    # Arrange images in a grid and save
+    tensor_grid = torch.stack(decoded_images).squeeze(1)
+    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(grid_image)
+    grid_image.save(filename + '.jpg', quality=95)
+    print("Grid image saved successfully")
+
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
@@ -210,16 +264,23 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr("vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
+interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10), device=device)
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
+interpolated_points = torch.load('interpolation_latent_points.pt')
 
-interpolated_latent_points = interpolate_gpr(random_myeloblast_point, random_neutrophil_seg_point, n_points=100)
+
+model_2.eval()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model_2.to(device)
 
 gene_expression_profiles = []
-for latent_vector in interpolated_latent_points:
-    gene_expression = model_2.decoder(torch.from_numpy(latent_vector).float().to(device))
-    gene_expression_profiles.append(gene_expression.detach().cpu().numpy())
+with torch.no_grad():
+    for latent_vector in interpolated_points:
+
+        latent_vector = latent_vector.to(device).unsqueeze(0)
+        gene_expression = model_2.decoder(latent_vector)
+        gene_expression_profiles.append(gene_expression.squeeze(0).cpu().numpy())
 
 gene_expression = np.array(gene_expression_profiles)
 print(" ge shape :", gene_expression.shape)
