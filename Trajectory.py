@@ -289,9 +289,8 @@ model_2.to(device)
 gene_expression_profiles = []
 with torch.no_grad():
     for latent_vector in interpolated_points:
-
-        latent_vector = latent_vector.to(device).unsqueeze(0)
-        gene_expression = model_2.decoder(latent_vector)
+        latent_vector_tensor = torch.from_numpy(latent_vector).float().to(device).unsqueeze(0)
+        gene_expression = model_2.decoder(latent_vector_tensor)
         gene_expression_profiles.append(gene_expression.squeeze(0).cpu().numpy())
 
 gene_expression = np.array(gene_expression_profiles)
