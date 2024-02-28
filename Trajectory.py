@@ -430,7 +430,7 @@ ref_z_class_2 = np.load(z_reference_filename)
 combined_data = np.vstack([neutrophil_data, ref_z_class_2])
 umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
 umap_embedding = umap_reducer.fit_transform(combined_data)
-umap_path = umap_reducer.transform(interpolated_latent_points)
+umap_path = umap_reducer.transform(interpolated_points)
 
 split_point = neutrophil_data.shape[0]
 umap_z_neutrophil = umap_embedding[:split_point, :]
