@@ -179,67 +179,6 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
     grid_image.save(filename + '.jpg', quality=300)
     print("Grid Image saved successfully")
 
-
-"""
-
-
-
-def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_size=(10, 10)):
-    model.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    start_latent = torch.from_numpy(start_latent).float().to(device)
-    end_latent = torch.from_numpy(end_latent).float().to(device)
-
-    def slerp(val, low, high):
-        low_norm = low / torch.norm(low)
-        high_norm = high / torch.norm(high)
-        omega = torch.acos((low_norm * high_norm).sum().clamp(-1, 1))
-        so = torch.sin(omega)
-        res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
-        return res.where(so != 0, low)
-
-    # Interpolate between the latent vectors
-    interpolated_latent_points = [start_latent.unsqueeze(0)]
-
-    # Generate interpolated points
-    for t in np.linspace(0, 1, n)[1:-1]:
-        t_tensor = torch.tensor(t, device=device)
-        z_interp = slerp(t_tensor, start_latent, end_latent).unsqueeze(0)
-        interpolated_latent_points.append(z_interp)
-
-    # Ensure end_latent is also correctly reshaped and added
-    interpolated_latent_points.append(end_latent.unsqueeze(0))
-
-    interpolated_latent_points = torch.cat(interpolated_latent_points, dim=0)
-
-    file_path = 'interpolation'
-    torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
-    print(f"Interpolated latent points saved to {file_path}_latent_points.pt")
-
-    with torch.no_grad():
-        decoded_images = model.decoder(interpolated_latent_points)
-        decoded_images = model.img_decoder(decoded_images)
-
-        decoded_images = decoded_images.cpu()
-
-    total_slots = grid_size[0] * grid_size[1]
-    if decoded_images.size(0) < total_slots:
-        padding = total_slots - decoded_images.size(0)
-        padding_tensor = torch.zeros(padding, *decoded_images.shape[1:], device='cpu')  # Match the shape and device
-        decoded_images = torch.cat([decoded_images, padding_tensor], dim=0)
-
-    # No need to stack 'decoded_images' as it's already a single tensor from the decoder
-    # Trim or pad the tensor to match the grid size exactly
-    decoded_images = decoded_images[:total_slots]
-
-    # Arrange images in a grid and save
-    grid_image = make_grid(decoded_images, nrow=grid_size[1], normalize=True, padding=2)
-    grid_image = ToPILImage()(grid_image)
-    grid_image.save(filename + '.jpg', quality=95)
-    print("Grid image saved successfully")
-"""
-
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
 
@@ -293,13 +232,25 @@ with torch.no_grad():
         gene_expression = model_2.decoder(latent_vector_tensor)
         gene_expression_profiles.append(gene_expression.squeeze(0).cpu().numpy())
 
-gene_expression = np.array(gene_expression_profiles)
+gen_expression = np.array(gene_expression_profiles)
 print(" ge shape :", gene_expression.shape)
 print("vis trajectory for each gene started")
+
+initial_expression = gen_expression[0, :]
+final_expression = gen_expression[-1, :]
+abs_diff_per_gene = np.abs(final_expression - initial_expression)
+
+# Determine a threshold for filtering based on the peak-to-peak values
+ptp_values = np.ptp(gene_expression, axis=0)
+threshold = np.max(ptp_values) * 0.1  # For example, 10% of the maximum range
+
+# Filter out genes with a small absolute difference
+variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
+filtered_gen_expression = gene_expression[:, variable_genes_indices]
 plt.figure(figsize=(12, 8))
 
-for i in range(gene_expression.shape[1]):  # Iterate over the number of genes
-    plt.plot(gene_expression[:, i], label=f'Gene {i+1}')
+for i in range(filtered_gen_expression.shape[1]):  # Iterate over the number of genes
+    plt.plot(filtered_gen_expression[:, i], label=f'Gene {i+1}')
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Gene Expression')
@@ -311,8 +262,8 @@ plt.close()
 print("trajectory is saved")
 
 print("Calculate fold change")
-small_const = 1e-6
-fold_changes = gene_expression / (gene_expression[0] + small_const)
+small_const = 1e-10
+fold_changes = filtered_gen_expression / (filtered_gen_expression[0] + small_const)
 
 # fold_changes = np.log2(fold_changes)
 
@@ -463,3 +414,66 @@ plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_Trajectory.png'))
 plt.close()
 
 print("completed")
+
+
+"""
+
+
+
+def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_size=(10, 10)):
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    start_latent = torch.from_numpy(start_latent).float().to(device)
+    end_latent = torch.from_numpy(end_latent).float().to(device)
+
+    def slerp(val, low, high):
+        low_norm = low / torch.norm(low)
+        high_norm = high / torch.norm(high)
+        omega = torch.acos((low_norm * high_norm).sum().clamp(-1, 1))
+        so = torch.sin(omega)
+        res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
+        return res.where(so != 0, low)
+
+    # Interpolate between the latent vectors
+    interpolated_latent_points = [start_latent.unsqueeze(0)]
+
+    # Generate interpolated points
+    for t in np.linspace(0, 1, n)[1:-1]:
+        t_tensor = torch.tensor(t, device=device)
+        z_interp = slerp(t_tensor, start_latent, end_latent).unsqueeze(0)
+        interpolated_latent_points.append(z_interp)
+
+    # Ensure end_latent is also correctly reshaped and added
+    interpolated_latent_points.append(end_latent.unsqueeze(0))
+
+    interpolated_latent_points = torch.cat(interpolated_latent_points, dim=0)
+
+    file_path = 'interpolation'
+    torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
+    print(f"Interpolated latent points saved to {file_path}_latent_points.pt")
+
+    with torch.no_grad():
+        decoded_images = model.decoder(interpolated_latent_points)
+        decoded_images = model.img_decoder(decoded_images)
+
+        decoded_images = decoded_images.cpu()
+
+    total_slots = grid_size[0] * grid_size[1]
+    if decoded_images.size(0) < total_slots:
+        padding = total_slots - decoded_images.size(0)
+        padding_tensor = torch.zeros(padding, *decoded_images.shape[1:], device='cpu')  # Match the shape and device
+        decoded_images = torch.cat([decoded_images, padding_tensor], dim=0)
+
+    # No need to stack 'decoded_images' as it's already a single tensor from the decoder
+    # Trim or pad the tensor to match the grid size exactly
+    decoded_images = decoded_images[:total_slots]
+
+    # Arrange images in a grid and save
+    grid_image = make_grid(decoded_images, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(grid_image)
+    grid_image.save(filename + '.jpg', quality=95)
+    print("Grid image saved successfully")
+"""
+
+
