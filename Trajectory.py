@@ -233,7 +233,7 @@ with torch.no_grad():
         gene_expression_profiles.append(gene_expression.squeeze(0))
 
 gen_expression = torch.stack(gene_expression_profiles).cpu().numpy()
-print("gene expression shape:", gene_expression.shape)
+print("gene expression shape:", gen_expression.shape)
 print("visualization of trajectory for each gene started")
 
 initial_expression = gen_expression[0, :]
@@ -245,10 +245,14 @@ threshold = np.max(ptp_values) * 0.1
 
 
 variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
-filtered_gen_expression = gene_expression[:, variable_genes_indices]
+filtered_gen_expression = gen_expression[:, variable_genes_indices]
+print(type(filtered_gen_expression))
+print(filtered_gen_expression.shape)
+
+assert isinstance(filtered_gen_expression, np.ndarray), "filtered_gen_expression must be a NumPy array"
 plt.figure(figsize=(12, 8))
 
-for i, gene_idx in enumerate(variable_genes_indices):  # Iterate over the number of genes
+for i, gene_idx in enumerate(variable_genes_indices):
     plt.plot(filtered_gen_expression[:, i], label=f'Gene {gene_idx+1}')
 
 plt.xlabel('Trajectory Points')
