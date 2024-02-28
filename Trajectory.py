@@ -232,25 +232,24 @@ with torch.no_grad():
         gene_expression = model_2.decoder(latent_vector_tensor)
         gene_expression_profiles.append(gene_expression.squeeze(0).cpu().numpy())
 
-gen_expression = np.array(gene_expression_profiles)
-print(" ge shape :", gene_expression.shape)
-print("vis trajectory for each gene started")
+gen_expression = torch.stack(gene_expression_profiles).cpu().numpy()
+print("gene expression shape:", gene_expression.shape)
+print("visualization of trajectory for each gene started")
 
 initial_expression = gen_expression[0, :]
 final_expression = gen_expression[-1, :]
 abs_diff_per_gene = np.abs(final_expression - initial_expression)
 
-# Determine a threshold for filtering based on the peak-to-peak values
 ptp_values = np.ptp(gene_expression, axis=0)
-threshold = np.max(ptp_values) * 0.1  # For example, 10% of the maximum range
+threshold = np.max(ptp_values) * 0.1
 
-# Filter out genes with a small absolute difference
+
 variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
 filtered_gen_expression = gene_expression[:, variable_genes_indices]
 plt.figure(figsize=(12, 8))
 
-for i in range(filtered_gen_expression.shape[1]):  # Iterate over the number of genes
-    plt.plot(filtered_gen_expression[:, i], label=f'Gene {i+1}')
+for i, gene_idx in enumerate(variable_genes_indices):  # Iterate over the number of genes
+    plt.plot(filtered_gen_expression[:, i], label=f'Gene {gene_idx+1}')
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Gene Expression')
