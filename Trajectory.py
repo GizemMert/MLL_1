@@ -150,22 +150,9 @@ def interpolate_gpr(latent_start, latent_end, steps=100):
     index_range = np.linspace(0, 1, steps).reshape(-1, 1)
 
     interpolated_latent_vectors = gpr.predict(index_range)
-    nbrs = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(filtered_latent_data)
-
-    unique_nearest_points = []
-    used_indices = set()
-
-    for point in interpolated_latent_vectors:
-        distances, indices = nbrs.kneighbors([point])
-
-        if indices[0, 0] not in used_indices:
-            unique_nearest_points.append(filtered_latent_data[indices[0, 0]])
-            used_indices.add(indices[0, 0])
 
 
-    interpolated_latent_vectors_unique = np.array(unique_nearest_points)
-
-    return interpolated_latent_vectors_unique
+    return interpolated_latent_vectors
 
 
 def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device=device):
@@ -189,7 +176,7 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
         decoded_images.append(torch.zeros_like(decoded_images[0]))
     decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
-    tensor_grid = torch.stack(decoded_images).squeeze(1)
+    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=300)
@@ -260,7 +247,7 @@ final_expression = gen_expression[-1, :]
 abs_diff_per_gene = np.abs(final_expression - initial_expression)
 
 ptp_values = np.ptp(gen_expression, axis=0)
-threshold = np.max(ptp_values) * 0.05
+threshold = np.max(ptp_values) * 0.0
 
 
 variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
@@ -290,17 +277,21 @@ mean_expression = np.mean(filtered_gen_expression, axis=0)
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 # fold_changes = np.log2(fold_changes)
+fold_change_std = np.std(fold_changes, axis=1)
+flat_threshold = 0.01
+non_flat_mask = fold_change_std > flat_threshold
+filtered_trajectory_points = np.arange(fold_changes.shape[0])[non_flat_mask]
+filtered_fold_changes = fold_changes[non_flat_mask, :]
 
 plt.figure(figsize=(20, 10))
 
 for i, gene_idx in enumerate(variable_genes_indices):
-    gene_name = gene_names[gene_idx]
-    plt.plot(fold_changes[:, i], label=gene_name)
+    plt.plot(filtered_trajectory_points, filtered_fold_changes[:, i], label=gene_names[gene_idx])
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
-plt.xlim(left=0, right=fold_changes.shape[0] - 1)
+plt.xlim(left=0, right=filtered_trajectory_points[-1])
 # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 # plt.tight_layout(rect=(0.0, 0.1, 0.75, 0.9))
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory.png'))
