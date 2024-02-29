@@ -143,4 +143,4 @@ if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
 
-train_dataset.save_class_samples(class_samples, base_save_dir)
+train_dataset.save_class_samples(class_samples, save_dir)
