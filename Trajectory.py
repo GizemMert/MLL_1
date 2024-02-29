@@ -315,7 +315,7 @@ for cluster, genes in genes_in_clusters.items():
 
 print("Gene names for each cluster have been saved.")
 
-driving_gene_names = ["CEBP", "PU", "MPO", "ELANE", "CEBPE", "LEF", "C/", "CEBPδ", "C-", "C/EBPβ", "GFI1"]
+driving_gene_names = ["CEBPA", "PU1", "MPO", "ELANE", "CEBPE", "LEF1", "RUNX1", "CEBPS", "CEBPY", "CEBPB", "GFI1"]
 driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
 
 
