@@ -21,6 +21,7 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
 from tslearn.clustering import KShape
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
+from sklearn.neighbors import NearestNeighbors
 
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
@@ -148,15 +149,23 @@ def interpolate_gpr(latent_start, latent_end, steps=100):
 
     index_range = np.linspace(0, 1, steps).reshape(-1, 1)
 
-    interpolated_latent_points = gpr.predict(index_range)
+    interpolated_latent_vectors = gpr.predict(index_range)
+    nbrs = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(filtered_latent_data)
 
-    latent_diffs = np.diff(interpolated_latent_points, axis=0)
-    latent_diff_norms = np.linalg.norm(latent_diffs, axis=1)
-    change_threshold = 0.05
-    significant_change_mask = latent_diff_norms > change_threshold
-    significant_change_mask = np.insert(significant_change_mask, 0, True)
-    filtered_interpolated_points = interpolated_latent_points[significant_change_mask]
-    return filtered_interpolated_points
+    unique_nearest_points = []
+    used_indices = set()
+
+    for point in interpolated_latent_vectors:
+        distances, indices = nbrs.kneighbors([point])
+
+        if indices[0, 0] not in used_indices:
+            unique_nearest_points.append(filtered_latent_data[indices[0, 0]])
+            used_indices.add(indices[0, 0])
+
+
+    interpolated_latent_vectors_unique = np.array(unique_nearest_points)
+
+    return interpolated_latent_vectors_unique
 
 
 def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device=device):
@@ -180,7 +189,7 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
         decoded_images.append(torch.zeros_like(decoded_images[0]))
     decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
-    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
+    tensor_grid = torch.stack(decoded_images).squeeze(1)
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=300)
@@ -306,10 +315,10 @@ sz = X_train.shape[1]
 
 
 # Perform kShape clustering
-ks = KShape(n_clusters=7, verbose=True)
+ks = KShape(n_clusters=4, verbose=True)
 y_pred = ks.fit_predict(X_train)
-genes_in_clusters = {i: [] for i in range(7)}
-for cluster_idx in range(7):
+genes_in_clusters = {i: [] for i in range(4)}
+for cluster_idx in range(4):
     gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
     genes_in_clusters[cluster_idx] = [filtered_gene_names[idx] for idx in gene_indices_in_cluster]
 
@@ -342,7 +351,7 @@ for gene_part, clusters in driving_genes_in_clusters.items():
 
 plt.figure(figsize=(20, 10))
 
-for cluster_idx in range(7):
+for cluster_idx in range(4):
 
     gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
 
