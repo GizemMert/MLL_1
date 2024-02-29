@@ -172,7 +172,7 @@ def interpolate_gif_gpr(filename, latents, steps=100, device=device):
         img_np = ToPILImage()(decoded_img.squeeze(0)).convert("RGB")
         frames.append(img_np)
 
-    imageio.mimsave(filename + '.gif', frames, fps=20)
+    imageio.mimsave(filename + '.gif', frames, fps=5)
     print("GIF saved successfully")
 
 
