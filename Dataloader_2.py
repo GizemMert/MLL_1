@@ -139,8 +139,8 @@ class_labels = [3, 7, 8]  # myeloblast, neutrophil banded, neutrophil segmented
 class_samples = train_dataset.get_samples_by_class(class_labels)
 
 save_dir = 'save_class_imaged'
-if not os.path.exists(umap_dir):
-    os.makedirs(umap_dir)
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
 
 
 train_dataset.save_class_samples(class_samples, base_save_dir)
