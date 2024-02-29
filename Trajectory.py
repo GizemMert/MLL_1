@@ -301,7 +301,7 @@ print("fold change is saved")
 #clustering
 
 filtered_gene_names = [gene_names[i] for i in variable_genes_indices]
-X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
+X_train = TimeSeriesScalerMeanVariance().fit_transform(filtered_fold_changes.T)
 sz = X_train.shape[1]
 
 
