@@ -260,7 +260,7 @@ final_expression = gen_expression[-1, :]
 abs_diff_per_gene = np.abs(final_expression - initial_expression)
 
 ptp_values = np.ptp(gen_expression, axis=0)
-threshold = np.max(ptp_values) * 0.0
+threshold = np.max(ptp_values) * 0.05
 
 
 variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
