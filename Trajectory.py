@@ -298,24 +298,37 @@ filtered_gene_names = [gene_names[i] for i in variable_genes_indices]
 X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
+
 # Perform kShape clustering
 ks = KShape(n_clusters=7, verbose=True)
 y_pred = ks.fit_predict(X_train)
-genes_in_clusters = {i: [] for i in range(5)}
+genes_in_clusters = {i: [] for i in range(7)}
 for cluster_idx in range(7):
     gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
     genes_in_clusters[cluster_idx] = [filtered_gene_names[idx] for idx in gene_indices_in_cluster]
 
 for cluster, genes in genes_in_clusters.items():
     print(f"Cluster {cluster}: {len(genes)} genes")
-    # for gene in genes:
-        # print(gene)
     with open(os.path.join(umap_dir, f'cluster_{cluster}_genes.txt'), 'w') as file:
         for gene in genes:
             file.write(gene + '\n')
 
 print("Gene names for each cluster have been saved.")
 
+driving_gene_names = ["C/EBPα", "PU.1", "MPO", "ELANE", "CEBPE", "LEF-1", "C/EBPε", "C/EBPδ", "C/EBPγ", "C/EBPβ", "Gfi-1"]
+driving_genes_in_clusters = {gene: None for gene in driving_gene_names}
+
+
+for cluster_idx, genes in genes_in_clusters.items():
+    for driving_gene in driving_gene_names:
+        if driving_gene in genes:
+            driving_genes_in_clusters[driving_gene] = cluster_idx
+
+for gene, cluster_idx in driving_genes_in_clusters.items():
+    if cluster_idx is not None:
+        print(f"Driving gene {gene} is in cluster {cluster_idx}")
+    else:
+        print(f"Driving gene {gene} is not found in any cluster")
 
 plt.figure(figsize=(20, 10))
 
