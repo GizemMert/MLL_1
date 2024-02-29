@@ -277,14 +277,14 @@ mean_expression = np.mean(filtered_gen_expression, axis=0)
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 # fold_changes = np.log2(fold_changes)
-fold_change_std = np.std(fold_changes, axis=1)
-flat_threshold = 0.01
-non_flat_mask = fold_change_std > flat_threshold
-filtered_trajectory_points = np.arange(fold_changes.shape[0])[non_flat_mask]
-filtered_fold_changes = fold_changes[non_flat_mask, :]
+abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
+change_threshold = 0.001
+significant_change_mask = np.append(np.any(abs_diff_fold_changes > change_threshold, axis=1), True)
+filtered_trajectory_points = np.arange(fold_changes.shape[0])[significant_change_mask]
+filtered_fold_changes = fold_changes[significant_change_mask, :]
+
 
 plt.figure(figsize=(20, 10))
-
 for i, gene_idx in enumerate(variable_genes_indices):
     plt.plot(filtered_trajectory_points, filtered_fold_changes[:, i], label=gene_names[gene_idx])
 
