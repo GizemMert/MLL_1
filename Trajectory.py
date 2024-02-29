@@ -16,6 +16,7 @@ from Model_Vae_GE_2 import VAE_GE
 from umap import UMAP
 import seaborn as sns
 import pandas as pd
+import anndata
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import pdist, squareform
 from tslearn.clustering import KShape
@@ -218,6 +219,7 @@ start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for fe
 interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10))
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
+adata = anndata.read_h5ad('s_data_feature_pancreas.h5ad')
 interpolated_points = torch.load('interpolation_latent_points.pt')
 
 
@@ -236,12 +238,14 @@ gen_expression = torch.stack(gene_expression_profiles).cpu().numpy()
 print("gene expression shape:", gen_expression.shape)
 print("visualization of trajectory for each gene started")
 
+gene_names = adata.var['feature_name'].tolist()
+
 initial_expression = gen_expression[0, :]
 final_expression = gen_expression[-1, :]
 abs_diff_per_gene = np.abs(final_expression - initial_expression)
 
 ptp_values = np.ptp(gen_expression, axis=0)
-threshold = np.max(ptp_values) * 0.05
+threshold = np.max(ptp_values) * 0.1
 
 
 variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
@@ -252,7 +256,8 @@ print(filtered_gen_expression.shape)
 plt.figure(figsize=(12, 8))
 
 for i, gene_idx in enumerate(variable_genes_indices):
-    plt.plot(filtered_gen_expression[:, i], label=f'Gene {gene_idx+1}')
+    gene_name = gene_names[gene_idx]
+    plt.plot(filtered_gen_expression[:, i], label=gene_name)
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Gene Expression')
@@ -273,8 +278,9 @@ fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 plt.figure(figsize=(20, 10))
 
-for i in range(fold_changes.shape[1]):
-    plt.plot(fold_changes[:, i], label=f'Gene {i+1}')
+for i, gene_idx in enumerate(variable_genes_indices):
+    gene_name = gene_names[gene_idx]
+    plt.plot(fold_changes[:, i], label=gene_name)
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
@@ -287,13 +293,31 @@ plt.close()
 print("fold change is saved")
 
 #clustering
+
+filtered_gene_names = [gene_names[i] for i in variable_genes_indices]
 X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
 # Perform kShape clustering
 ks = KShape(n_clusters=3, verbose=True)
 y_pred = ks.fit_predict(X_train)
-n_genes_in_clusters = {i: sum(y_pred == i) for i in range(5)}
+genes_in_clusters = {i: [] for i in range(3)}
+for cluster_idx in range(3):
+    gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
+    genes_in_clusters[cluster_idx] = [filtered_gene_names[idx] for idx in gene_indices_in_cluster]
+
+for cluster, genes in genes_in_clusters.items():
+    print(f"Cluster {cluster}: {len(genes)} genes")
+    # for gene in genes:
+        # print(gene)
+    with open(os.path.join(umap_dir, f'cluster_{cluster}_genes.txt'), 'w') as file:
+        for gene in genes:
+            file.write(gene + '\n')
+
+print("Gene names for each cluster have been saved.")
+
+
+n_genes_in_clusters = {i: sum(y_pred == i) for i in range(3)}
 
 for cluster, count in n_genes_in_clusters.items():
     print(f"Number of genes in cluster {cluster}: {count}")
@@ -313,6 +337,7 @@ for yi in range(3):
 
 plt.tight_layout()
 plt.close()
+print("Clusters finished")
 
 
 """
