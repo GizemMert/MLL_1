@@ -317,24 +317,33 @@ for cluster, genes in genes_in_clusters.items():
 print("Gene names for each cluster have been saved.")
 
 
-n_genes_in_clusters = {i: sum(y_pred == i) for i in range(3)}
+plt.figure(figsize=(20, 10))
 
-for cluster, count in n_genes_in_clusters.items():
-    print(f"Number of genes in cluster {cluster}: {count}")
-fig_width, fig_height = 20, 15  # Width, Height in inches
-plt.figure(figsize=(fig_width, fig_height))
+for cluster_idx in range(3):
 
-for yi in range(3):
-    plt.subplot(3, 1, 1 + yi)
-    for xx in X_train[y_pred == yi]:
-        plt.plot(xx.ravel(), "k-", alpha=.2)
-    plt.plot(ks.cluster_centers_[yi].ravel(), "r-")
-    plt.xlim(0, sz)
-    plt.ylim(-6, 6)
-    plt.title("Cluster %d" % (yi + 1))
-    plt.tight_layout()
-    plt.savefig(os.path.join(umap_dir, f'gene_expression_clusters_{yi + 1}.png'))
+    gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
 
+    cluster_fold_changes = fold_changes[:, gene_indices_in_cluster]
+    mean_cluster_fold_changes = np.mean(cluster_fold_changes, axis=1)
+
+    std_cluster_fold_changes = np.std(cluster_fold_changes, axis=1)
+
+    plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}')
+
+    plt.fill_between(
+        range(len(mean_cluster_fold_changes)),
+        mean_cluster_fold_changes - std_cluster_fold_changes,
+        mean_cluster_fold_changes + std_cluster_fold_changes,
+        alpha=0.2
+    )
+
+
+plt.xlabel('Trajectory Points')
+plt.ylabel('Fold Change')
+plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
+plt.xlim(left=0, right=fold_changes.shape[0] - 1)
+plt.legend()
+plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.png'))
 plt.tight_layout()
 plt.close()
 print("Clusters finished")
