@@ -316,19 +316,23 @@ for cluster, genes in genes_in_clusters.items():
 print("Gene names for each cluster have been saved.")
 
 driving_gene_names = ["EBP", "PU", "MPO", "ELANE", "CEBPE", "LEF", "C/EBP", "CEBPδ", "C/EBPγ", "C/EBPβ", "Gfi"]
-driving_genes_in_clusters = {gene: None for gene in driving_gene_names}
+driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
 
 
 for cluster_idx, genes in genes_in_clusters.items():
-    for driving_gene in driving_gene_names:
-        if driving_gene in genes:
-            driving_genes_in_clusters[driving_gene] = cluster_idx
+    for gene in genes:
+        for gene_part in driving_gene_names:
+            if gene_part in gene:
+                driving_genes_in_clusters[gene_part].append(cluster_idx)
+                break
 
-for gene, cluster_idx in driving_genes_in_clusters.items():
-    if cluster_idx is not None:
-        print(f"Driving gene {gene} is in cluster {cluster_idx}")
+
+for gene_part, clusters in driving_genes_in_clusters.items():
+    if clusters:
+        unique_clusters = set(clusters)
+        print(f"Driving gene part '{gene_part}' is found in clusters: {', '.join(map(str, unique_clusters))}")
     else:
-        print(f"Driving gene {gene} is not found in any cluster")
+        print(f"Driving gene part '{gene_part}' is not found in any cluster")
 
 plt.figure(figsize=(20, 10))
 
