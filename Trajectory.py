@@ -148,9 +148,15 @@ def interpolate_gpr(latent_start, latent_end, steps=100):
 
     index_range = np.linspace(0, 1, steps).reshape(-1, 1)
 
-    interpolated_latent_vectors = gpr.predict(index_range)
+    interpolated_latent_points = gpr.predict(index_range)
 
-    return interpolated_latent_vectors
+    latent_diffs = np.diff(interpolated_latent_points, axis=0)
+    latent_diff_norms = np.linalg.norm(latent_diffs, axis=1)
+    change_threshold = 0.01
+    significant_change_mask = latent_diff_norms > change_threshold
+    significant_change_mask = np.insert(significant_change_mask, 0, True)
+    filtered_interpolated_points = interpolated_latent_points[significant_change_mask]
+    return filtered_interpolated_points
 
 
 def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device=device):
@@ -160,7 +166,7 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
     
     file_path = 'interpolation'
     torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
-    print(f"Interpolated latent points saved to {filename}_latent_points.pt")
+    print(f"Interpolated latent points saved to {file_path}_latent_points.pt")
 
     decoded_images = []
     for z in interpolated_latent_points:
