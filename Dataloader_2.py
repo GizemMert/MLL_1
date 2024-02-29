@@ -86,118 +86,61 @@ class Dataloader(Dataset):
         random.shuffle(data_keys)
         self.data = list(set(self.samples.keys()) & set(self.images.keys()))
 
+        print("Total number of samples:", len(self.data))
+
     def __len__(self):
         if self.split == 'train':
-            return int(len(self.data) * 0.9)  # 90% for training
+            return int(len(self.data) * 1)  # 90% for training
         elif self.split == 'test':
-            return len(self.data) - int(len(self.data) * 0.9)  # 10% for testing
+            return len(self.data) - int(len(self.data) * 1)  # 10% for testing
 
-    def __getitem__(self, index):
-        if self.split == 'train':
-            index = index % int(len(self.data) * 0.9)
-        elif self.split == 'test':
-            index = int(len(self.data) * 0.9) + index
-
-        key = self.data[index]
-        label_fold = self.samples[key]['label']
-        label_fold = equivalent_classes.get(label_fold, label_fold)
-        label_fold = label_map.get(label_fold, -1)
-        img = self.images[key]
-        mask = self.samples[key]['masks']
-        if len(mask.shape) == 2:
-            mask = mask[..., np.newaxis]
-        bounding_box = self.samples[key]['rois']
-        if len(bounding_box) == 1:
-            bounding_box = bounding_box[0]
-        w, h, _ = img.shape
-        wm, hm, _ = mask.shape
-        bounding_box = bounding_box / 400
-        x0 = bounding_box[0] * w
-        y0 = bounding_box[1] * h
-        x1 = bounding_box[2] * w
-        y1 = bounding_box[3] * h
-
-        x2 = bounding_box[0] * wm
-        y2 = bounding_box[1] * hm
-        x3 = bounding_box[2] * wm
-        y3 = bounding_box[3] * hm
-
-        roi_cropped = img[
-            max(0, int(y0) - 10):min(h, int(y1) + 20),
-            max(0, int(x0) - 10):min(w, int(x1) + 20)
-        ]
-        roi_cropped = cv2.resize(roi_cropped, (128, 128))
-        roi_cropped = roi_cropped / 255.
-        roi_cropped = np.rollaxis(roi_cropped, 2, 0)
-
-        mask_cropped = mask[
-            max(0, int(y2) - 10):min(hm, int(y3) + 20),  # Crop vertically (rows)
-            max(0, int(x2) - 10):min(wm, int(x3) + 20)   # Crop horizontally (columns)
-        ]
-        mask_dilation = mask_cropped.astype(np.uint8)
-        kernel = np.ones((10, 10), np.uint8)
-        mask_dilation = cv2.dilate(mask_dilation, kernel, iterations=5)
-        mask_dilation = mask_dilation.astype(np.float32)
-        mask_dilation = cv2.resize(mask_dilation, (128, 128))
-        if len(mask_dilation.shape) == 2:
-            mask_dilation = mask_dilation[..., np.newaxis]
-
-        mask_dilation = np.rollaxis(mask_dilation, 2, 0)
-
-        feat = self.samples[key]['feats']
-        feat = 2. * (feat - np.min(feat)) / np.ptp(feat) - 1
-        feat = np.squeeze(feat)
-        feat = np.rollaxis(feat, 2, 0)
-
-        return feat, roi_cropped, mask_dilation, label_fold, key
+    def get_samples_by_class(self, class_labels, n_samples=5):
 
 
-"""
-def create_subset(features_path, images_path, start_index, end_index):
-   
-    dataloader_dir = os.path.dirname(os.path.realpath(__file__))
-
-    subset_features_dir = os.path.join(dataloader_dir, 'subset_features')
-    subset_images_dir = os.path.join(dataloader_dir, 'subset_images')
-
-    if not os.path.exists(subset_features_dir):
-        os.makedirs(subset_features_dir)
-    if not os.path.exists(subset_images_dir):
-        os.makedirs(subset_images_dir)
-
-    with gzip.open(features_path, "rb") as f:
-        features = pickle.load(f)
-
-    with gzip.open(images_path, "rb") as f:
-        images = pickle.load(f)
-
-    subset_keys = list(features.keys())[start_index:end_index]
-
-    subset_features = {k: features[k] for k in subset_keys}
-    with gzip.open(os.path.join(subset_features_dir, 'subset_features.dat.gz'), 'wb') as f:
-        pickle.dump(subset_features, f)
-
-    subset_images = {k: images[k] for k in subset_keys}
-    with gzip.open(os.path.join(subset_images_dir, 'subset_images.pkl.gz'), 'wb') as f:
-        pickle.dump(subset_images, f)
-
-    print(f"Features subset saved in {subset_features_dir}")
-    print(f"Images subset saved in {subset_images_dir}")
-
-# Usage
-features_mll_path = "/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz"
-images_path = "/lustre/groups/aih/raheleh.salehi/Master-thesis/save_files/mll_images.pkl.gz"
-create_subset(features_mll_path, images_path, 0, 30)
+        class_samples = {label: [] for label in class_labels}
+        for key in self.data:
+            label_fold = self.samples[key]['label']
+            label_fold = equivalent_classes.get(label_fold, label_fold)
+            label_fold = label_map.get(label_fold, -1)
+            if label_fold in class_labels:
+                img = self.images[key]
+                class_samples[label_fold].append((img, label_fold))
 
 
+        for label in class_samples:
+            class_samples[label] = random.sample(class_samples[label], min(len(class_samples[label]), n_samples))
+
+        return class_samples
+
+    def save_class_samples(self, class_samples, base_save_dir):
+        if not os.path.exists(base_save_dir):
+            os.makedirs(base_save_dir)
+
+        class_folders = {
+            3: 'myeloblast',
+            7: 'neutrophil_banded',
+            8: 'neutrophil_segmented'
+        }
+
+        for label, samples in class_samples.items():
+            class_dir = os.path.join(base_save_dir, class_folders.get(label, f"class_{label}"))
+            if not os.path.exists(class_dir):
+                os.makedirs(class_dir)
 
 
-    def get_all_labels(self):
-        all_labels = set()
+            for i, (img, _) in enumerate(samples):
+                file_path = os.path.join(class_dir, f"sample_{i}.png")
+                cv2.imwrite(file_path, img * 255)
 
-        for key, sample in self.samples.items():
-            label = sample.get('label', key.split("_")[0])
-            all_labels.add(label)
+train_dataset = Dataloader(split='train')
 
-        return list(all_labels)
-"""
+class_labels = [3, 7, 8]  # myeloblast, neutrophil banded, neutrophil segmented
+
+class_samples = train_dataset.get_samples_by_class(class_labels)
+
+save_dir = 'save_class_imaged'
+if not os.path.exists(umap_dir):
+    os.makedirs(umap_dir)
+
+
+train_dataset.save_class_samples(class_samples, base_save_dir)
