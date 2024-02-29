@@ -278,7 +278,7 @@ fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 # fold_changes = np.log2(fold_changes)
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
-change_threshold = 0.01
+change_threshold = 0.005
 significant_change_mask = np.append(np.any(abs_diff_fold_changes > change_threshold, axis=1), True)
 filtered_trajectory_points = np.arange(fold_changes.shape[0])[significant_change_mask]
 filtered_fold_changes = fold_changes[significant_change_mask, :]
