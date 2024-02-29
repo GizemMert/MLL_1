@@ -152,7 +152,7 @@ def interpolate_gpr(latent_start, latent_end, steps=100):
 
     latent_diffs = np.diff(interpolated_latent_points, axis=0)
     latent_diff_norms = np.linalg.norm(latent_diffs, axis=1)
-    change_threshold = 0.1
+    change_threshold = 0.05
     significant_change_mask = latent_diff_norms > change_threshold
     significant_change_mask = np.insert(significant_change_mask, 0, True)
     filtered_interpolated_points = interpolated_latent_points[significant_change_mask]
