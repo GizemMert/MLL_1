@@ -346,18 +346,23 @@ def interpolate_gif_from_masked_points(model, interpolated_points_file, output_f
     interpolated_latent_points = torch.load(interpolated_points_file)
     interpolated_latent_points_masked = interpolated_latent_points[mask]
 
-    for z in interpolated_latent_points_masked:
-        z_tensor = z.to(device).unsqueeze(0)
+    for z in interpolated_latent_points:
+        if isinstance(z, np.ndarray):
+            z_tensor = torch.from_numpy(z).float().to(device)
+        else:
+            z_tensor = z.float().to(device)
+        z_tensor = z_tensor.unsqueeze(0)
+
         with torch.no_grad():
-            decoded_img = model_1.decoder(z_tensor)
-            decoded_img = model_1.img_decoder(decoded_img)
+            decoded_img = model.decoder(z_tensor)
+            decoded_img = model.img_decoder(decoded_img)
         img_np = ToPILImage()(decoded_img.squeeze(0)).convert("RGB")
         frames.append(img_np)
 
     imageio.mimsave(output_filename + '.gif', frames, fps=10)
     print("GIF saved successfully")
 
-interpolate_gif_from_masked_points(model_1, 'interpolation_latent_points.pt', 'mask_gif_myelo_neutro', device= device)
+interpolate_gif_from_masked_points(model=model_1,  device= device, interpolated_points_file= 'interpolation_latent_points.pt', output_filename='mask_gif_myelo_neutro')
 
 #clustering
 
