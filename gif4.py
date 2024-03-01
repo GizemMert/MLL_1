@@ -177,8 +177,8 @@ def interpolate_gif_gpr(filename, latents, steps=100, device=device):
 
 
 
-def get_images_from_different_classes(dataloader, class_1_label, class_2_label, class_3_label, class_4_label, class_5_label, class_6_label):
-    feature_1, feature_2, feature_3, feature_4, feature_5, feature_6 = None, None, None, None, None, None
+def get_images_from_different_classes(dataloader, class_1_label, class_2_label, class_3_label):
+    feature_1, feature_2, feature_3 = None, None, None
 
     for feature, _, _, labels, _ in dataloader:
         if feature_1 is not None and feature_2 is not None:
@@ -193,7 +193,7 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label, 
 
             if label.item() == class_3_label and feature_3 is None:
                 feature_3 = feature[i].unsqueeze(0)
-
+            """"
             if label.item() == class_4_label and feature_4 is None:
                 feature_4 = feature[i].unsqueeze(0)
 
@@ -202,8 +202,8 @@ def get_images_from_different_classes(dataloader, class_1_label, class_2_label, 
 
             if label.item() == class_6_label and feature_6 is None:
                 feature_6 = feature[i].unsqueeze(0)
-
-    return [feature_1, feature_2, feature_3, feature_4, feature_5, feature_6]
+            """
+    return [feature_1, feature_2, feature_3]
 
 
 def get_latent_vector(x):
