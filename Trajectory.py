@@ -279,12 +279,21 @@ fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 
-
+# Define a threshold for significant change
 change_threshold = 0.005
 
+# Create a mask that is `True` where changes are significant
+# This mask is one element shorter than the number of fold change points
 significant_changes = np.any(abs_diff_fold_changes > change_threshold, axis=1)
 
+# Extend the mask to include the first and last points by default
+# Now the mask should be the same length as the number of fold change points
 significant_change_mask = np.concatenate(([True], significant_changes, [True]))
+
+# Apply the mask to the fold changes
+filtered_fold_changes = fold_changes[significant_change_mask, :]
+
+# Check if the mask and fold_changes have the same length
 assert len(significant_change_mask) == fold_changes.shape[0], "Mask length must match number of fold change points"
 
 filtered_fold_changes = fold_changes[significant_change_mask, :]
