@@ -124,19 +124,19 @@ z_dir = 'z_data4cp2_new5_std_gen_2_cp'
 if not os.path.exists(z_dir):
     os.makedirs(z_dir)
 
-neutrophil_banded_z_dir = 'z_data4cp2_new5_std_gen_2_cp'
+neutrophil_banded_z_dir = 'banded_z_data4cp2_new5_std_gen_2_cp'
 if not os.path.exists(neutrophil_banded_z_dir):
     os.makedirs(neutrophil_banded_z_dir)
 
-neutrophil_segment_z_dir = 'z_data4cp2_new5_std_gen_2_cp'
+neutrophil_segment_z_dir = 'segment_z_data4cp2_new5_std_gen_2_cp'
 if not os.path.exists(neutrophil_segment_z_dir):
     os.makedirs(neutrophil_segment_z_dir)
 
-monocyte_z_dir = 'z_data4cp2_new5_std_gen_2_cp'
+monocyte_z_dir = 'mono_z_data4cp2_new5_std_gen_2_cp'
 if not os.path.exists(monocyte_z_dir):
     os.makedirs(monocyte_z_dir)
 
-myle_z_dir = 'z_data4cp2_new5_std_gen_2_cp'
+myle_z_dir = 'myle_z_data4cp2_new5_std_gen_2_cp'
 if not os.path.exists(myle_z_dir):
     os.makedirs(myle_z_dir)
 
