@@ -1,146 +1,78 @@
-import gzip
 import numpy as np
-import pickle
-import os
-import cv2
 import torch
-from torch.utils.data import Dataset
-import random
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from umap import UMAP
+import torch.nn.functional as F
+from sklearn.metrics import f1_score
+from Dataloader_4 import Dataloader, label_map
+from SSIM import SSIM
+from model4 import VariationalAutoencodermodel4
+from matplotlib.colors import ListedColormap
+import os
+from mmd import MMDLoss, RBF
+import time
+import torchvision
+import cv2
+from mmd_loss_2 import mmd
+from matplotlib.gridspec import GridSpec
+import matplotlib.pyplot as plt
+# import mrcnn.config
+# import mrcnn.model_feat_extract
+import numpy as np
 
+inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
+epochs = 160
+batch_size = 128
+ngpu = torch.cuda.device_count()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-equivalent_classes = {
+num_classes = len(label_map)
+model = VariationalAutoencodermodel4(latent_dim=50)
+model_name = 'AE-CFE-'
 
-    #  INT-20 dataset
-    '01-NORMO': 'erythroblast',
-    '04-LGL': "unknown",  # atypical
-    '05-MONO': 'monocyte',
-    '08-LYMPH-neo': 'lymphocyte_atypical',
-    '09-BASO': 'basophil',
-    '10-EOS': 'eosinophil',
-    '11-STAB': 'neutrophil_banded',
-    '12-LYMPH-reaktiv': 'lymphocyte_atypical',
-    '13-MYBL': 'myeloblast',
-    '14-LYMPH-typ': 'lymphocyte_typical',
-    '15-SEG': 'neutrophil_segmented',
-    '16-PLZ': "unknown",
-    '17-Kernschatten': 'smudge_cell',
-    '18-PMYEL': 'promyelocyte',
-    '19-MYEL': 'myelocyte',
-    '20-Meta': 'metamyelocyte',
-    '21-Haarzelle': "unknown",
-    '22-Atyp-PMYEL': "unknown",
-}
+# Load the dataset
+train_dataset = Dataloader(split='train')
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
 
-label_map = {
-    'basophil': 0,
-    'eosinophil': 1,
-    'erythroblast': 2,
+class_labels = {
+    'neutrophil_banded': 7,
+    'neutrophil_segmented': 8,
     'myeloblast': 3,
     'promyelocyte': 4,
     'myelocyte': 5,
     'metamyelocyte': 6,
-    'neutrophil_banded': 7,
-    'neutrophil_segmented': 8,
     'monocyte': 9,
-    'lymphocyte_typical': 10,
-    'lymphocyte_atypical': 11,
-    'smudge_cell': 12,
+    'basophil': 0
 }
 
+for class_name in class_labels.keys():
+    dir_path = f"reconstructed-{class_name}/"
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
-class Dataloader(Dataset):
-    def __init__(self, split='train'):
-        self.split = split
+def save_images_for_classes(dataloader, class_labels, n_images=5):
+    saved_images_count = {label: 0 for label in class_labels.values()}  # Initialize count for each class
 
-        features_mll_path = (
-            "/lustre/groups/aih/raheleh.salehi/Master-thesis/Aug_features_datasets/Augmented-MLL-AML_MLLdataset.dat.gz")
+    for i, (feat, img, mask, lbl, _) in enumerate(dataloader.dataset):
+        if lbl in saved_images_count and saved_images_count[lbl] < n_images:
+            class_name = [name for name, label in class_labels.items() if label == lbl][0]  # Get class name from label
+            save_path = os.path.join(f"reconstructed-{class_name}/", f"{saved_images_count[lbl]}.jpg")
 
-        samples = {}
-        with gzip.open(os.path.join(features_mll_path), "rb") as f:
-            data = pickle.load(f)
-            for d in data:
-                data[d]["dataset"] = "MLL-AML"
-                if "label" not in data[d].keys():
-                    data[d]["label"] = d.split("_")[0]
-            samples = {**samples, **data}
-        print("[done]")
-
-        samples2 = samples.copy()
-        for s in samples2:
-            if equivalent_classes[samples[s]["label"]] == "unknown":
-                samples.pop(s, None)
-
-        # loading images
-        images = {}
-        images_path = "/lustre/groups/aih/raheleh.salehi/Master-thesis/save_files/mll_images.pkl.gz"
-
-        with gzip.open(os.path.join(images_path), "rb") as f:
-            file_images = pickle.load(f)
-        images = {**images, **file_images}
-        print("[done]")
-
-        self.samples = samples
-        self.images = images
-
-        data_keys = list(set(samples.keys()) & set(self.images.keys()))
-        random.shuffle(data_keys)
-        self.data = list(set(self.samples.keys()) & set(self.images.keys()))
-
-        print("Total number of samples:", len(self.data))
-
-    def __len__(self):
-        if self.split == 'train':
-            return int(len(self.data) * 1)  # 90% for training
-        elif self.split == 'test':
-            return len(self.data) - int(len(self.data) * 1)  # 10% for testing
-
-    def get_samples_by_class(self, class_labels, n_samples=5):
+            image_to_save = img.transpose(1, 2, 0)
+            image_to_save = (image_to_save * 255).astype(np.uint8)
 
 
-        class_samples = {label: [] for label in class_labels}
-        for key in self.data:
-            label_fold = self.samples[key]['label']
-            label_fold = equivalent_classes.get(label_fold, label_fold)
-            label_fold = label_map.get(label_fold, -1)
-            if label_fold in class_labels:
-                img = self.images[key]
-                class_samples[label_fold].append((img, label_fold))
+            if image_to_save.shape[2] == 1:
+                image_to_save = cv2.cvtColor(image_to_save, cv2.COLOR_GRAY2BGR)
+            else:
+                image_to_save = cv2.cvtColor(image_to_save, cv2.COLOR_RGB2BGR)
+
+            cv2.imwrite(save_path, image_to_save)
+            saved_images_count[lbl] += 1
+
+            if all(count >= n_images for count in saved_images_count.values()):
+                break
 
 
-        for label in class_samples:
-            class_samples[label] = random.sample(class_samples[label], min(len(class_samples[label]), n_samples))
-
-        return class_samples
-
-    def save_class_samples(self, class_samples, base_save_dir):
-        if not os.path.exists(base_save_dir):
-            os.makedirs(base_save_dir)
-
-        class_folders = {
-            3: 'myeloblast',
-            7: 'neutrophil_banded',
-            8: 'neutrophil_segmented'
-        }
-
-        for label, samples in class_samples.items():
-            class_dir = os.path.join(base_save_dir, class_folders.get(label, f"class_{label}"))
-            if not os.path.exists(class_dir):
-                os.makedirs(class_dir)
-
-
-            for i, (img, _) in enumerate(samples):
-                file_path = os.path.join(class_dir, f"sample_{i}.png")
-                cv2.imwrite(file_path, img * 255)
-
-train_dataset = Dataloader(split='train')
-
-class_labels = [3, 7, 8]  # myeloblast, neutrophil banded, neutrophil segmented
-
-class_samples = train_dataset.get_samples_by_class(class_labels)
-
-save_dir = 'save_class_imaged'
-if not os.path.exists(save_dir):
-    os.makedirs(save_dir)
-
-
-train_dataset.save_class_samples(class_samples, save_dir)
+save_images_for_classes(train_dataloader, class_labels)
