@@ -279,7 +279,7 @@ abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 
 
 # Define a threshold for significant change
-change_threshold = 0.009
+change_threshold = 0.01
 
 padded_diffs = np.pad(abs_diff_fold_changes, ((1, 1), (0, 0)), mode='constant', constant_values=(0, 0))
 
@@ -308,7 +308,7 @@ plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
 plt.xlim(left=0, right=filtered_trajectory_points[-1])
-plt.legend()
+# plt.legend()
 
 
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.png'))
@@ -324,10 +324,10 @@ sz = X_train.shape[1]
 
 
 # Perform kShape clustering
-ks = KShape(n_clusters=3, verbose=True)
+ks = KShape(n_clusters=4, verbose=True)
 y_pred = ks.fit_predict(X_train)
-genes_in_clusters = {i: [] for i in range(3)}
-for cluster_idx in range(3):
+genes_in_clusters = {i: [] for i in range(4)}
+for cluster_idx in range(4):
     gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
     genes_in_clusters[cluster_idx] = [filtered_gene_names[idx] for idx in gene_indices_in_cluster]
 
