@@ -1,16 +1,12 @@
 import os
 import pickle
-
+import imageio
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from PIL import Image
 from model4 import VariationalAutoencodermodel4, reparametrize
 from Dataloader_4 import Dataloader
 from torch.utils.data import DataLoader
-from torchvision.utils import make_grid
-from torchvision.transforms import ToPILImage
-import torch
-import numpy as np
 import cv2
 import umap
 import matplotlib.pyplot as plt
@@ -24,6 +20,12 @@ from scipy.spatial.distance import pdist, squareform
 from tslearn.clustering import KShape
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 from sklearn.neighbors import NearestNeighbors
+import torch
+from torchvision.utils import make_grid
+from torchvision.transforms import ToPILImage
+import numpy as np
+
+
 
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
@@ -278,43 +280,86 @@ mean_expression = np.mean(filtered_gen_expression, axis=0)
 
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
-with open("filtered_gene_expression", "wb") as f:
-    pickle.dump(filtered_gen_expression, f)
-    print("file_saved")
-exit()
+sum_genes = np.sum(abs_diff_fold_changes, axis = 1)
+mask = sum_genes > 0.1
+mask = np.append(mask, True )
+print(mask)
 
-change_threshold = 0.1
-
-padded_diffs = np.pad(abs_diff_fold_changes, ((1, 1), (0, 0)), mode='constant', constant_values=(0, 0))
-change_mask = np.logical_or(padded_diffs[:-1, :].any(axis=1), padded_diffs[1:, :].any(axis=1))
-
-print("Shape of fold_changes:", fold_changes.shape)
-print("Shape of change_mask:", change_mask.shape)
-print("Padded values:", padded_diffs)
-print("Change mask values:", change_mask)
-
-filtered_fold_changes = fold_changes[change_mask]
-filtered_fold_changes = fold_changes[change_mask, :]
-filtered_trajectory_points = np.arange(len(filtered_fold_changes))
-print("Number of points retained after filtering:", change_mask.sum())
+print("Number of points retained after filtering:", mask.sum())
+fold_changes = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
 for i, gene_idx in enumerate(variable_genes_indices):
-    plt.plot(filtered_trajectory_points, filtered_fold_changes[:, i], label=gene_names[gene_idx])
+    plt.plot(range(fold_changes[mask, :].shape[0]), fold_changes[mask, i], label=gene_names[gene_idx])
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
-plt.xlim(left=0, right=filtered_trajectory_points[-1])
+plt.xlim(left=0, right=fold_changes[mask, :].shape[0]-1)
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.png'))
 plt.close()
 print("fold change filtered is saved")
 
+#plotting filtered grid
+
+def generate_grid_image_from_interpolated_points(model, device, interpolated_points_file, output_filename):
+    model.eval()
+
+    # Load the interpolated latent points
+    interpolated_latent_points = torch.load(interpolated_points_file)
+    interpolated_latent_points = interpolated_latent_points[mask]
+
+    # Calculate new grid size based on the number of points
+    num_points = len(interpolated_latent_points)
+    grid_width = int(np.ceil(np.sqrt(num_points)))
+    grid_height = int(np.ceil(num_points / grid_width))
+    grid_size = (grid_height, grid_width)
+
+    decoded_images = []
+    for z in interpolated_latent_points:
+        z_tensor = z.float().to(device).unsqueeze(0)
+        with torch.no_grad():
+            decoded_img = model.decoder(z_tensor)
+            decoded_img = model.img_decoder(decoded_img)
+        decoded_images.append(decoded_img.cpu())
+
+    while len(decoded_images) < grid_size[0] * grid_size[1]:
+        decoded_images.append(torch.zeros_like(decoded_images[0]))
+    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
+
+    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
+    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
+    grid_image = ToPILImage()(grid_image)
+    grid_image.save(output_filename + '.jpg', quality=300)
+    print(f"Grid Image saved successfully as {output_filename}.jpg")
+
+generate_grid_image_from_interpolated_points ( model=model_1, device=device, interpolated_points_file='interpolation_latent_points.pt', output_filename='filtered_grid_myelo_neutro')
+
+# plotting gif
+def interpolate_gif_from_masked_points(model, interpolated_points_file, output_filename, device=device):
+    model_1.eval()
+    frames = []
+
+    interpolated_latent_points = torch.load(interpolated_points_file)
+    interpolated_latent_points_masked = interpolated_latent_points[mask]
+
+    for z in interpolated_latent_points_masked:
+        z_tensor = z.to(device).unsqueeze(0)
+        with torch.no_grad():
+            decoded_img = model_1.decoder(z_tensor)
+            decoded_img = model_1.img_decoder(decoded_img)
+        img_np = ToPILImage()(decoded_img.squeeze(0)).convert("RGB")
+        frames.append(img_np)
+
+    imageio.mimsave(output_filename + '.gif', frames, fps=10)
+    print("GIF saved successfully")
+
+interpolate_gif_from_masked_points(model_1, 'interpolation_latent_points.pt', 'mask_gif_myelo_neutro', device= device)
 
 #clustering
 
 filtered_gene_names = [gene_names[i] for i in variable_genes_indices]
-X_train = TimeSeriesScalerMeanVariance().fit_transform(filtered_fold_changes.T)
+X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
 
 
@@ -364,12 +409,12 @@ for cluster_idx in range(3):
 
     filtered_gene_indices_in_cluster = [i for i in gene_indices_in_cluster if i in variable_genes_indices]
 
-    cluster_fold_changes = filtered_fold_changes[:, filtered_gene_indices_in_cluster]
+    cluster_fold_changes = fold_changes[:, filtered_gene_indices_in_cluster]
     mean_cluster_fold_changes = np.mean(cluster_fold_changes, axis=1)
     std_cluster_fold_changes = np.std(cluster_fold_changes, axis=1)
 
 
-    plt.plot(filtered_trajectory_points, mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}')
+    plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}')
 
 
     plt.fill_between(
