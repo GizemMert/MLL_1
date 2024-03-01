@@ -1,4 +1,6 @@
 import os
+import pickle
+
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from PIL import Image
@@ -276,7 +278,9 @@ mean_expression = np.mean(filtered_gen_expression, axis=0)
 
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
-
+with open("filtered_gene_expression", "wb") as f:
+    pickle.dump(filtered_gen_expression, f)
+exit()
 
 change_threshold = 0.1
 
