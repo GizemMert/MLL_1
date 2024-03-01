@@ -13,6 +13,21 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
 
+label_map = {
+    'basophil': 0,
+    'eosinophil': 1,
+    'erythroblast': 2,
+    'myeloblast': 3,
+    'promyelocyte': 4,
+    'myelocyte': 5,
+    'metamyelocyte': 6,
+    'neutrophil_banded': 7,
+    'neutrophil_segmented': 8,
+    'monocyte': 9,
+    'lymphocyte_typical': 10,
+    'lymphocyte_atypical': 11,
+    'smudge_cell': 12,
+}
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 epochs = 160
@@ -259,7 +274,7 @@ for epoch in range(epochs):
 
         mmd_loss_n_lung = torch.tensor(0.0).to(device)
         # Check for class samples and calculate MMD loss if present in the batch
-        neutrophil_band_mask = (label == 7)
+        neutrophil_band_mask = (label == label_map['neutrophil_banded'])
         if neutrophil_band_mask.any():
             z_neutrophil_band = z_dist[neutrophil_band_mask]
             z_neutrophil_band = z_neutrophil_band.to(device)
@@ -267,7 +282,7 @@ for epoch in range(epochs):
 
         mmd_loss_n_blood = torch.tensor(0.0).to(device)
         # Check for class samples and calculate MMD loss if present in the batch
-        neutrophil_segmented_mask = (label == 8)
+        neutrophil_segmented_mask = (label == label_map['neutrophil_segmented'])
         if neutrophil_segmented_mask.any():
             z_neutrophil_segmented = z_dist[neutrophil_segmented_mask]
             z_neutrophil_segmented = z_neutrophil_segmented.to(device)
