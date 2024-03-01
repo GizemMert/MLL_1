@@ -375,24 +375,20 @@ for epoch in range(epochs):
         x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
         y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
 
-        zoom_factor = 0.40  # Smaller values mean more zoom
-        padding_factor = 0.3  # Adjust padding around the zoomed area
+        zoom_factor = 0.40
+        padding_factor = 0.3
 
-        # Calculate the range for zooming in based on the zoom factor
         x_range = (x_max - x_min) * zoom_factor
         y_range = (y_max - y_min) * zoom_factor
 
-        # Calculate the center of the data
         center_x = (x_max + x_min) / 2
         center_y = (y_max + y_min) / 2
 
-        # Calculate new limits around the center of the data
         new_x_min = center_x - (x_range * (1 + padding_factor))
         new_x_max = center_x + (x_range * (1 + padding_factor))
         new_y_min = center_y - (y_range * (1 + padding_factor))
         new_y_max = center_y + (y_range * (1 + padding_factor))
 
-        # Apply the new limits to zoom in on the plot
         ax.set_xlim(new_x_min, new_x_max)
         ax.set_ylim(new_y_min, new_y_max)
 
@@ -400,9 +396,8 @@ for epoch in range(epochs):
         ax.set_xlabel('UMAP Dimension 1', fontsize=16)
         ax.set_ylabel('UMAP Dimension 2', fontsize=16)
 
-        # Second subplot for the legend
         ax_legend = fig.add_subplot(gs[1])
-        ax_legend.axis('off')  # Turn off the axis for the legend subplot
+        ax_legend.axis('off')
 
         unique_filtered_labels = np.unique(filtered_labels)
         filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
