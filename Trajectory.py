@@ -275,29 +275,24 @@ small_const = 1e-10
 mean_expression = np.mean(filtered_gen_expression, axis=0)
 
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
-
-
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
+
 
 # Define a threshold for significant change
 change_threshold = 0.005
 
-# Create a mask that is `True` where changes are significant
-# This mask is one element shorter than the number of fold change points
-significant_changes = np.any(abs_diff_fold_changes > change_threshold, axis=1)
+padded_diffs = np.pad(abs_diff_fold_changes, ((1, 1), (0, 0)), mode='constant', constant_values=(0, 0))
+
 
 # Extend the mask to include the first and last points by default
 # Now the mask should be the same length as the number of fold change points
-significant_change_mask = np.concatenate(([True], significant_changes, [True]))
+significant_change_mask = np.logical_or(padded_diffs[:-1] > change_threshold, padded_diffs[1:] > change_threshold)
+
 
 print(fold_changes.shape)
 print(significant_change_mask.shape)
 
-# Apply the mask to the fold changes
-filtered_fold_changes = fold_changes[significant_change_mask, :]
-
-# Check if the mask and fold_changes have the same length
-assert len(significant_change_mask) == fold_changes.shape[0], "Mask length must match number of fold change points"
+filtered_fold_changes = fold_changes[significant_change_mask]
 
 filtered_fold_changes = fold_changes[significant_change_mask, :]
 
@@ -307,16 +302,13 @@ print("Number of points retained after filtering:", significant_change_mask.sum(
 
 plt.figure(figsize=(20, 10))
 for i, gene_idx in enumerate(variable_genes_indices):
-
-    assert len(filtered_trajectory_points) == filtered_fold_changes.shape[0], "Mismatch in x and y data length"
     plt.plot(filtered_trajectory_points, filtered_fold_changes[:, i], label=gene_names[gene_idx])
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
-
-
 plt.xlim(left=0, right=filtered_trajectory_points[-1])
+plt.legend()
 
 
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.png'))
