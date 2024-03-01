@@ -281,7 +281,7 @@ mean_expression = np.mean(filtered_gen_expression, axis=0)
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 sum_genes = np.sum(abs_diff_fold_changes, axis = 1)
-mask = sum_genes > 0.15
+mask = sum_genes > 0.1
 mask = np.append(mask, True )
 print(mask)
 
