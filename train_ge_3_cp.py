@@ -73,8 +73,8 @@ dataloader = DataLoader(dataset, batch_size=128, shuffle=True, num_workers=1)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-input_s = X.shape[1]  # number of genes
-print(X.shape)
+input_s = X_tensor.shape[1]
+print("Shape of X_tensor:", X_tensor.shape)
 model = VAE_GE(input_shape=input_s, latent_dim=50).to(device)
 
 
