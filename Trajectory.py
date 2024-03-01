@@ -290,6 +290,9 @@ significant_changes = np.any(abs_diff_fold_changes > change_threshold, axis=1)
 # Now the mask should be the same length as the number of fold change points
 significant_change_mask = np.concatenate(([True], significant_changes, [True]))
 
+print(fold_changes.shape)
+print(significant_change_mask.shape)
+
 # Apply the mask to the fold changes
 filtered_fold_changes = fold_changes[significant_change_mask, :]
 
