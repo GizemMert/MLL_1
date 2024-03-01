@@ -17,7 +17,7 @@ X = adata.X
 print("Maximum value in X:", X.max())
 print("Minimum value in X:", X.min())
 
-adata.obs['updated_cell_class'] = adata.obs['cell_ontology_class'] + '_' + adata.obs['tissue_in_publication']
+adata.obs['updated_cell_class'] = adata.obs['cell_ontology_class'].astype(str) + '_' + adata.obs['tissue_in_publication'].astype(str)
 adata = adata[~((adata.obs['cell_ontology_class'] == 'neutrophil') & (adata.obs['tissue_in_publication'] == 'Bone_Marrow'))]
 
 label_mapping = {label: index for index, label in enumerate(adata.obs['updated_cell_class'].cat.categories)}
