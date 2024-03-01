@@ -290,12 +290,12 @@ fold_changes = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
 for i, gene_idx in enumerate(variable_genes_indices):
-    plt.plot(range(fold_changes[mask, :].shape[0]), fold_changes[mask, i], label=gene_names[gene_idx])
+    plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], label=gene_names[gene_idx])
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
-plt.xlim(left=0, right=fold_changes[mask, :].shape[0]-1)
+plt.xlim(left=0, right=fold_changes.shape[0]-1)
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.png'))
 plt.close()
 print("fold change filtered is saved")
