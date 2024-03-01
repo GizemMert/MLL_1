@@ -369,7 +369,7 @@ for epoch in range(epochs):
         neutrophil_segment_z_filename = os.path.join(neutrophil_segment_z_dir, f'neutrophil_z_segment_{epoch}.npy')
         concatenated_z_seg = np.concatenate(all_z_n_segmented, axis=0)
         print(f"Shape of concatenated_z for neutrophil segmented before saving: {concatenated_z_seg.shape}")
-        np.save(neutrophil_band_z_filename, concatenated_z_seg)
+        np.save(neutrophil_segment_z_filename, concatenated_z_seg)
 
         for i, img in enumerate(masked_scimg):
             img_np = img.cpu().numpy().transpose(1, 2, 0)
