@@ -279,23 +279,33 @@ fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 
-change_threshold = 0.005
+change_threshold = 0.008
 
 significant_change_mask = np.append(np.any(abs_diff_fold_changes > change_threshold, axis=1), True)
 significant_change_mask = np.insert(significant_change_mask, 0, True)
 
+
 filtered_fold_changes = fold_changes[significant_change_mask, :]
 filtered_trajectory_points = np.arange(significant_change_mask.sum())
 
+
+print("Number of points retained after filtering:", significant_change_mask.sum())
+
+# Plotting
 plt.figure(figsize=(20, 10))
 for i, gene_idx in enumerate(variable_genes_indices):
+
+    assert len(filtered_trajectory_points) == filtered_fold_changes.shape[0], "Mismatch in x and y data length"
     plt.plot(filtered_trajectory_points, filtered_fold_changes[:, i], label=gene_names[gene_idx])
 
 plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
+
+
 plt.xlim(left=0, right=filtered_trajectory_points[-1])
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.png'))
 plt.close()
 print("fold change filtered is saved")
