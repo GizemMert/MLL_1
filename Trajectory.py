@@ -279,19 +279,20 @@ fold_changes = filtered_gen_expression / (mean_expression + small_const)
 
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 
-change_threshold = 0.008
 
-significant_change_mask = np.append(np.any(abs_diff_fold_changes > change_threshold, axis=1), True)
-significant_change_mask = np.insert(significant_change_mask, 0, True)
+change_threshold = 0.005
 
+significant_changes = np.any(abs_diff_fold_changes > change_threshold, axis=1)
+
+significant_change_mask = np.concatenate(([True], significant_changes, [True]))
+assert len(significant_change_mask) == fold_changes.shape[0], "Mask length must match number of fold change points"
 
 filtered_fold_changes = fold_changes[significant_change_mask, :]
-filtered_trajectory_points = np.arange(significant_change_mask.sum())
 
-
+filtered_trajectory_points = np.arange(len(filtered_fold_changes))
 print("Number of points retained after filtering:", significant_change_mask.sum())
 
-# Plotting
+
 plt.figure(figsize=(20, 10))
 for i, gene_idx in enumerate(variable_genes_indices):
 
