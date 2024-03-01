@@ -223,6 +223,8 @@ for epoch in range(epochs):
     mmd_loss_n_lung = 0.0
     y_true = []
     y_pred = []
+    count_neutrophil_banded = 0
+    count_neutrophil_segmented = 0
     # neutrophil_z_vectors = []
 
     model.train()
@@ -235,6 +237,7 @@ for epoch in range(epochs):
         all_z_n_band = []
         all_z_n_segmented =[]
 
+
     for feat, scimg, mask, label, _ in train_dataloader:
         feat = feat.float()
         scimg = scimg.float()
@@ -243,6 +246,8 @@ for epoch in range(epochs):
         # mmd_loss_neutrophil = torch.tensor(0.0).to(device)
         # mmd_loss_monocyte = torch.tensor(0.0).to(device)
         # mmd_loss_myle = torch.tensor(0.0).to(device)
+        count_neutrophil_banded += (label == label_map['neutrophil_banded']).sum().item()
+        count_neutrophil_segmented += (label == label_map['neutrophil_segmented']).sum().item()
 
         feat, scimg = feat.to(device), scimg.to(device)
 
@@ -324,6 +329,7 @@ for epoch in range(epochs):
     mmd_loss_n_lung = mmd_loss_n_lung / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
+
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss_n_blood = {:.6f}, mmd_loss_n_lung = {:.6f} ".format
           (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss_n_blood.item(), mmd_loss_n_lung.item()))
 
@@ -335,6 +341,9 @@ for epoch in range(epochs):
     if epoch % 10 == 0:
         # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
         # latent_values = np.concatenate(latent_values_per_epoch, axis=0)
+
+        print(f"Number of neutrophil banded instances: {count_neutrophil_banded}")
+        print(f"Number of neutrophil segmented instances: {count_neutrophil_segmented}")
 
         latent_filename = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
         concatenated_means = np.concatenate(all_means, axis=0)
