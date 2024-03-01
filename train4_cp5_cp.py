@@ -30,7 +30,7 @@ label_map = {
 }
 
 inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
-epochs = 64
+epochs = 290
 batch_size = 512
 ngpu = torch.cuda.device_count()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -107,7 +107,7 @@ cff_im_rec = 0.20
 cff_kld = 0.05
 cff_mmd_n_blood = 0.30
 cff_mmd_n_liver = 0.20
-cff_mmd_n_lung = 20
+cff_mmd_n_lung = 50
 
 
 beta = 4
@@ -360,12 +360,13 @@ for epoch in range(epochs):
         log_filename = os.path.join(log_dir, f'log_epoch_{epoch}.npy')
         np.save(log_filename, np.concatenate(all_logvars, axis=0))
 
-        neutrophil_band_z_filename = os.path.join(neutrophil_banded_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
+        #CHECK FILE NAME NOT SAME
+        neutrophil_band_z_filename = os.path.join(neutrophil_banded_z_dir, f'neutrophil_z_band_eopch_{epoch}.npy')
         concatenated_z = np.concatenate(all_z_n_band, axis=0)
         print(f"Shape of concatenated_z for neutrophil banded before saving: {concatenated_z.shape}")
         np.save(neutrophil_band_z_filename, concatenated_z)
 
-        neutrophil_segment_z_filename = os.path.join(neutrophil_segment_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
+        neutrophil_segment_z_filename = os.path.join(neutrophil_segment_z_dir, f'neutrophil_z_segment_eopch_{epoch}.npy')
         concatenated_z = np.concatenate(all_z_n_segmented, axis=0)
         print(f"Shape of concatenated_z for neutrophil segmented before saving: {concatenated_z.shape}")
         np.save(neutrophil_band_z_filename, concatenated_z)
