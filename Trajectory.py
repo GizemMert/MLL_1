@@ -359,7 +359,7 @@ def interpolate_gif_from_masked_points(model, interpolated_points_file, output_f
         img_np = ToPILImage()(decoded_img.squeeze(0)).convert("RGB")
         frames.append(img_np)
 
-    imageio.mimsave(output_filename + '.gif', frames, fps=5)
+    imageio.mimsave(output_filename + '.gif', frames, fps=10)
     print("GIF saved successfully")
 
 interpolate_gif_from_masked_points(model=model_1,  device= device, interpolated_points_file= 'interpolation_latent_points.pt', output_filename='mask_gif_myelo_neutro')
