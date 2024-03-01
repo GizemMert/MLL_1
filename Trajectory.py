@@ -284,9 +284,8 @@ change_threshold = 0.005
 padded_diffs = np.pad(abs_diff_fold_changes, ((1, 1), (0, 0)), mode='constant', constant_values=(0, 0))
 
 
-# Extend the mask to include the first and last points by default
-# Now the mask should be the same length as the number of fold change points
-significant_change_mask = np.logical_or(padded_diffs[:-1] > change_threshold, padded_diffs[1:] > change_threshold)
+significant_change_mask = np.logical_or(padded_diffs[:-1, :].any(axis=1), padded_diffs[1:, :].any(axis=1))
+
 
 
 print(fold_changes.shape)
