@@ -403,31 +403,27 @@ for gene_part, clusters in driving_genes_in_clusters.items():
 
 plt.figure(figsize=(20, 10))
 
-for cluster_idx in range(3):
+for cluster_idx in range(4):
     gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
-
-
-    filtered_gene_indices_in_cluster = [i for i in gene_indices_in_cluster if i in variable_genes_indices]
+    filtered_gene_indices_in_cluster = [idx for idx in gene_indices_in_cluster if idx in variable_genes_indices]
 
     cluster_fold_changes = fold_changes[:, filtered_gene_indices_in_cluster]
+
     mean_cluster_fold_changes = np.mean(cluster_fold_changes, axis=1)
     std_cluster_fold_changes = np.std(cluster_fold_changes, axis=1)
 
-
     plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}')
 
-
     plt.fill_between(
-        filtered_trajectory_points,
+        range(len(mean_cluster_fold_changes)),
         mean_cluster_fold_changes - std_cluster_fold_changes,
         mean_cluster_fold_changes + std_cluster_fold_changes,
         alpha=0.2
     )
 
-plt.xlabel('Trajectory Points')
+plt.xlabel('Trajectory Points Index')
 plt.ylabel('Fold Change')
 plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
-plt.xlim(left=0, right=filtered_trajectory_points[-1])  # Set x-axis limit to the range of the filtered points
 plt.legend()
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.png'))
 plt.tight_layout()
@@ -443,7 +439,6 @@ plt.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(umap_dir, 'gene_expression_clusters.png'))
 plt.close()
-"""
 
 gene_variances = np.var(gene_expression, axis=0)
 top_genes_indices = np.argsort(gene_variances)[-100:]
@@ -468,7 +463,7 @@ row_linkage = linkage(gene_distances, method='average')
 norm_variances = gene_variances[sorted_indices] / gene_variances[sorted_indices].max()
 variance_colors = plt.cm.viridis(norm_variances)
 
-"""  
+
 plt.figure(figsize=(10, 10))
 sns.heatmap(
     gene_expression.T,
@@ -480,7 +475,7 @@ plt.xlabel('Points on Trajectory')
 plt.ylabel('Genes')
 plt.savefig(os.path.join(umap_dir, 'Gene_Expression_HeatMap.png'))
 plt.close()
-"""
+
 # Plotting the clustermap
 sns.clustermap(sorted_gene_expression.T,
                row_linkage=row_linkage,
@@ -540,34 +535,6 @@ plt.close()
 
 print("completed")
 
-
-"""
-
-
-
-def interpolate_gif_gpr(model, filename, start_latent, end_latent, n=100, grid_size=(10, 10)):
-    model.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    start_latent = torch.from_numpy(start_latent).float().to(device)
-    end_latent = torch.from_numpy(end_latent).float().to(device)
-
-    def slerp(val, low, high):
-        low_norm = low / torch.norm(low)
-        high_norm = high / torch.norm(high)
-        omega = torch.acos((low_norm * high_norm).sum().clamp(-1, 1))
-        so = torch.sin(omega)
-        res = torch.sin((1.0 - val) * omega) / so * low + torch.sin(val * omega) / so * high
-        return res.where(so != 0, low)
-
-    # Interpolate between the latent vectors
-    interpolated_latent_points = [start_latent.unsqueeze(0)]
-
-    # Generate interpolated points
-    for t in np.linspace(0, 1, n)[1:-1]:
-        t_tensor = torch.tensor(t, device=device)
-        z_interp = slerp(t_tensor, start_latent, end_latent).unsqueeze(0)
-        interpolated_latent_points.append(z_interp)
 
     # Ensure end_latent is also correctly reshaped and added
     interpolated_latent_points.append(end_latent.unsqueeze(0))
