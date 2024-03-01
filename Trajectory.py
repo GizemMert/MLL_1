@@ -279,7 +279,7 @@ abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 
 
 # Define a threshold for significant change
-change_threshold = 0.005
+change_threshold = 0.009
 
 padded_diffs = np.pad(abs_diff_fold_changes, ((1, 1), (0, 0)), mode='constant', constant_values=(0, 0))
 
