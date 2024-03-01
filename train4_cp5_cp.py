@@ -92,7 +92,7 @@ cff_im_rec = 0.20
 cff_kld = 0.05
 cff_mmd_n_blood = 0.30
 cff_mmd_n_liver = 0.20
-cff_mmd_n_lung = 0.30
+cff_mmd_n_lung = 20
 
 
 beta = 4
