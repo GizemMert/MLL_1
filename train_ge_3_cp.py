@@ -37,7 +37,7 @@ with open('class_mappings.json', 'w') as f:
 batch_size = 128
 epochs = 300
 beta = 0.0005
-cff_rec = 1
+cff_rec = 2
 cff_emd = 1
 
 from torch.utils.data import Dataset
