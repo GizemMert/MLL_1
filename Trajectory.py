@@ -279,7 +279,7 @@ abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 
 
 # Define a threshold for significant change
-change_threshold = 0.01
+change_threshold = 0.1
 
 padded_diffs = np.pad(abs_diff_fold_changes, ((1, 1), (0, 0)), mode='constant', constant_values=(0, 0))
 
@@ -339,7 +339,9 @@ for cluster, genes in genes_in_clusters.items():
 
 print("Gene names for each cluster have been saved.")
 
-driving_gene_names = ["CEBPA", "PU1", "MPO", "ELANE", "CEBP", "LEF1", "RUNX1", "CEBPS", "CEBPY", "CEBPB", "GFI1", "CD14", "CD16", "CR1", "FMLP"]
+driving_gene_names = ["CEBPA", "PU1", "MPO", "ELANE", "CEBP", "LEF1", "RUNX1", "CEBPS", "CEBPY", "CEBPB", "GFI1", "CD14", "CD16", "CR1",
+                     "FMLP", "CSF", "CD177", "OLFM4", "TCR", "CD62L", "CD63", "IL-13", "CD49", "IL-17", "LDG", "TAN", "CEBPD",
+                     "CXCL12", "CXCR4", "CXCR2", "CXCR4", "CD11b", "CD62L", "OLFM4", "CD11C", "IFN", "G-MDSC", " PAMP", "DAMP" ]
 driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
 
 
