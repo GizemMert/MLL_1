@@ -360,16 +360,7 @@ for epoch in range(epochs):
         log_filename = os.path.join(log_dir, f'log_epoch_{epoch}.npy')
         np.save(log_filename, np.concatenate(all_logvars, axis=0))
 
-        #CHECK FILE NAME NOT SAME
-        neutrophil_band_z_filename = os.path.join(neutrophil_banded_z_dir, f'neutrophil_z_band_{epoch}.npy')
-        concatenated_z = np.concatenate(all_z_n_band, axis=0)
-        print(f"Shape of concatenated_z for neutrophil banded before saving: {concatenated_z.shape}")
-        np.save(neutrophil_band_z_filename, concatenated_z)
 
-        neutrophil_segment_z_filename = os.path.join(neutrophil_segment_z_dir, f'neutrophil_z_segment_{epoch}.npy')
-        concatenated_z = np.concatenate(all_z_n_segmented, axis=0)
-        print(f"Shape of concatenated_z for neutrophil segmented before saving: {concatenated_z.shape}")
-        np.save(neutrophil_band_z_filename, concatenated_z)
 
         for i, img in enumerate(masked_scimg):
             img_np = img.cpu().numpy().transpose(1, 2, 0)
