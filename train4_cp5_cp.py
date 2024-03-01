@@ -361,12 +361,12 @@ for epoch in range(epochs):
         np.save(log_filename, np.concatenate(all_logvars, axis=0))
 
         #CHECK FILE NAME NOT SAME
-        neutrophil_band_z_filename = os.path.join(neutrophil_banded_z_dir, f'neutrophil_z_band_eopch_{epoch}.npy')
+        neutrophil_band_z_filename = os.path.join(neutrophil_banded_z_dir, f'neutrophil_z_band_{epoch}.npy')
         concatenated_z = np.concatenate(all_z_n_band, axis=0)
         print(f"Shape of concatenated_z for neutrophil banded before saving: {concatenated_z.shape}")
         np.save(neutrophil_band_z_filename, concatenated_z)
 
-        neutrophil_segment_z_filename = os.path.join(neutrophil_segment_z_dir, f'neutrophil_z_segment_eopch_{epoch}.npy')
+        neutrophil_segment_z_filename = os.path.join(neutrophil_segment_z_dir, f'neutrophil_z_segment_{epoch}.npy')
         concatenated_z = np.concatenate(all_z_n_segmented, axis=0)
         print(f"Shape of concatenated_z for neutrophil segmented before saving: {concatenated_z.shape}")
         np.save(neutrophil_band_z_filename, concatenated_z)
@@ -382,8 +382,17 @@ for epoch in range(epochs):
             mask_filepath = os.path.join(save_mask_dir, mask_filename)
             cv2.imwrite(mask_filepath, mask_np * 255)
 
-    # if epoch == epochs - 1:
 
+    # CHECK FILE NAME NOT SAME
+    neutrophil_band_z_filename = os.path.join(neutrophil_banded_z_dir, f'neutrophil_z_band_{epoch}.npy')
+    concatenated_z = np.concatenate(all_z_n_band, axis=0)
+    print(f"Shape of concatenated_z for neutrophil banded before saving: {concatenated_z.shape}")
+    np.save(neutrophil_band_z_filename, concatenated_z)
+
+    neutrophil_segment_z_filename = os.path.join(neutrophil_segment_z_dir, f'neutrophil_z_segment_{epoch}.npy')
+    concatenated_z = np.concatenate(all_z_n_segmented, axis=0)
+    print(f"Shape of concatenated_z for neutrophil segmented before saving: {concatenated_z.shape}")
+    np.save(neutrophil_band_z_filename, concatenated_z)
 
     model.eval()
 
