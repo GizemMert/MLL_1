@@ -299,6 +299,7 @@ filtered_trajectory_points = np.arange(len(filtered_fold_changes))
 print("Number of points retained after filtering:", significant_change_mask.sum())
 
 
+
 plt.figure(figsize=(20, 10))
 for i, gene_idx in enumerate(variable_genes_indices):
     plt.plot(filtered_trajectory_points, filtered_fold_changes[:, i], label=gene_names[gene_idx])
@@ -323,10 +324,10 @@ sz = X_train.shape[1]
 
 
 # Perform kShape clustering
-ks = KShape(n_clusters=4, verbose=True)
+ks = KShape(n_clusters=3, verbose=True)
 y_pred = ks.fit_predict(X_train)
-genes_in_clusters = {i: [] for i in range(4)}
-for cluster_idx in range(4):
+genes_in_clusters = {i: [] for i in range(3)}
+for cluster_idx in range(3):
     gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
     genes_in_clusters[cluster_idx] = [filtered_gene_names[idx] for idx in gene_indices_in_cluster]
 
@@ -359,7 +360,7 @@ for gene_part, clusters in driving_genes_in_clusters.items():
 
 plt.figure(figsize=(20, 10))
 
-for cluster_idx in range(4):
+for cluster_idx in range(3):
     gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
 
 
