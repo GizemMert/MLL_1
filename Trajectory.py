@@ -281,7 +281,7 @@ mean_expression = np.mean(filtered_gen_expression, axis=0)
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 sum_genes = np.sum(abs_diff_fold_changes, axis = 1)
-mask = sum_genes > 0.1
+mask = sum_genes > 0.15
 mask = np.append(mask, True )
 print(mask)
 
@@ -359,7 +359,7 @@ def interpolate_gif_from_masked_points(model, interpolated_points_file, output_f
         img_np = ToPILImage()(decoded_img.squeeze(0)).convert("RGB")
         frames.append(img_np)
 
-    imageio.mimsave(output_filename + '.gif', frames, fps=10)
+    imageio.mimsave(output_filename + '.gif', frames, fps=5)
     print("GIF saved successfully")
 
 interpolate_gif_from_masked_points(model=model_1,  device= device, interpolated_points_file= 'interpolation_latent_points.pt', output_filename='mask_gif_myelo_neutro')
