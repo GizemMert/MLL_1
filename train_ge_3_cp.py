@@ -13,9 +13,6 @@ import json
 
 # Load data
 adata = anndata.read_h5ad('s_data_feature_liver_lung.h5ad')
-X = adata.X
-print("Maximum value in X:", X.max())
-print("Minimum value in X:", X.min())
 
 adata.obs['updated_cell_class'] = adata.obs['cell_ontology_class'].astype(str) + '_' + adata.obs['tissue_in_publication'].astype(str)
 adata = adata[~((adata.obs['cell_ontology_class'] == 'neutrophil') & (adata.obs['tissue_in_publication'] == 'Bone_Marrow'))]
@@ -60,8 +57,10 @@ class GeneExpressionDataset(Dataset):
 
 
 
-X_dense = X.toarray()  # Convert sparse matrix to dense
+X_dense = adata.X.toarray()
 X_tensor = torch.tensor(X_dense, dtype=torch.float32)
+label_mapping = {label: index for index, label in enumerate(adata.obs['updated_cell_class'].unique())}
+numeric_labels = adata.obs['updated_cell_class'].map(label_mapping).to_numpy()
 label_tensor = torch.tensor(numeric_labels, dtype=torch.long)
 scvi_tensor = torch.tensor(adata.obsm["X_scvi"], dtype=torch.float32)
 print("Maximum value in ref latent:", scvi_tensor.max())
