@@ -280,6 +280,7 @@ fold_changes = filtered_gen_expression / (mean_expression + small_const)
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
 with open("filtered_gene_expression", "wb") as f:
     pickle.dump(filtered_gen_expression, f)
+    print("file_saved")
 exit()
 
 change_threshold = 0.1
