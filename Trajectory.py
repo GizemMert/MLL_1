@@ -285,7 +285,7 @@ change_mask = np.logical_or(padded_diffs[:-1, :].any(axis=1), padded_diffs[1:, :
 
 print("Shape of fold_changes:", fold_changes.shape)
 print("Shape of change_mask:", change_mask.shape)
-
+print("Padded values:", padded_diffs)
 print("Change mask values:", change_mask)
 
 filtered_fold_changes = fold_changes[change_mask]
