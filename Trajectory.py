@@ -317,7 +317,10 @@ def generate_grid_image_from_interpolated_points(model, device, interpolated_poi
 
     decoded_images = []
     for z in interpolated_latent_points:
-        z_tensor = z.float().to(device).unsqueeze(0)
+        if isinstance(z, np.ndarray):
+            z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
+        else:
+            z_tensor = z.float().to(device).unsqueeze(0)
         with torch.no_grad():
             decoded_img = model.decoder(z_tensor)
             decoded_img = model.img_decoder(decoded_img)
