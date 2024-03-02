@@ -12,6 +12,7 @@ from mmd_loss_2 import mmd
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 label_map = {
     'basophil': 0,
@@ -205,6 +206,26 @@ class SobelFilter(nn.Module):
         edge = torch.sqrt(edge_x ** 2 + edge_y ** 2 + 1e-6)
 
         return edge
+
+def process_and_save_samples(selected_indices, label_description, file_name_prefix, epoch):
+    file_name = f"reconstructed-{file_name_prefix}/"
+    if not os.path.exists(file_name):
+        os.makedirs(file_name)
+
+    for i in selected_indices:
+        ft, img, mask, lbl, _ = train_dataset[i]
+        ft = np.expand_dims(ft, axis=0)
+        ft = torch.tensor(ft, dtype=torch.float).to(device)
+
+        _, _, im_out, _, _ = model(ft)
+        im_out = im_out.data.cpu().numpy().squeeze()
+        im_out = np.moveaxis(im_out, 0, -1)
+        img = np.moveaxis(img, 0, -1)
+        im = np.concatenate([img, im_out], axis=1) * 255
+        im = np.clip(im, 0, 255).astype(np.uint8)
+
+        if epoch % 10 == 0:
+            cv2.imwrite(os.path.join(file_name, f"{label_description}_{i}-{epoch}.jpg"), im)
 
 edge_loss_fn = SobelFilter().to(device)
 ref_z_class_n_blood = ref_z_class_n_blood.to(device)
@@ -508,53 +529,14 @@ for epoch in range(epochs):
         plt.close()
 
         neutrophil_banded_label = 7
-
-        file_name = "reconstructed-neutrophil_banded_lung/"
-        if not os.path.exists(file_name):
-            os.makedirs(file_name)
-
-        # Process and visualize only for specified neutrophil classes
-        for i in range(30):
-            ft, img, mask, lbl, _ = train_dataset[i]
-
-            # Check if the label is for neutrophil banded or segmented
-            if lbl == neutrophil_banded_label:
-                ft = np.expand_dims(ft, axis=0)
-                ft = torch.tensor(ft, dtype=torch.float).to(device)
-
-                _, _, im_out, _, _ = model(ft)
-                im_out = im_out.data.cpu().numpy().squeeze()
-                im_out = np.moveaxis(im_out, 0, 2)
-                img = np.moveaxis(img, 0, 2)
-                im = np.concatenate([img, im_out], axis=1)
-
-                if epoch % 10 == 0:
-                    cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+        neutrophil_banded_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_banded_label]
+        selected_indices = random.sample(neutrophil_banded_indices, 30) if len(neutrophil_banded_indices) >= 30 else []
+        process_and_save_samples(selected_indices, 'neutrophil_banded', 'neutrophil_banded_lung', epoch)
 
         neutrophil_segmented_label = 8
-        file_name = "reconstructed-neutrophil_segment_blood/"
-        if not os.path.exists(file_name):
-            os.makedirs(file_name)
-
-        # Process and visualize only for specified neutrophil classes
-        for i in range(30):
-            ft, img, mask, lbl, _ = train_dataset[i]
-
-            # Check if the label is for neutrophil banded or segmented
-            if lbl == neutrophil_segmented_label:
-                ft = np.expand_dims(ft, axis=0)
-                ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
-
-                _, _, im_out, _, _ = model(ft)
-                im_out = im_out.data.cpu().numpy().squeeze()
-                im_out = np.moveaxis(im_out, 0, 2)
-                img = np.moveaxis(img, 0, 2)
-                im = np.concatenate([img, im_out], axis=1)
-
-                if epoch % 10 == 0:
-                    cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
-
-
+        neutrophil_segmented_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_segmented_label]
+        selected_indices = random.sample(neutrophil_segmented_indices, 30) if len(neutrophil_segmented_indices) >= 30 else []
+        process_and_save_samples(selected_indices, 'neutrophil_segmented', 'neutrophil_segment_blood', epoch)
 
 script_dir = os.path.dirname(__file__)
 
