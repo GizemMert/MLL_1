@@ -346,7 +346,7 @@ def interpolate_gif_from_masked_points(model, interpolated_points_file, output_f
     interpolated_latent_points = torch.load(interpolated_points_file)
     interpolated_latent_points_masked = interpolated_latent_points[mask]
 
-    for z in interpolated_latent_points:
+    for z in interpolated_latent_points_masked:
         if isinstance(z, np.ndarray):
             z_tensor = torch.from_numpy(z).float().to(device)
         else:
