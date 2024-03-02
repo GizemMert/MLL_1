@@ -105,7 +105,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-6)
 cff_feat_rec = 0.05
 cff_im_rec = 0.25
 cff_kld = 0.10
-cff_mmd_n_blood = 0.30
+cff_mmd_n_blood = 0.60
 cff_mmd_n_liver = 0.20
 cff_mmd_n_lung = 0.30
 
@@ -336,7 +336,7 @@ for epoch in range(epochs):
     with open(result_file, "a") as f:
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
-                f"MMD_Loss_n = {mmd_loss_n_blood.item():.6f}, MMD_Loss_myle = {mmd_loss_n_lung.item():.6f} \n")
+                f"MMD_Loss_n_blood = {mmd_loss_n_blood.item():.6f}, MMD_Loss_n_lung = {mmd_loss_n_lung.item():.6f} \n")
 
     if epoch % 10 == 0:
         # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
@@ -507,52 +507,53 @@ for epoch in range(epochs):
         plt.savefig(os.path.join(umap_dir, f'umap_neutrophil_segmented_comparison_{epoch}.png'))
         plt.close()
 
-    neutrophil_banded_label = 7
+        neutrophil_banded_label = 7
 
-    file_name = "reconstructed-neutrophil_banded_lung/"
-    if not os.path.exists(file_name):
-        os.makedirs(file_name)
+        file_name = "reconstructed-neutrophil_banded_lung/"
+        if not os.path.exists(file_name):
+            os.makedirs(file_name)
 
-    # Process and visualize only for specified neutrophil classes
-    for i in range(30):
-        ft, img, mask, lbl, _ = train_dataset[i]
+        # Process and visualize only for specified neutrophil classes
+        for i in range(30):
+            ft, img, mask, lbl, _ = train_dataset[i]
 
-        # Check if the label is for neutrophil banded or segmented
-        if lbl == neutrophil_banded_label:
-            ft = np.expand_dims(ft, axis=0)
-            ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
+            # Check if the label is for neutrophil banded or segmented
+            if lbl == neutrophil_banded_label:
+                ft = np.expand_dims(ft, axis=0)
+                ft = torch.tensor(ft, dtype=torch.float).to(device)
 
-            _, _, im_out, _, _ = model(ft)
-            im_out = im_out.data.cpu().numpy().squeeze()
-            im_out = np.moveaxis(im_out, 0, 2)
-            img = np.moveaxis(img, 0, 2)
-            im = np.concatenate([img, im_out], axis=1)
+                _, _, im_out, _, _ = model(ft)
+                im_out = im_out.data.cpu().numpy().squeeze()
+                im_out = np.moveaxis(im_out, 0, 2)
+                img = np.moveaxis(img, 0, 2)
+                im = np.concatenate([img, im_out], axis=1)
 
-            if epoch % 10 == 0:
-                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+                if epoch % 10 == 0:
+                    cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
 
-    neutrophil_segmented_label = 8
-    file_name = "reconstructed-neutrophil_segment_blood/"
-    if not os.path.exists(file_name):
-        os.makedirs(file_name)
+        neutrophil_segmented_label = 8
+        file_name = "reconstructed-neutrophil_segment_blood/"
+        if not os.path.exists(file_name):
+            os.makedirs(file_name)
 
-    # Process and visualize only for specified neutrophil classes
-    for i in range(30):
-        ft, img, mask, lbl, _ = train_dataset[i]
+        # Process and visualize only for specified neutrophil classes
+        for i in range(30):
+            ft, img, mask, lbl, _ = train_dataset[i]
 
-        # Check if the label is for neutrophil banded or segmented
-        if lbl == neutrophil_segmented_label:
-            ft = np.expand_dims(ft, axis=0)
-            ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
+            # Check if the label is for neutrophil banded or segmented
+            if lbl == neutrophil_segmented_label:
+                ft = np.expand_dims(ft, axis=0)
+                ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
 
-            _, _, im_out, _, _ = model(ft)
-            im_out = im_out.data.cpu().numpy().squeeze()
-            im_out = np.moveaxis(im_out, 0, 2)
-            img = np.moveaxis(img, 0, 2)
-            im = np.concatenate([img, im_out], axis=1)
+                _, _, im_out, _, _ = model(ft)
+                im_out = im_out.data.cpu().numpy().squeeze()
+                im_out = np.moveaxis(im_out, 0, 2)
+                img = np.moveaxis(img, 0, 2)
+                im = np.concatenate([img, im_out], axis=1)
 
-            if epoch % 10 == 0:
-                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+                if epoch % 10 == 0:
+                    cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im * 255)
+
 
 
 script_dir = os.path.dirname(__file__)
