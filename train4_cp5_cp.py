@@ -531,10 +531,12 @@ for epoch in range(epochs):
         plt.savefig(os.path.join(umap_dir, f'umap_neutrophil_segmented_comparison_{epoch}.png'))
         plt.close()
 
+        neutrophil_banded_label = 7
         neutrophil_banded_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_banded_label]
         selected_indices = random.sample(neutrophil_banded_indices, 30) if len(neutrophil_banded_indices) >= 30 else []
         process_and_save_samples(selected_indices, 'neutrophil_banded', 'neutrophil_banded_lung', epoch)
 
+        neutrophil_segmented_label = 8
         neutrophil_segmented_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_segmented_label]
         selected_indices = random.sample(neutrophil_segmented_indices, 30) if len(neutrophil_segmented_indices) >= 30 else []
         process_and_save_samples(selected_indices, 'neutrophil_segmented', 'neutrophil_segment_blood', epoch)
