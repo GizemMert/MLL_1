@@ -207,33 +207,13 @@ class SobelFilter(nn.Module):
 
         return edge
 
-def process_and_save_samples(selected_indices, label_description, file_name_prefix, epoch):
-    file_name = f"reconstructed-{file_name_prefix}/"
-    if not os.path.exists(file_name):
-        os.makedirs(file_name)
-
-    for i in selected_indices:
-        ft, img, mask, lbl, _ = train_dataset[i]
-        ft = np.expand_dims(ft, axis=0)
-        ft = torch.tensor(ft, dtype=torch.float).to(device)
-
-        _, _, im_out, _, _ = model(ft)
-        im_out = im_out.data.cpu().numpy().squeeze()
-        im_out = np.moveaxis(im_out, 0, -1)
-        img = np.moveaxis(img, 0, -1)
-        im = np.concatenate([img, im_out], axis=1) * 255
-        im = np.clip(im, 0, 255).astype(np.uint8)
-
-        if epoch % 10 == 0:
-            cv2.imwrite(os.path.join(file_name, f"{label_description}_{i}-{epoch}.jpg"), im)
-
 edge_loss_fn = SobelFilter().to(device)
 ref_z_class_n_blood = ref_z_class_n_blood.to(device)
 ref_z_class_n_liver = ref_z_class_n_liver.to(device)
 ref_z_class_n_lung = ref_z_class_n_lung.to(device)
 ref_z_class_mono = ref_z_class_mono.to(device)
 ref_z_class_myelo = ref_z_class_myelo.to(device)
-print("training starting")
+
 for epoch in range(epochs):
     loss = 0.0
     acc_imrec_loss = 0.0
@@ -351,7 +331,6 @@ for epoch in range(epochs):
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
 
-
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss_n_blood = {:.6f}, mmd_loss_n_lung = {:.6f} ".format
           (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss_n_blood.item(), mmd_loss_n_lung.item()))
 
@@ -359,8 +338,6 @@ for epoch in range(epochs):
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
                 f"MMD_Loss_n_blood = {mmd_loss_n_blood.item():.6f}, MMD_Loss_n_lung = {mmd_loss_n_lung.item():.6f} \n")
-
-    print("epoch completed")
 
     if epoch % 10 == 0:
         # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
@@ -532,14 +509,69 @@ for epoch in range(epochs):
         plt.close()
 
         neutrophil_banded_label = 7
-        neutrophil_banded_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_banded_label]
-        selected_indices = random.sample(neutrophil_banded_indices, 30) if len(neutrophil_banded_indices) >= 30 else []
-        process_and_save_samples(selected_indices, 'neutrophil_banded', 'neutrophil_banded_lung', epoch)
+        file_name = "reconstructed-neutrophil_banded_lung/"
+        if not os.path.exists(file_name):
+            os.makedirs(file_name)
+
+
+        neutrophil_banded_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if
+                                     lbl == neutrophil_banded_label]
+
+        num_samples_to_select = 30
+        if len(neutrophil_banded_indices) >= num_samples_to_select:
+            selected_indices = random.sample(neutrophil_banded_indices, num_samples_to_select)
+        else:
+            print("Not enough samples of the specified class to select from.")
+            selected_indices = []
+
+        for i in selected_indices:
+            ft, img, mask, lbl, _ = train_dataset[i]
+            ft = np.expand_dims(ft, axis=0)
+            ft = torch.tensor(ft, dtype=torch.float).to(device)
+
+            _, _, im_out, _, _ = model(ft)
+            im_out = im_out.data.cpu().numpy().squeeze()
+            im_out = np.moveaxis(im_out, 0, 2)
+            img = np.moveaxis(img, 0, 2)
+            im = np.concatenate([img, im_out], axis=1) * 255
+            im = np.clip(im, 0, 255).astype(np.uint8)
+
+            if epoch % 10 == 0:
+                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im)
 
         neutrophil_segmented_label = 8
-        neutrophil_segmented_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_segmented_label]
-        selected_indices = random.sample(neutrophil_segmented_indices, 30) if len(neutrophil_segmented_indices) >= 30 else []
-        process_and_save_samples(selected_indices, 'neutrophil_segmented', 'neutrophil_segment_blood', epoch)
+
+        file_name = "reconstructed-neutrophil_segment_blood/"
+        if not os.path.exists(file_name):
+            os.makedirs(file_name)
+
+
+        neutrophil_segmented_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if
+                                        lbl == neutrophil_segmented_label]
+
+        num_samples_to_select = 30
+        if len(neutrophil_segmented_indices) >= num_samples_to_select:
+            selected_indices = random.sample(neutrophil_segmented_indices, num_samples_to_select)
+        else:
+            print("Not enough samples of the specified class to select from.")
+            selected_indices = []
+
+        for i in selected_indices:
+            ft, img, mask, lbl, _ = train_dataset[i]
+
+            ft = np.expand_dims(ft, axis=0)
+            ft = torch.tensor(ft, dtype=torch.float).to(device)
+
+
+            _, _, im_out, _, _ = model(ft)
+
+            im_out = im_out.data.cpu().numpy().squeeze()
+            im_out = np.moveaxis(im_out, 0, 2)
+            img = np.moveaxis(img, 0, 2)
+            im = np.concatenate([img, im_out], axis=1) * 255
+            im = np.clip(im, 0, 255).astype(np.uint8)
+            if epoch % 10 == 0:
+                cv2.imwrite(os.path.join(file_name, f"neutrophil_segment_{i}-{epoch}.jpg"), im)
 
 script_dir = os.path.dirname(__file__)
 
@@ -549,4 +581,5 @@ print(f"Trained model saved to {model_save_path}")
 
 with open(result_file, "a") as f:
     f.write("Training completed.\n")
+
 
