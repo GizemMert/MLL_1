@@ -13,7 +13,6 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from mmd import MMDLoss, RBF
 
 label_map = {
     'basophil': 0,
@@ -234,7 +233,7 @@ ref_z_class_n_liver = ref_z_class_n_liver.to(device)
 ref_z_class_n_lung = ref_z_class_n_lung.to(device)
 ref_z_class_mono = ref_z_class_mono.to(device)
 ref_z_class_myelo = ref_z_class_myelo.to(device)
-
+print("training starting")
 for epoch in range(epochs):
     loss = 0.0
     acc_imrec_loss = 0.0
@@ -352,6 +351,7 @@ for epoch in range(epochs):
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
 
+
     print("epoch : {}/{}, loss = {:.6f}, feat_loss = {:.6f}, imrec_loss = {:.6f}, kl_div = {:.6f}, mmd_loss_n_blood = {:.6f}, mmd_loss_n_lung = {:.6f} ".format
           (epoch + 1, epochs, loss.item(), acc_featrec_loss.item(), acc_imrec_loss.item(), kl_div_loss.item(), mmd_loss_n_blood.item(), mmd_loss_n_lung.item()))
 
@@ -359,6 +359,8 @@ for epoch in range(epochs):
         f.write(f"Epoch {epoch + 1}: Loss = {loss.item():.6f}, Feat_Loss = {acc_featrec_loss.item():.6f}, "
                 f"Img_Rec_Loss = {acc_imrec_loss.item():.6f}, KL_DIV = {kl_div_loss.item():.6f}, "
                 f"MMD_Loss_n_blood = {mmd_loss_n_blood.item():.6f}, MMD_Loss_n_lung = {mmd_loss_n_lung.item():.6f} \n")
+
+    print("epoch completed")
 
     if epoch % 10 == 0:
         # latent_values_per_epoch = [np.stack((m, lv), axis=-1) for m, lv in zip(all_means, all_logvars)]
@@ -529,12 +531,10 @@ for epoch in range(epochs):
         plt.savefig(os.path.join(umap_dir, f'umap_neutrophil_segmented_comparison_{epoch}.png'))
         plt.close()
 
-        neutrophil_banded_label = 7
         neutrophil_banded_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_banded_label]
         selected_indices = random.sample(neutrophil_banded_indices, 30) if len(neutrophil_banded_indices) >= 30 else []
         process_and_save_samples(selected_indices, 'neutrophil_banded', 'neutrophil_banded_lung', epoch)
 
-        neutrophil_segmented_label = 8
         neutrophil_segmented_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if lbl == neutrophil_segmented_label]
         selected_indices = random.sample(neutrophil_segmented_indices, 30) if len(neutrophil_segmented_indices) >= 30 else []
         process_and_save_samples(selected_indices, 'neutrophil_segmented', 'neutrophil_segment_blood', epoch)
@@ -547,3 +547,4 @@ print(f"Trained model saved to {model_save_path}")
 
 with open(result_file, "a") as f:
     f.write("Training completed.\n")
+
