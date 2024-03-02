@@ -13,6 +13,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+from mmd import MMDLoss, RBF
 
 label_map = {
     'basophil': 0,
@@ -304,7 +305,7 @@ for epoch in range(epochs):
         if neutrophil_band_mask.any():
             z_neutrophil_band = z_dist[neutrophil_band_mask]
             z_neutrophil_band = z_neutrophil_band.to(device)
-            mmd_loss_n_lung = mmd(z_neutrophil_band, ref_z_class_n_lung)
+            mmd_loss_n_lung = MMDLoss()(z_neutrophil_band, ref_z_class_n_lung)
 
         mmd_loss_n_blood = torch.tensor(0.0).to(device)
         # Check for class samples and calculate MMD loss if present in the batch
@@ -312,7 +313,7 @@ for epoch in range(epochs):
         if neutrophil_segmented_mask.any():
             z_neutrophil_segmented = z_dist[neutrophil_segmented_mask]
             z_neutrophil_segmented = z_neutrophil_segmented.to(device)
-            mmd_loss_n_blood = mmd(z_neutrophil_segmented, ref_z_class_n_blood)
+            mmd_loss_n_blood = MMDLoss()(z_neutrophil_segmented, ref_z_class_n_blood)
 
 
         train_loss = ((cff_feat_rec * feat_rec_loss) + (cff_im_rec * recon_loss) + (cff_kld * kld_loss) + (cff_mmd_n_blood * mmd_loss_n_blood) + (cff_mmd_n_lung * mmd_loss_n_lung)) # (cff_mmd_m * mmd_loss_monocyte)
