@@ -16,4 +16,4 @@
 source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
 
-python Dataloader_2.py
+python train4_cp5_mono.py
