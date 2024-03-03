@@ -87,7 +87,7 @@ cff_feat_rec = 0.20
 cff_im_rec = 0.45
 cff_kld = 0.25
 cff_mmd_n = 0.15
-cff_mmd_m = 0.15
+cff_mmd_m = 0.25
 cff_mmd_myle = 0.25
 
 
@@ -468,7 +468,7 @@ for epoch in range(epochs):
         plt.ylabel('UMAP Dimension 2')
         plt.legend()
         plt.grid(False)
-        plt.savefig(os.path.join(umap_dir, 'umap_monocyte_comparison_training.png'))
+        plt.savefig(os.path.join(umap_dir, 'umap_monocyte_comparison_{epoch}_training.png'))
         plt.close()
 
         ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
