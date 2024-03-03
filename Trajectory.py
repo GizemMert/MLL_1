@@ -52,7 +52,7 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_1 = VariationalAutoencodermodel4(latent_dim=50)
-model_save_path = 'trained_model4cp2_new5_std_gen_2_mono.pth'
+model_save_path = 'trained_model4cp2_new5_std_gen_2.pth'
 model_1.load_state_dict(torch.load(model_save_path, map_location=device))
 model_1.to(device)
 model_1.eval()
