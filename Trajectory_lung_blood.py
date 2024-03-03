@@ -92,7 +92,7 @@ n_banded_data = np.load(n_banded_lung_z_path)
 # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
 print("Neutrophil Banded Latent data shape:", n_banded_data.shape)
 
-n_segment_data = np.load(n_banded_lung_z_path)
+n_segment_data = np.load(n_segment_blood_lung_z_path)
 # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
 print("N.Segmented Latent data shape:", n_segment_data.shape)
 
@@ -392,7 +392,7 @@ for cluster, genes in genes_in_clusters.items():
 
 print("Gene names for each cluster have been saved.")
 
-driving_gene_names = ["MPO", "ELANE", "CD16", "CD11b", "CD18", "CXCR1", "CXCR2", "CXCR4", "CD62L", ""]
+driving_gene_names = ["MPO", "ELANE", "CD16", "CD11b", "CD18", "CXCR1", "CXCR2", "CXCR4", "CD62L"]
 driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
 
 
