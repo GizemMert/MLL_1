@@ -32,7 +32,7 @@ import numpy as np
 
 
 epoch = 150
-latent_dim = 30
+latent_dim = 50
 
 label_map = {
     'basophil': 0,
@@ -52,7 +52,7 @@ label_map = {
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_1 = VariationalAutoencodermodel4(latent_dim=50)
-model_save_path = 'trained_model4cp2_new5_std_gen_2.pth'
+model_save_path = 'trained_model4cp2_new5_std_gen_2_mono.pth'
 model_1.load_state_dict(torch.load(model_save_path, map_location=device))
 model_1.to(device)
 model_1.eval()
@@ -75,7 +75,7 @@ labels_path = os.path.join(label_dir, f'label_epoch_151.npy')
 neutrophil_z_dir = 'z_data4cp2_new5_std_gen_2'
 neutrophil_z_path = os.path.join(neutrophil_z_dir, f'neutrophil_z_eopch_{epoch}.npy')
 myeloblast_z_dir = 'z_data4cp2_new5_std_gen_2'
-myeloblast_z_path = os.path.join(neutrophil_z_dir, f'myle_z_eopch_{epoch}.npy')
+myeloblast_z_path = os.path.join(myeloblast_z_dir, f'myle_z_eopch_{epoch}.npy')
 
 # Load all latent representations
 latent_data = np.load(latents_path)
@@ -85,11 +85,11 @@ print("Latent data shape:", latent_data.shape)
 # Load all neutrophil latent representations
 neutrophil_data = np.load(neutrophil_z_path)
 # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-print("Latent data shape:", latent_data.shape)
+print("Neutrophil Latent data shape:", neutrophil_data.shape)
 
-neutrophil_data = np.load(myeloblast_z_path)
+myeloblast_data = np.load(myeloblast_z_path)
 # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
-print("Latent data shape:", latent_data.shape)
+print("myeloblast_Latent data shape:", myeloblast_data.shape)
 
 # Load all labels
 all_labels_array = np.load(labels_path)
@@ -390,7 +390,7 @@ print("Gene names for each cluster have been saved.")
 driving_gene_names = ["CEBPA", "PU1", "MPO", "ELANE", "CEBP", "LEF1", "RUNX1", "CEBPS", "CEBPY", "CEBPB", "GFI1", "CD14", "CD16", "CR1",
                      "FMLP", "CSF3R", "CD177", "OLFM4", "TCR", "CD62L", "CD63", "IL-13", "CD49", "IL-17", "LDG", "TAN", "CEBPD", "CXCR1",
                      "CXCL12", "CXCR4", "CXCR2", "CXCR4", "CD11b", "CD62L", "OLFM4", "CD11C", "IFN", "G-MDSC", " PAMP", "DAMP" ,
-                      "CXCL3", "CXCL5", "CXCL6", "CXCL7", "CXCL8", "CD54", "CXCR1", "CSF3R", "S100A8", "S100A9", ]
+                      "CXCL3", "CXCL5", "CXCL6", "CXCL7", "CXCL8", "CD54", "CXCR1", "CSF3R", "CLEC11A", ""]
 driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
 
 
