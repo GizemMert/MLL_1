@@ -247,8 +247,7 @@ for epoch in range(epochs):
         # mmd_loss_neutrophil = torch.tensor(0.0).to(device)
         # mmd_loss_monocyte = torch.tensor(0.0).to(device)
         # mmd_loss_myle = torch.tensor(0.0).to(device)
-        count_neutrophil_banded += (label == label_map['neutrophil_banded']).sum().item()
-        count_neutrophil_segmented += (label == label_map['neutrophil_segmented']).sum().item()
+
 
         feat, scimg = feat.to(device), scimg.to(device)
 
@@ -268,7 +267,7 @@ for epoch in range(epochs):
         kld_loss, dim_wise_kld, mean_kld = kl_divergence(mu, logvar)
 
         """
-        # TODO REMOVE ONE OF BANDED
+    
         mmd_loss_n_liver = torch.tensor(0.0).to(device)
         # Check for class samples and calculate MMD loss if present in the batch
         neutrophil_band_mask = (label == 7)
@@ -305,7 +304,7 @@ for epoch in range(epochs):
         acc_imrec_loss += recon_loss.data.cpu()
         kl_div_loss += kld_loss.data.cpu()
         mmd_loss_n_blood += mmd_loss_n_blood.data.cpu()
-        # mmd_loss_n_liver += mmd_loss_n_liver.data.cpu() #TODO  USE IF NECESSARY
+        # mmd_loss_n_liver += mmd_loss_n_liver.data.cpu()
         mmd_loss_n_lung += mmd_loss_n_lung.data.cpu()
 
         if epoch % 10 == 0:
@@ -326,7 +325,7 @@ for epoch in range(epochs):
     acc_imrec_loss = acc_imrec_loss / len(train_dataloader)
     kl_div_loss = kl_div_loss / len(train_dataloader)
     mmd_loss_n_blood = mmd_loss_n_blood / len(train_dataloader)
-    # mmd_loss_n_liver = mmd_loss_n_liver / len(train_dataloader) #TODO  USE IF NECESSARY
+    # mmd_loss_n_liver = mmd_loss_n_liver / len(train_dataloader)
     mmd_loss_n_lung = mmd_loss_n_lung / len(train_dataloader)
     # f1 = f1_score(y_true, y_pred, average='weighted')
 
@@ -509,69 +508,49 @@ for epoch in range(epochs):
         plt.close()
 
         neutrophil_banded_label = 7
-        file_name = "reconstructed-neutrophil_banded_lung/"
-        if not os.path.exists(file_name):
-            os.makedirs(file_name)
+        file_name_banded= "reconstructed-neutrophil_banded_lung/"
+        if not os.path.exists(file_name_banded):
+            os.makedirs(file_name_banded)
 
-
-        neutrophil_banded_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if
-                                     lbl == neutrophil_banded_label]
-
-        num_samples_to_select = 30
-        if len(neutrophil_banded_indices) >= num_samples_to_select:
-            selected_indices = random.sample(neutrophil_banded_indices, num_samples_to_select)
-        else:
-            print("Not enough samples of the specified class to select from.")
-            selected_indices = []
-
-        for i in selected_indices:
+        for i in range(30):
             ft, img, mask, lbl, _ = train_dataset[i]
-            ft = np.expand_dims(ft, axis=0)
-            ft = torch.tensor(ft, dtype=torch.float).to(device)
 
-            _, _, im_out, _, _ = model(ft)
-            im_out = im_out.data.cpu().numpy().squeeze()
-            im_out = np.moveaxis(im_out, 0, 2)
-            img = np.moveaxis(img, 0, 2)
-            im = np.concatenate([img, im_out], axis=1) * 255
-            im = np.clip(im, 0, 255).astype(np.uint8)
+            # Check if the label is for neutrophil banded or segmented
+            if lbl in [neutrophil_banded_label]:
+                ft = np.expand_dims(ft, axis=0)
+                ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
 
-            if epoch % 10 == 0:
-                cv2.imwrite(os.path.join(file_name, f"{i}-{epoch}.jpg"), im)
+                _, _, im_out, _, _ = model(ft)
+                im_out = im_out.data.cpu().numpy().squeeze()
+                im_out = np.moveaxis(im_out, 0, 2)
+                img = np.moveaxis(img, 0, 2)
+                im = np.concatenate([img, im_out], axis=1)
+
+                if epoch % 10 == 0:
+                    cv2.imwrite(os.path.join(file_name_banded, f"{i}-{epoch}.jpg"), im * 255)
 
         neutrophil_segmented_label = 8
 
-        file_name = "reconstructed-neutrophil_segment_blood/"
-        if not os.path.exists(file_name):
-            os.makedirs(file_name)
+        file_name_segment = "reconstructed-neutrophil_segment_blood/"
+        if not os.path.exists(file_name_segment):
+            os.makedirs(file_name_segment)
 
-
-        neutrophil_segmented_indices = [i for i, (_, _, _, lbl, _) in enumerate(train_dataset) if
-                                        lbl == neutrophil_segmented_label]
-
-        num_samples_to_select = 30
-        if len(neutrophil_segmented_indices) >= num_samples_to_select:
-            selected_indices = random.sample(neutrophil_segmented_indices, num_samples_to_select)
-        else:
-            print("Not enough samples of the specified class to select from.")
-            selected_indices = []
-
-        for i in selected_indices:
+        for i in range(30):
             ft, img, mask, lbl, _ = train_dataset[i]
 
-            ft = np.expand_dims(ft, axis=0)
-            ft = torch.tensor(ft, dtype=torch.float).to(device)
+            # Check if the label is for neutrophil banded or segmented
+            if lbl in [neutrophil_segmented_label]:
+                ft = np.expand_dims(ft, axis=0)
+                ft = torch.tensor(ft, dtype=torch.float).to(device)  # Ensure correct dtype
 
+                _, _, im_out, _, _ = model(ft)
+                im_out = im_out.data.cpu().numpy().squeeze()
+                im_out = np.moveaxis(im_out, 0, 2)
+                img = np.moveaxis(img, 0, 2)
+                im = np.concatenate([img, im_out], axis=1)
 
-            _, _, im_out, _, _ = model(ft)
-
-            im_out = im_out.data.cpu().numpy().squeeze()
-            im_out = np.moveaxis(im_out, 0, 2)
-            img = np.moveaxis(img, 0, 2)
-            im = np.concatenate([img, im_out], axis=1) * 255
-            im = np.clip(im, 0, 255).astype(np.uint8)
-            if epoch % 10 == 0:
-                cv2.imwrite(os.path.join(file_name, f"neutrophil_segment_{i}-{epoch}.jpg"), im)
+                if epoch % 10 == 0:
+                    cv2.imwrite(os.path.join(file_name_segment, f"{i}-{epoch}.jpg"), im * 255)
 
 script_dir = os.path.dirname(__file__)
 
