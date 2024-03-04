@@ -9,7 +9,7 @@ def save_class_images(dataloader, classes_of_interest, save_directory):
     # Dictionary to track whether an image for each class has been saved
     saved_classes = {class_label: False for class_label in classes_of_interest}
 
-    for _, roi, label, _ in dataloader:
+    for _, roi, mask, label, _ in dataloader:
         label = label.item()  # Convert label tensor to Python integer
         if label in classes_of_interest and not saved_classes[label]:
             # Remove the batch dimension and convert from CHW to HWC format
