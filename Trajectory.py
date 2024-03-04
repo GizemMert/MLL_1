@@ -327,7 +327,7 @@ def generate_grid_image_from_interpolated_points(model, device, interpolated_poi
     while len(selected_images) < grid_size[0] * grid_size[1]:
         selected_images.append(torch.zeros_like(selected_images[0]))
 
-    tensor_grid = torch.stack(decoded_images).squeeze(1)
+    tensor_grid = torch.stack(selected_images).squeeze(1)
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
     grid_image.save(output_filename + '.jps', quality=400)
