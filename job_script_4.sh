@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=ge_3
+#SBATCH --job-name=save_img
 #SBATCH --partition=gpu_p
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -16,4 +16,4 @@
 source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
 
-python train4_cp5.py
+python save_img.py
