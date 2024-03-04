@@ -388,7 +388,8 @@ print("Gene names for each cluster have been saved.")
 
 driving_gene_names = ["CD14", "CD16", "CD36", "CCR2", "CD64", "CCR5", "HLADR", "CX3CR1", "TREM2", "CD115", "CSF1R", "MAFB", "MAFF", "CD14",
                       "CD11b", "CD66B", "CD15", "CSF1", "PU1", "IRF8", "KLF4", "FLI1", "CEBPA", "CEBPB", "NR4A1","JUNB", "CJUN", "CXCL12",
-                      "RUNX1", "NOTCH1", "LY6C", "CMOP", "MP", "HLADR", "PSTAT3", "ARG1", "LEF1"]
+                      "RUNX1", "NOTCH1", "LY6C", "CMOP", "MP", "HLADR", "PSTAT3", "ARG1", "LEF1", "CXCL4", "GATA2", "SFPI1", "LY6C2", "TRP53",
+                      "CREBBP", "EP300", "CSF2RB", "CSF1R" ,"LYZ1", "LYZ2", "LY6C1","JUN", "CSF2RA"]
 driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
 
 
