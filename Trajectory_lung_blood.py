@@ -428,7 +428,7 @@ for cluster_idx in range(3):
     mean_cluster_fold_changes = np.mean(cluster_fold_changes, axis=1)
     std_cluster_fold_changes = np.std(cluster_fold_changes, axis=1)
 
-    plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}')
+    plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}', linewidth=8)
 
     plt.fill_between(
         range(len(mean_cluster_fold_changes)),
@@ -442,7 +442,7 @@ plt.ylabel('Fold Change')
 plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
 plt.legend()
 plt.xlim(0, sz - 1)
-plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.png'))
+plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.svg'))
 plt.tight_layout()
 plt.close()
 print("Clusters finished")
