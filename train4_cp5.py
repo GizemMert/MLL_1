@@ -501,7 +501,7 @@ for epoch in range(epochs):
     neutrophil_segmented_label = 8
 
 
-    file_name = "reconstructed-neutrophil_2/"
+    file_name = "reconstructed-neutrophil_2_figure/"
     if not os.path.exists(file_name):
         os.makedirs(file_name)
 
@@ -553,7 +553,7 @@ for epoch in range(epochs):
     myeloblast_label = 3
 
 
-    file_name = "reconstructed-myeloblast_2/"
+    file_name = "reconstructed-myeloblast_2_figure/"
     if not os.path.exists(file_name):
         os.makedirs(file_name)
 
