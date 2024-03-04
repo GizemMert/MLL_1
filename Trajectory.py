@@ -302,7 +302,7 @@ print("fold change filtered is saved")
 
 #plotting filtered grid
 
-def generate_grid_image_from_interpolated_points(model, device, interpolated_points_file, output_filename, grid_size =(1, 100)):
+def generate_grid_image_from_interpolated_points(model, device, interpolated_points_file, output_filename, grid_size =(2, 50)):
     model.eval()
 
     # Load the interpolated latent points
@@ -327,7 +327,7 @@ def generate_grid_image_from_interpolated_points(model, device, interpolated_poi
     grid_image.save(output_filename + '.jpg', quality=300)
     print("Grid Image saved successfully")
 
-generate_grid_image_from_interpolated_points ( model=model_1, device=device, interpolated_points_file='interpolation_latent_points.pt', output_filename='filtered_grid_myelo_neutro', grid_size=(1, 100))
+generate_grid_image_from_interpolated_points ( model=model_1, device=device, interpolated_points_file='interpolation_latent_points.pt', output_filename='filtered_grid_myelo_neutro', grid_size=(2, 50))
 
 # plotting gif
 def interpolate_gif_from_masked_points(model, interpolated_points_file, output_filename, device=device):
