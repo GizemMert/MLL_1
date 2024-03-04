@@ -172,15 +172,17 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
     for z in interpolated_latent_points:
         z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
         with torch.no_grad():
-            decoded_img = model_1.decoder(z_tensor)
-            decoded_img = model_1.img_decoder(decoded_img)
+            decoded_img = model.decoder(z_tensor)  # Adjust according to your model's structure
+            # Assuming decoded_img is now a tensor representing the image, possibly after another decoding step or reshaping
         decoded_images.append(decoded_img.cpu())
 
+    # Adjust the number of images if necessary to fit the grid_size
     while len(decoded_images) < grid_size[0] * grid_size[1]:
         decoded_images.append(torch.zeros_like(decoded_images[0]))
     decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
 
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
+    # Use grid_size[1] as the number of rows (nrow) for the layout
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=300)
