@@ -159,7 +159,7 @@ def interpolate_gpr(latent_start, latent_end, steps=100):
     return interpolated_latent_vectors
 
 
-def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, grid_size=(10, 10), device=device):
+def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, grid_size=(1, 100), device=device):
     model_1.eval()
 
     interpolated_latent_points = interpolate_gpr(latent_start, latent_end, steps=steps)
@@ -222,7 +222,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10))
+interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(1, 100))
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 adata = anndata.read_h5ad('s_data_feature_pancreas.h5ad')
