@@ -107,17 +107,20 @@ erythroblast_class_index = label_map['erythroblast']
 neutrophil_banded_index = label_map['neutrophil_banded']
 segmented_index = label_map['neutrophil_segmented']
 mask = all_labels_array != erythroblast_class_index
-mask2 = (all_labels_array == neutrophil_banded_index) | (all_labels_array == segmented_index)
+mask2 = (all_labels_array == neutrophil_banded_index)
+mask3 = (all_labels_array == segmented_index)
 filtered_latent_data = latent_data[mask]
 print("filtered data shape:", filtered_latent_data.shape)
 filtered_labels = all_labels_array[mask]
-filtered_labels_neutrophil = all_labels_array[mask2]
+filtered_labels_neutrophil_banded = all_labels_array[mask2]
+filtered_labels_neutrophil_segmented = all_labels_array[mask3]
 
-print("filtered neutrophil label shape:", filtered_labels_neutrophil.shape)
+print("filtered neutrophil label shape:", filtered_labels_neutrophil_banded.shape)
+print("filtered neutrophil label shape:", filtered_labels_neutrophil_segmented.shape)
 
 myeloblast_indices = np.where(filtered_labels == label_map['myeloblast'])[0]
-neutrophil_banded_indices = np.where(filtered_labels == label_map['neutrophil_banded'])[0]
-neutrophil_seg_indices = np.where(filtered_labels == label_map['neutrophil_segmented'])[0]
+neutrophil_banded_indices = np.where(filtered_labels_neutrophil_banded == label_map['neutrophil_banded'])[0]
+neutrophil_seg_indices = np.where(filtered_labels_neutrophil_segmented == label_map['neutrophil_segmented'])[0]
 basophil_indices = np.where(filtered_labels == label_map['basophil'])[0]
 eosinophil_indices = np.where(filtered_labels == label_map['eosinophil'])[0]
 monocyte_indices = np.where(filtered_labels == label_map['monocyte'])[0]
@@ -132,8 +135,8 @@ random_monocyte_index = np.random.choice(monocyte_indices)
 
 random_myeloblast_point = filtered_latent_data[random_myeloblast_index]
 # You can replace filtered_laten_data with neutrophil_data
-random_neutrophil_banded_point = filtered_latent_data[random_neutrophil_banded_index]
-random_neutrophil_seg_point = filtered_latent_data[random_neutrophil_seg_index]
+random_neutrophil_banded_point = n_banded_data[random_neutrophil_banded_index]
+random_neutrophil_seg_point = n_segment_data[random_neutrophil_seg_index]
 random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
