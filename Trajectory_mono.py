@@ -417,7 +417,7 @@ for cluster_idx in range(3):
     mean_cluster_fold_changes = np.mean(cluster_fold_changes, axis=1)
     std_cluster_fold_changes = np.std(cluster_fold_changes, axis=1)
 
-    plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}', linewidth=2)
+    plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}', linewidth=8)
 
     plt.fill_between(
         range(len(mean_cluster_fold_changes)),
