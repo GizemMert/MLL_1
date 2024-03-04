@@ -338,7 +338,7 @@ def generate_grid_image_from_interpolated_points(model, device, interpolated_poi
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
-    grid_image.save(umap_dir, output_filename + '.jpg', quality=300)
+    grid_image.save(output_filename + '.jpg', quality=300)
     print(f"Grid Image saved successfully as {output_filename}.jpg")
 
 generate_grid_image_from_interpolated_points ( model=model_1, device=device, interpolated_points_file='interpolation_band_segmented_latent_points.pt', output_filename='filtered_grid_band_segment')
@@ -364,7 +364,7 @@ def interpolate_gif_from_masked_points(model, interpolated_points_file, output_f
         img_np = ToPILImage()(decoded_img.squeeze(0)).convert("RGB")
         frames.append(img_np)
 
-    imageio.mimsave(umap_dir, output_filename + '.gif', frames, fps=10)
+    imageio.mimsave(output_filename + '.gif', frames, fps=10)
     print("GIF saved successfully")
 
 interpolate_gif_from_masked_points(model=model_1,  device= device, interpolated_points_file= 'interpolation_band_segmented_latent_points.pt', output_filename='mask_gif_band_segment')
