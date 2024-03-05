@@ -7,7 +7,7 @@
 #SBATCH --mem=50G
 #SBATCH --gres=gpu:1
 #SBATCH --time=1:00:00
-#SBATCH --nice=10000
+#SBATCH --nice=1
 #SBATCH --qos=cpu_normal
 
 
