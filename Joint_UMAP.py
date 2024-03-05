@@ -235,7 +235,7 @@ labels = np.concatenate([
     np.repeat("Reference Neutrophil Blood", ref_z_class_n_blood.shape[0])
 ])
 
-umap_reducer_all = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
+umap_reducer_all = UMAP(n_neighbors=15, min_dist=0.001, n_components=2, metric='euclidean')
 umap_embedding_all = umap_reducer_all.fit_transform(combined_all_data)
 
 plt.figure(figsize=(12, 8))
