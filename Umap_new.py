@@ -133,7 +133,7 @@ if __name__ == '__main__':
     scatter_latent = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1], s=100, c='blue',
                                 label='Latent Data', alpha=0.5)
 
-    scatter_gene = ax.scatter(combined_gene_data_transformed[:, 0], combined_gene_data_transformed[:, 1], s=100,
+    scatter_gene = ax.scatter(combined_gene_data_transformed[:, 0], combined_gene_data_transformed[:, 1], s=10,
                               c='red', label='Gene Data', alpha=0.5)
 
     ax.set_aspect('equal')
