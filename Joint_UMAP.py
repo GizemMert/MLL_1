@@ -249,7 +249,8 @@ plt.xlabel('UMAP Dimension 1')
 plt.ylabel('UMAP Dimension 2')
 plt.legend()
 plt.grid(False)
-plt.show()
+plt.savefig(os.path.join(umap_dir, f'umap_all_{epoch}.png'))
+plt.close()
 
 
 
