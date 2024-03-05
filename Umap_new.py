@@ -99,8 +99,15 @@ if __name__ == '__main__':
     filtered_latent_data = latent_data[mask]
     filtered_labels = all_labels_array[mask]
 
-    gene_data_sizes = [ref_z_class_neutrophils.shape[0], ref_z_class_myeloid.shape[0], ref_z_class_mono.shape[0],
-                       ref_z_class_n_blood.shape[0], ref_z_class_n_lung.shape[0]]
+    gene_data_sizes = [
+        ref_z_class_neutrophils.shape[0],
+        ref_z_class_myeloid.shape[0],
+        ref_z_class_mono.shape[0],
+        ref_z_class_n_blood.shape[0],
+        ref_z_class_n_lung.shape[0]
+    ]
+
+
     gene_labels = np.concatenate([
         np.full(gene_data_sizes[0], "neutrophil gene"),
         np.full(gene_data_sizes[1], "myeloid gene"),
@@ -108,6 +115,8 @@ if __name__ == '__main__':
         np.full(gene_data_sizes[3], "lung neutrophil gene"),
         np.full(gene_data_sizes[4], "blood neutrophil gene"),
     ])
+
+    gene_data_labels = gene_labels
 
     # UMAP for latent space
 
@@ -120,8 +129,7 @@ if __name__ == '__main__':
         ref_z_class_myeloid,
         ref_z_class_mono,
         ref_z_class_n_blood,
-        ref_z_class_n_lung
-    ], axis=0)
+        ref_z_class_n_lung], axis=0)
 
     combined_gene_data_transformed = reducer.transform(combined_gene_data)
 
@@ -130,12 +138,19 @@ if __name__ == '__main__':
     gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
     ax = fig.add_subplot(gs[0])
-    scatter_latent = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1], s=100, c='blue',
-                                label='Latent Data', alpha=0.5)
+    color_map_latent = plt.cm.Spectral(np.linspace(0, 1, len(np.unique(filtered_labels))))
+    scatter_latent = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1],
+                                s=100, c=color_map_latent[filtered_labels], label='Latent Data', alpha=0.5)
 
-    scatter_gene = ax.scatter(combined_gene_data_transformed[:, 0], combined_gene_data_transformed[:, 1], s=10,
-                              c='red', label='Gene Data', alpha=0.5)
+    gene_cell_types = ["neutrophil gene", "myeloid gene", "monocyte gene", "lung neutrophil gene",
+                       "blood neutrophil gene"]
+    gene_colors = ['green', 'orange', 'purple', 'brown', 'pink']
+    gene_markers = ['^', 's', 'p', '*', 'D']
 
+    for i, gene_type in enumerate(gene_cell_types):
+        idxs = (gene_data_labels == gene_type)
+        ax.scatter(combined_gene_data_transformed[idxs, 0], combined_gene_data_transformed[idxs, 1],
+                   s=1, c=gene_colors[i], marker=gene_markers[i], label=gene_type, alpha=0.5)
     ax.set_aspect('equal')
 
 
@@ -162,7 +177,7 @@ if __name__ == '__main__':
     ax.set_xlim(new_x_min, new_x_max)
     ax.set_ylim(new_y_min, new_y_max)
 
-    ax.set_title(f'Latent Space Representatio with Genes)', fontsize=18)
+    ax.set_title(f'Latent Space Representation with Genes)', fontsize=18)
     ax.set_xlabel('UMAP Dimension 1', fontsize=16)
     ax.set_ylabel('UMAP Dimension 2', fontsize=16)
 
