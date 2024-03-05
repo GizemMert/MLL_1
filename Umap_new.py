@@ -139,8 +139,7 @@ if __name__ == '__main__':
 
     ax = fig.add_subplot(gs[0])
     color_map_latent = plt.cm.Spectral(np.linspace(0, 1, len(np.unique(filtered_labels))))
-    scatter_latent = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1],
-                                s=100, c=color_map_latent[filtered_labels], label='Latent Data', alpha=0.5)
+    scatter = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1], s=100, c=filtered_labels, cmap='Spectral')
 
     gene_cell_types = ["neutrophil gene", "myeloid gene", "monocyte gene", "lung neutrophil gene",
                        "blood neutrophil gene"]
@@ -184,14 +183,12 @@ if __name__ == '__main__':
     ax_legend = fig.add_subplot(gs[1])
     ax_legend.axis('off')
 
-    unique_filtered_labels = np.unique(filtered_labels)
 
-    color_map_latent = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
-    latent_legend_handles = [
-        plt.Line2D([0], [0], marker='o', color='w', label=inverse_label_map[label],
-                   markerfacecolor=color_map_latent[i], markersize=10)
-        for i, label in enumerate(unique_filtered_labels)
-    ]
+    unique_filtered_labels = np.unique(filtered_labels)
+    filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+    color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+    latent_legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                                 markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
 
     gene_cell_types = ["neutrophil gene", "myeloid gene", "monocyte gene", "lung neutrophil gene",
                        "blood neutrophil gene"]
