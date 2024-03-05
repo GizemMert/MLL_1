@@ -92,6 +92,7 @@ if __name__ == '__main__':
     z_filename_n_lung = os.path.join(z_dir_ge_2, f'class_{class_label_n_lung}_z_epoch_{epoch_of_gen}.npy')
     ref_z_class_n_lung = np.load(z_filename_n_lung)
 
+
     # Filter out the 'erythroblast' class
     erythroblast_class_index = label_map['erythroblast']
     mask = all_labels_array != erythroblast_class_index
@@ -110,7 +111,7 @@ if __name__ == '__main__':
 
     # UMAP for latent space
 
-    reducer = UMAP(random_state=42, n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean')
+    reducer = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean')
     reducer.fit(filtered_latent_data)
     latent_data_transformed = reducer.transform(filtered_latent_data)
 
@@ -287,4 +288,44 @@ if __name__ == '__main__':
     pdf_figure_filename = os.path.join(pdf_dir, f'pdf_interpolation_epoch_{epoch}.png')
     plt.savefig(pdf_figure_filename)
     plt.close(fig)
+    
+     latent_dir = '/Users/gizem/Downloads/latent_epoch_150 (2).npy'
+    latents_path = '/Users/gizem/Downloads/latent_epoch_150 (2).npy'
+    label_dir = '/Users/gizem/Downloads/label_epoch_151 (1).npy'
+    labels_path = '/Users/gizem/Downloads/label_epoch_151 (1).npy'
+    latent_data = np.load(latents_path)
+    # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+    print("Latent data shape:", latent_data.shape)
+    all_labels_array = np.load(labels_path)
+    print("Labels array shape:", all_labels_array.shape)
+
+
+    # gene latents
+    z_dir_ge = 'z_variables_GE_3'
+    epoch_of_gen = 290
+
+    class_labels_gen = [0, 1, 2, 3]
+    # monocyte : class 1
+    # myeloblast : class 2
+    # basophil : class 0
+    # neutrophil : class 3
+
+    class_label_n = 3
+    class_label_m = 1
+    class_label_myeloid = 2
+
+    z_filename_n = '/Users/gizem/Downloads/class_3_z_epoch_290.npy'
+    z_filename_myeloid = '/Users/gizem/Downloads/class_2_z_epoch_290.npy'
+    ref_z_class_neutrophils = np.load(z_filename_n)
+    ref_z_class_myeloid = np.load(z_filename_myeloid)
+    z_filename_m = '/Users/gizem/Downloads/class_1_z_epoch_290.npy'
+    ref_z_class_mono = np.load(z_filename_m)
+
+    latent_dir_ge_2 = 'latent_variables_GE_3_cp'
+    z_dir_ge_2 = 'z_variables_GE_3_cp'
+    class_label_n_blood = 2
+    class_label_n_lung = 5
+
+    z_filename_n_blood = '/Users/gizem/Downloads/class_2_z_epoch_290 (1).npy'
+    ref_z_class_n_blood = np.load(z_filename_n_blood)
 """
