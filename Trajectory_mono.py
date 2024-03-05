@@ -295,7 +295,7 @@ plt.xlabel('Trajectory Points')
 plt.ylabel('Fold Change')
 plt.title('Fold Change of Gene Expression Over Trajectory')
 plt.xlim(left=0, right=fold_changes.shape[0]-1)
-plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.png'))
+plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.svg'))
 plt.close()
 print("fold change filtered is saved")
 
