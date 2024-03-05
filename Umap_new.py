@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     # UMAP for latent space
 
-    reducer = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean')
+    reducer = UMAP(n_neighbors=13, min_dist=1, n_components=2, metric='euclidean')
     reducer.fit(filtered_latent_data)
     latent_data_transformed = reducer.transform(filtered_latent_data)
 
