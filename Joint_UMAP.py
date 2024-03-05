@@ -168,7 +168,7 @@ neutrophil_segment_z_data = np.load(n_segment_blood_z_path)
 
 # UMAP 4
 combined_data = np.vstack([neutrophil_band_z_data, ref_z_class_n_lung])
-umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean')
+umap_reducer = UMAP(n_neighbors=13, min_dist=1, n_components=2, metric='euclidean')
 umap_embedding = umap_reducer.fit_transform(combined_data)
 
 split_point = neutrophil_band_z_data.shape[0]
@@ -249,7 +249,7 @@ plt.xlabel('UMAP Dimension 1')
 plt.ylabel('UMAP Dimension 2')
 plt.legend()
 plt.grid(False)
-plt.savefig(os.path.join(umap_dir, f'umap_all_{epoch}.png'))
+plt.savefig(os.path.join(umap_dir, f'umap_all_{epoch}.svg'))
 plt.close()
 
 
