@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     # UMAP for latent space
 
-    reducer = UMAP(n_neighbors=13, min_dist=1, n_components=2, metric='euclidean')
+    reducer = UMAP(n_neighbors=13, min_dist=5, n_components=2, metric='euclidean')
     reducer.fit(filtered_latent_data)
     latent_data_transformed = reducer.transform(filtered_latent_data)
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     for i, gene_type in enumerate(gene_cell_types):
         idxs = (gene_data_labels == gene_type)
         ax.scatter(combined_gene_data_transformed[idxs, 0], combined_gene_data_transformed[idxs, 1],
-                   s=10, c=gene_colors[i], marker=gene_markers[i], label=gene_type, alpha=0.5)
+                   s=10, c=gene_colors[i], marker=gene_markers[i], label=gene_type, alpha=0.2)
     ax.set_aspect('equal')
 
 
