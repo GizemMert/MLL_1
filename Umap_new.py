@@ -149,7 +149,7 @@ if __name__ == '__main__':
     for i, gene_type in enumerate(gene_cell_types):
         idxs = (gene_data_labels == gene_type)
         ax.scatter(combined_gene_data_transformed[idxs, 0], combined_gene_data_transformed[idxs, 1],
-                   s=100, c=gene_colors[i], marker=gene_markers[i], label=gene_type, alpha=0.01)
+                   s=100, c=gene_colors[i], marker=gene_markers[i], label=gene_type, alpha=0.1)
     ax.set_aspect('equal')
 
 
