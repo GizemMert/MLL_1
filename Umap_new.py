@@ -59,25 +59,90 @@ if __name__ == '__main__':
     all_labels_array = np.load(labels_path)
     print("Labels array shape:", all_labels_array.shape)
 
+
+    # gene latents
+    z_dir_ge = 'z_variables_GE_3'
+    epoch_of_gen = 290
+
+    class_labels_gen = [0, 1, 2, 3]
+    # monocyte : class 1
+    # myeloblast : class 2
+    # basophil : class 0
+    # neutrophil : class 3
+
+    class_label_n = 3
+    class_label_m = 1
+    class_label_myeloid = 2
+
+    z_filename_n = os.path.join(z_dir_ge, f'class_{class_label_n}_z_epoch_{epoch_of_gen}.npy')
+    z_filename_myeloid = os.path.join(z_dir_ge, f'class_{class_label_myeloid}_z_epoch_{epoch_of_gen}.npy')
+    ref_z_class_neutrophils = np.load(z_filename_n)
+    ref_z_class_myeloid = np.load(z_filename_myeloid)
+    z_filename_m = os.path.join(z_dir_ge, f'class_{class_label_m}_z_epoch_{epoch_of_gen}.npy')
+    ref_z_class_mono = np.load(z_filename_m)
+
+    latent_dir_ge_2 = 'latent_variables_GE_3_cp'
+    z_dir_ge_2 = 'z_variables_GE_3_cp'
+    class_label_n_blood = 2
+    class_label_n_lung = 5
+
+    z_filename_n_blood = os.path.join(z_dir_ge_2, f'class_{class_label_n_blood}_z_epoch_{epoch_of_gen}.npy')
+    ref_z_class_n_blood = np.load(z_filename_n_blood)
+
+    z_filename_n_lung = os.path.join(z_dir_ge_2, f'class_{class_label_n_lung}_z_epoch_{epoch_of_gen}.npy')
+    ref_z_class_n_lung = np.load(z_filename_n_lung)
+
     # Filter out the 'erythroblast' class
     erythroblast_class_index = label_map['erythroblast']
     mask = all_labels_array != erythroblast_class_index
     filtered_latent_data = latent_data[mask]
     filtered_labels = all_labels_array[mask]
 
+    gene_data_sizes = [ref_z_class_neutrophils.shape[0], ref_z_class_myeloid.shape[0], ref_z_class_mono.shape[0],
+                       ref_z_class_n_blood.shape[0], ref_z_class_n_lung.shape[0]]
+    gene_labels = np.concatenate([
+        np.full(gene_data_sizes[0], "neutrophil gene"),
+        np.full(gene_data_sizes[1], "myeloid gene"),
+        np.full(gene_data_sizes[2], "monocyte gene"),
+        np.full(gene_data_sizes[3], "lung neutrophil gene"),
+        np.full(gene_data_sizes[4], "blood neutrophil gene"),
+    ])
+
     # UMAP for latent space
-    latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
-        filtered_latent_data)
+
+    reducer = UMAP(random_state=42, n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean')
+    reducer.fit(filtered_latent_data)
+    latent_data_transformed = reducer.transform(filtered_latent_data)
+
+    combined_gene_data = np.concatenate([
+        ref_z_class_neutrophils,
+        ref_z_class_myeloid,
+        ref_z_class_mono,
+        ref_z_class_n_blood,
+        ref_z_class_n_lung
+    ], axis=0)
+
+    combined_gene_data_transformed = reducer.transform(combined_gene_data)
+
 
     fig = plt.figure(figsize=(12, 10), dpi=150)
     gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
 
     ax = fig.add_subplot(gs[0])
-    scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
+    scatter_latent = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1], s=100, c='blue',
+                                label='Latent Data', alpha=0.5)
+
+    scatter_gene = ax.scatter(combined_gene_data_transformed[:, 0], combined_gene_data_transformed[:, 1], s=100,
+                              c='red', label='Gene Data', alpha=0.5)
+
     ax.set_aspect('equal')
 
-    x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
-    y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
+
+    combined_x = np.concatenate([latent_data_transformed[:, 0], combined_gene_data_transformed[:, 0]])
+    combined_y = np.concatenate([latent_data_transformed[:, 1], combined_gene_data_transformed[:, 1]])
+
+    x_min, x_max = np.min(combined_x), np.max(combined_x)
+    y_min, y_max = np.min(combined_y), np.max(combined_y)
 
     zoom_factor = 0.40
     padding_factor = 0.3
@@ -96,7 +161,7 @@ if __name__ == '__main__':
     ax.set_xlim(new_x_min, new_x_max)
     ax.set_ylim(new_y_min, new_y_max)
 
-    ax.set_title(f'Latent Space Representation)', fontsize=18)
+    ax.set_title(f'Latent Space Representatio with Genes)', fontsize=18)
     ax.set_xlabel('UMAP Dimension 1', fontsize=16)
     ax.set_ylabel('UMAP Dimension 2', fontsize=16)
 
@@ -104,13 +169,27 @@ if __name__ == '__main__':
     ax_legend.axis('off')
 
     unique_filtered_labels = np.unique(filtered_labels)
-    filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
-    color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
 
-    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
-                                 markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
+    color_map_latent = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+    latent_legend_handles = [
+        plt.Line2D([0], [0], marker='o', color='w', label=inverse_label_map[label],
+                   markerfacecolor=color_map_latent[i], markersize=10)
+        for i, label in enumerate(unique_filtered_labels)
+    ]
 
-    ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
+    gene_cell_types = ["neutrophil gene", "myeloid gene", "monocyte gene", "lung neutrophil gene",
+                       "blood neutrophil gene"]
+
+    gene_colors = ['green', 'orange', 'purple', 'brown', 'pink']  # Assuming 5 gene cell types
+    gene_markers = ['^', 's', 'p', '*', 'D']  # Different marker styles for each gene cell type
+    gene_legend_handles = [
+        plt.Line2D([0], [0], marker=gene_markers[i], color='w', label=gene_cell_types[i],
+                   markerfacecolor=gene_colors[i], markersize=10)
+        for i in range(len(gene_cell_types))
+    ]
+    legend_handles = latent_legend_handles + gene_legend_handles
+
+    ax_legend.legend(handles=legend_handles, loc='center', fontsize=12, title='Cell Types')
 
     plt.tight_layout()
     umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
