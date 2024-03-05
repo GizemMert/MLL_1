@@ -18,59 +18,104 @@ from sklearn.preprocessing import MinMaxScaler
 
 import geomstats.visualization as visualization
 from geomstats.geometry.special_euclidean import SpecialEuclidean
-
+inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
 
 import matplotlib
 import matplotlib.pyplot as plt
 from geomstats.information_geometry.normal import NormalDistributions
 
 
-label_map = {
-    'basophil': 0,
-    'eosinophil': 1,
-    'erythroblast': 2,
-    'myeloblast': 3,
-    'promyelocyte': 4,
-    'myelocyte': 5,
-    'metamyelocyte': 6,
-    'neutrophil_banded': 7,
-    'neutrophil_segmented': 8,
-    'monocyte': 9,
-    'lymphocyte_typical': 10,
-    'lymphocyte_atypical': 11,
-    'smudge_cell': 12,
-}
-
 if __name__ == '__main__':
-    final_z_neutrophil_filename = 'final_z_neutrophil_gen_2.npy'
-    umap_dir = 'umap_figures4cp2_new5_std_gen'
-    # ref_z_class_2_cpu = ref_z_class_2.cpu().numpy() if ref_z_class_2.is_cuda else ref_z_class_2.numpy()
 
+    label_map = {
+        'basophil': 0,
+        'eosinophil': 1,
+        'erythroblast': 2,
+        'myeloblast': 3,
+        'promyelocyte': 4,
+        'myelocyte': 5,
+        'metamyelocyte': 6,
+        'neutrophil_banded': 7,
+        'neutrophil_segmented': 8,
+        'monocyte': 9,
+        'lymphocyte_typical': 10,
+        'lymphocyte_atypical': 11,
+        'smudge_cell': 12,
+    }
 
-    if os.path.exists(final_z_neutrophil_filename):
-        final_z_neutrophil = np.load(final_z_neutrophil_filename)
-        print(f"Loaded final_z_neutrophil with shape: {final_z_neutrophil.shape}")
+    umap_dir = 'umap_comparison_img_gene'
+    if not os.path.exists(umap_dir):
+        os.makedirs(umap_dir)
 
-    # Proceed with UMAP visualization
-    # combined_data = np.vstack([final_z_neutrophil, ref_z_class_2_cpu])
-    umap_reducer = UMAP(n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', random_state=42)
-    umap_embedding = umap_reducer.fit_transform(final_z_neutrophil)
+    epoch = 150
 
-    # split_point = final_z_neutrophil.shape[0]
-    # umap_z_neutrophil = umap_embedding[:split_point, :]
-    # umap_ref_z_class_2 = umap_embedding[split_point:, :]
+    latent_dir = 'latent_data4cp2_new5_std_gen_2'
+    latents_path = os.path.join(latent_dir, f'latent_epoch_{epoch}.npy')
+    label_dir = 'label_data4cp2_new5_std_gen_2'
+    labels_path = os.path.join(label_dir, f'label_epoch_151.npy')
+    latent_data = np.load(latents_path)
+    # latent_data_reshaped = latent_data.reshape(latent_data.shape[0], -1)
+    print("Latent data shape:", latent_data.shape)
+    all_labels_array = np.load(labels_path)
+    print("Labels array shape:", all_labels_array.shape)
 
-    plt.figure(figsize=(12, 6))
-    # plt.scatter(umap_z_neutrophil[:, 0], umap_z_neutrophil[:, 1], s=10, label='Model Neutrophil')
-    plt.scatter(umap_embedding[:, 0], umap_embedding[:, 1], s=10, label='Model Neutrophil')
-    # plt.scatter(umap_ref_z_class_2[:, 0], umap_ref_z_class_2[:, 1], s=10, label='Reference Neutrophil', alpha=0.6)
-    plt.title('UMAP Visualization of Neutrophil Latent Representations-Model')
-    plt.xlabel('UMAP Dimension 1')
-    plt.ylabel('UMAP Dimension 2')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_training.png'))
-    plt.close()
+    # Filter out the 'erythroblast' class
+    erythroblast_class_index = label_map['erythroblast']
+    mask = all_labels_array != erythroblast_class_index
+    filtered_latent_data = latent_data[mask]
+    filtered_labels = all_labels_array[mask]
+
+    # UMAP for latent space
+    latent_data_umap = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean').fit_transform(
+        filtered_latent_data)
+
+    fig = plt.figure(figsize=(12, 10), dpi=150)
+    gs = GridSpec(1, 2, width_ratios=[4, 1], figure=fig)
+
+    ax = fig.add_subplot(gs[0])
+    scatter = ax.scatter(latent_data_umap[:, 0], latent_data_umap[:, 1], s=100, c=filtered_labels, cmap='Spectral')
+    ax.set_aspect('equal')
+
+    x_min, x_max = np.min(latent_data_umap[:, 0]), np.max(latent_data_umap[:, 0])
+    y_min, y_max = np.min(latent_data_umap[:, 1]), np.max(latent_data_umap[:, 1])
+
+    zoom_factor = 0.40
+    padding_factor = 0.3
+
+    x_range = (x_max - x_min) * zoom_factor
+    y_range = (y_max - y_min) * zoom_factor
+
+    center_x = (x_max + x_min) / 2
+    center_y = (y_max + y_min) / 2
+
+    new_x_min = center_x - (x_range * (1 + padding_factor))
+    new_x_max = center_x + (x_range * (1 + padding_factor))
+    new_y_min = center_y - (y_range * (1 + padding_factor))
+    new_y_max = center_y + (y_range * (1 + padding_factor))
+
+    ax.set_xlim(new_x_min, new_x_max)
+    ax.set_ylim(new_y_min, new_y_max)
+
+    ax.set_title(f'Latent Space Representation)', fontsize=18)
+    ax.set_xlabel('UMAP Dimension 1', fontsize=16)
+    ax.set_ylabel('UMAP Dimension 2', fontsize=16)
+
+    ax_legend = fig.add_subplot(gs[1])
+    ax_legend.axis('off')
+
+    unique_filtered_labels = np.unique(filtered_labels)
+    filtered_class_names = [inverse_label_map[label] for label in unique_filtered_labels if label in inverse_label_map]
+    color_map = plt.cm.Spectral(np.linspace(0, 1, len(unique_filtered_labels)))
+
+    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', label=filtered_class_names[i],
+                                 markerfacecolor=color_map[i], markersize=18) for i in range(len(filtered_class_names))]
+
+    ax_legend.legend(handles=legend_handles, loc='center', fontsize=16, title='Cell Types')
+
+    plt.tight_layout()
+    umap_figure_filename = os.path.join(umap_dir, f'umap_epoch_{epoch}.png')
+    plt.savefig(umap_figure_filename, bbox_inches='tight', dpi=300)
+    plt.close(fig)
 
 """
     inverse_label_map = {v: k for k, v in label_map.items()}  # inverse mapping for UMAP
