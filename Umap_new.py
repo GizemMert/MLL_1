@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     # UMAP for latent space
 
-    reducer = UMAP(n_neighbors=13, min_dist=0.01, n_components=2, metric='euclidean')
+    reducer = UMAP(n_neighbors=13, min_dist=0.1, n_components=2, metric='euclidean')
     reducer.fit(filtered_latent_data)
     latent_data_transformed = reducer.transform(filtered_latent_data)
 
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     ax = fig.add_subplot(gs[0])
     color_map_latent = plt.cm.Spectral(np.linspace(0, 1, len(np.unique(filtered_labels))))
-    scatter = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1], s=20, c=filtered_labels, cmap='Spectral')
+    scatter = ax.scatter(latent_data_transformed[:, 0], latent_data_transformed[:, 1], s=100, c=filtered_labels, cmap='Spectral')
 
     gene_cell_types = ["neutrophil gene", "myeloid gene", "monocyte gene", "lung neutrophil gene",
                        "blood neutrophil gene"]
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     for i, gene_type in enumerate(gene_cell_types):
         idxs = (gene_data_labels == gene_type)
         ax.scatter(combined_gene_data_transformed[idxs, 0], combined_gene_data_transformed[idxs, 1],
-                   s=10, c=gene_colors[i], marker=gene_markers[i], label=gene_type, alpha=0.2)
+                   s=100, c=gene_colors[i], marker=gene_markers[i], label=gene_type, alpha=0.01)
     ax.set_aspect('equal')
 
 
