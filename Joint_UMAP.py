@@ -211,15 +211,15 @@ plt.close()
 # COMBINED UMAP
 combined_all_data = np.vstack([
     neutrophil_z_data,  # Loaded earlier
-    ref_z_class_neutrophils.cpu().numpy(),
+    ref_z_class_neutrophils,
     myle_z_data,  # Loaded earlier
-    ref_z_class_myeloid.cpu().numpy(),
+    ref_z_class_myeloid,
     monocyte_z_data,  # Loaded earlier
-    ref_z_class_mono.cpu().numpy(),
+    ref_z_class_mono,
     neutrophil_band_z_data,  # Loaded earlier
-    ref_z_class_n_lung.cpu().numpy(),
-    neutrophil_segment_z_data,  # Loaded earlier
-    ref_z_class_n_blood.cpu().numpy()
+    ref_z_class_n_lung,
+    neutrophil_segment_z_data,
+    ref_z_class_n_blood
 ])
 
 labels = np.concatenate([
