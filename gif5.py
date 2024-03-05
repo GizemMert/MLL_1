@@ -189,7 +189,7 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
-    grid_image.save(filename , quality=400)
+    grid_image.save(filename + '.jpg', quality=400)
     print("Grid Image saved successfully")
 
 
@@ -230,5 +230,5 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr(model_1, "grid_banded_segmented.svg", random_neutrophil_banded_point, random_neutrophil_seg_point,
+interpolate_gif_gpr(model_1, "grid_banded_segmented", random_neutrophil_banded_point, random_neutrophil_seg_point,
                     steps=100, grid_size=(10, 10))
