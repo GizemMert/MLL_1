@@ -148,10 +148,10 @@ z_dir_ge_2 = 'z_variables_GE_3_cp'
 class_label_n_blood = 2
 class_label_n_lung = 5
 
-z_filename_n_blood = os.path.join(z_dir_ge, f'class_{class_label_n_blood}_z_epoch_{epoch_of_gen}.npy')
+z_filename_n_blood = os.path.join(z_dir_ge_2, f'class_{class_label_n_blood}_z_epoch_{epoch_of_gen}.npy')
 ref_z_class_n_blood = np.load(z_filename_n_blood)
 
-z_filename_n_lung = os.path.join(z_dir_ge, f'class_{class_label_n_lung}_z_epoch_{epoch_of_gen}.npy')
+z_filename_n_lung = os.path.join(z_dir_ge_2, f'class_{class_label_n_lung}_z_epoch_{epoch_of_gen}.npy')
 ref_z_class_n_lung = np.load(z_filename_n_lung)
 
 # image data
