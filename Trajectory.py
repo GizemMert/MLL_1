@@ -330,7 +330,7 @@ def generate_grid_image_from_interpolated_points(model, device, interpolated_poi
     tensor_grid = torch.stack(selected_images).squeeze(1)
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
-    grid_image.save(output_filename + '.jps', quality=400)
+    grid_image.save(output_filename + '.jpg', quality=400)
     print("Grid Image saved successfully")
 
 generate_grid_image_from_interpolated_points ( model=model_1, device=device, interpolated_points_file='interpolation_latent_points.pt', output_filename='filtered_grid_myelo_neutro', grid_size=(2, 10))
