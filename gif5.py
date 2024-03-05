@@ -230,5 +230,5 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr(model_1, "grid_banded_segmented", random_neutrophil_banded_point, random_neutrophil_seg_point,
+interpolate_gif_gpr(model_1, "new_banded_segment", random_neutrophil_banded_point, random_neutrophil_seg_point,
                     steps=100, grid_size=(10, 10))
