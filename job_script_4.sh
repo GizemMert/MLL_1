@@ -17,4 +17,4 @@
 source /home/aih/gizem.mert/miniconda3/etc/profile.d/conda.sh
 conda activate my_env2
 
-python job_script_4.sh
+python Joint_UMAP.py
