@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 # import mrcnn.model_feat_extract
 import numpy as np
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 #data for myeloid and neutrophils
 #gene latent
@@ -41,8 +41,8 @@ class_label_myeloid = 2
 
 z_filename_n = os.path.join(z_dir_ge, f'class_{class_label_n}_z_epoch_{epoch_of_gen}.npy')
 z_filename_myeloid = os.path.join(z_dir_ge, f'class_{class_label_myeloid}_z_epoch_{epoch_of_gen}.npy')
-ref_z_class_neutrophils = torch.from_numpy(np.load(z_filename_n)).float().to(device)
-ref_z_class_myeloid = torch.from_numpy(np.load(z_filename_myeloid)).float().to(device)
+ref_z_class_neutrophils = np.load(z_filename_n)
+ref_z_class_myeloid = np.load(z_filename_myeloid)
 
 
 
@@ -109,7 +109,7 @@ plt.close()
 #data for monocyte
 #gene latent
 z_filename_m = os.path.join(z_dir_ge, f'class_{class_label_m}_z_epoch_{epoch_of_gen}.npy')
-ref_z_class_mono = torch.from_numpy(np.load(z_filename_m)).float().to(device)
+ref_z_class_mono = np.load(z_filename_m)
 
 #image latent
 epoch = 150
@@ -149,10 +149,10 @@ class_label_n_blood = 2
 class_label_n_lung = 5
 
 z_filename_n_blood = os.path.join(z_dir_ge, f'class_{class_label_n_blood}_z_epoch_{epoch_of_gen}.npy')
-ref_z_class_n_blood = torch.from_numpy(np.load(z_filename_n_blood)).float().to(device)
+ref_z_class_n_blood = np.load(z_filename_n_blood)
 
 z_filename_n_lung = os.path.join(z_dir_ge, f'class_{class_label_n_lung}_z_epoch_{epoch_of_gen}.npy')
-ref_z_class_n_lung = torch.from_numpy(np.load(z_filename_n_lung)).float().to(device)
+ref_z_class_n_lung = np.load(z_filename_n_lung)
 
 # image data
 epoch_2 = 280
