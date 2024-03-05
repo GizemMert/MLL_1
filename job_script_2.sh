@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=ge_2
+#SBATCH --job-name=n_n
 #SBATCH --partition=gpu_p
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=150G
 #SBATCH --gres=gpu:1
-#SBATCH --time=10:00:00
+#SBATCH --time=1:00:00
 #SBATCH --nice=10000
 #SBATCH --qos=gpu_normal
 

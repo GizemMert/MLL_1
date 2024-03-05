@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=img_ge
+#SBATCH --job-name=m_n
 #SBATCH --partition=gpu_p
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
