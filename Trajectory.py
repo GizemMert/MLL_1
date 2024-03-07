@@ -305,8 +305,6 @@ for i, gene_idx in enumerate(variable_genes_indices):
 
         plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], label=gene_name, color=color_for_genes[gene_name], linewidth=8)
 
-
-
 # plt.xlabel('Trajectory Points')
 # plt.ylabel('Fold Change')
 #plt.title('Fold Change of Gene Expression Over Trajectory')
