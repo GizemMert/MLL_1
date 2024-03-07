@@ -227,7 +227,7 @@ interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myel
 
 # SEQUENCE DECODING and GENE EXPRESSED DETECTION
 adata = anndata.read_h5ad('s_data_feature_pancreas.h5ad')
-interpolated_points = torch.load('interpolation_latent_points.pt')
+interpolated_points = torch.load('interpolation_myelo_neutro_latent_points.pt')
 
 model_2.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
