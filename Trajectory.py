@@ -286,6 +286,11 @@ print(mask)
 
 print("Number of points retained after filtering:", mask.sum())
 fold_changes = fold_changes[mask, :]
+with open('fold_change_gene', 'wb') as f:
+    pickle.dump(fold_changes, f)
+    exit()
+
+
 
 plt.figure(figsize=(20, 10))
 color_for_genes = {'RUNX1': 'red', 'CD16': 'blue'}
