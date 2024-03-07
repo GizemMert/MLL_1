@@ -231,7 +231,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
 interpolate_gif_gpr(model_1, "grid_banded_segmented", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10))
-"""
+
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 adata = anndata.read_h5ad('s_data_feature_liver_lung.h5ad')
 interpolated_points = torch.load('interpolation_band_segmented_latent_points.pt')
@@ -297,13 +297,20 @@ print("Number of points retained after filtering:", mask.sum())
 fold_changes = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
-for i, gene_idx in enumerate(variable_genes_indices):
-    plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], label=gene_names[gene_idx])
+color_for_genes = {'S1PR1': 'red'}
+default_color = 'gray'
 
-plt.xlabel('Trajectory Points')
-plt.ylabel('Fold Change')
-plt.title('Fold Change of Gene Expression Over Trajectory')
-plt.xlim(left=0, right=fold_changes.shape[0]-1)
+for i, gene_idx in enumerate(variable_genes_indices):
+    gene_name = gene_names[gene_idx]
+    if gene_name in color_for_genes:
+        plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], label=gene_name, color=color_for_genes[gene_name])
+    else:
+        plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], color=default_color, alpha=0.5)
+
+# plt.xlabel('Trajectory Points')
+# plt.ylabel('Fold Change')
+# plt.title('Fold Change of Gene Expression Over Trajectory')
+# plt.xlim(left=0, right=fold_changes.shape[0]-1)
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.svg'))
 plt.close()
 print("fold change filtered is saved")
@@ -341,7 +348,8 @@ def generate_grid_image_from_interpolated_points(model, device, interpolated_poi
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
-    grid_image.save(output_filename + '.jpg', quality=400)
+    output_path = os.path.join(umap_dir, output_filename + '.jpg')
+    grid_image.save(output_path, quality=400)
     print(f"Grid Image saved successfully as {output_filename}.jpg")
 
 generate_grid_image_from_interpolated_points ( model=model_1, device=device, interpolated_points_file='interpolation_band_segmented_latent_points.pt', output_filename='filtered_grid_band_segment')
@@ -437,18 +445,18 @@ for cluster_idx in range(3):
         alpha=0.2
     )
 
-plt.xlabel('Trajectory Points Index')
-plt.ylabel('Fold Change')
-plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
-plt.legend()
-plt.xlim(0, sz - 1)
+# plt.xlabel('Trajectory Points Index')
+# plt.ylabel('Fold Change')
+# plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
+# lt.legend()
+# plt.xlim(0, sz - 1)
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.svg'))
 plt.tight_layout()
 plt.close()
 print("Clusters finished")
 
 
-
+"""
 plt.title("Gene Expression Profiles by Cluster")
 plt.xlabel("Time")
 plt.ylabel("Fold Change")
