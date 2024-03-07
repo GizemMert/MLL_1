@@ -290,7 +290,7 @@ fold_changes = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
 
-color_for_genes = {'RUNX1': 'red', 'CD16': 'blue'}
+color_for_genes = {'RUNX1': 'red', 'CD16': 'yellow'}
 default_color = 'gray'
 
 for i, gene_idx in enumerate(variable_genes_indices):
