@@ -440,7 +440,7 @@ for cluster_idx in range(3):
 # plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
 # plt.legend()
 # plt.xlim(0, sz - 1)
-plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.scg'))
+plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.svg'))
 plt.tight_layout()
 plt.close()
 print("Clusters finished")
