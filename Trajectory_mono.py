@@ -293,15 +293,23 @@ default_color = 'gray'
 
 for i, gene_idx in enumerate(variable_genes_indices):
     gene_name = gene_names[gene_idx]
-    if gene_name in color_for_genes:
-        plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], label=gene_name, color=color_for_genes[gene_name], linewidth=8)
-    else:
+    if gene_name not in color_for_genes:
+
         plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], color=default_color, alpha=0.2)
+
+for i, gene_idx in enumerate(variable_genes_indices):
+    gene_name = gene_names[gene_idx]
+    if gene_name in color_for_genes:
+
+        plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], label=gene_name, color=color_for_genes[gene_name], linewidth=8)
+
+
 
 # plt.xlabel('Trajectory Points')
 # plt.ylabel('Fold Change')
 # plt.title('Fold Change of Gene Expression Over Trajectory')
 # plt.xlim(left=0, right=fold_changes.shape[0]-1)
+plt.tight_layout()
 plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filtered.svg'))
 plt.close()
 print("fold change filtered is saved")
