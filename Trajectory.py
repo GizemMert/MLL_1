@@ -25,8 +25,6 @@ from torchvision.utils import make_grid
 from torchvision.transforms import ToPILImage
 import numpy as np
 
-
-
 # dimension = 30
 # complex_manifold = cm.ComplexManifold(dimension)
 
@@ -132,6 +130,8 @@ random_neutrophil_seg_point = filtered_latent_data[random_neutrophil_seg_index]
 random_basophil_point = filtered_latent_data[random_basophil_index]
 random_eosinophil_point = filtered_latent_data[random_eosinophil_index]
 random_monocyte_point = filtered_latent_data[random_monocyte_index]
+
+
 # print("Point data shape:", random_myeloblast_point.shape)
 
 
@@ -142,7 +142,6 @@ def interpolate_gpr(latent_start, latent_end, steps=100):
         latent_end = latent_end.detach().cpu().numpy()
 
     indices = np.array([0, 1]).reshape(-1, 1)
-
 
     latent_vectors = np.vstack([latent_start, latent_end])
 
@@ -155,7 +154,6 @@ def interpolate_gpr(latent_start, latent_end, steps=100):
 
     interpolated_latent_vectors = gpr.predict(index_range)
 
-
     return interpolated_latent_vectors
 
 
@@ -163,8 +161,8 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
     model_1.eval()
 
     interpolated_latent_points = interpolate_gpr(latent_start, latent_end, steps=steps)
-    
-    file_path = 'interpolation_myle_neutrophil'
+
+    file_path = 'interpolation_myelo_neutro'
     torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
     print(f"Interpolated latent points saved to {file_path}_latent_points.pt")
 
@@ -185,6 +183,7 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
     grid_image = ToPILImage()(grid_image)
     grid_image.save(filename + '.jpg', quality=300)
     print("Grid Image saved successfully")
+
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
@@ -218,16 +217,17 @@ def get_latent_vector(x):
 train_dataset = Dataloader(split='train')
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=1)
 
-selected_features = get_images_from_different_classes(train_dataloader, label_map['neutrophil_banded'], label_map['neutrophil_segmented'])
+selected_features = get_images_from_different_classes(train_dataloader, label_map['neutrophil_banded'],
+                                                      label_map['neutrophil_segmented'])
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point, random_neutrophil_seg_point, steps=100, grid_size=(1, 100))
+interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_nsegment", random_myeloblast_point,
+                    random_neutrophil_seg_point, steps=100, grid_size=(1, 100))
 
-#SEQUENCE DECODING and GENE EXPRESSED DETECTION
+# SEQUENCE DECODING and GENE EXPRESSED DETECTION
 adata = anndata.read_h5ad('s_data_feature_pancreas.h5ad')
 interpolated_points = torch.load('interpolation_latent_points.pt')
-
 
 model_2.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -252,7 +252,6 @@ abs_diff_per_gene = np.abs(final_expression - initial_expression)
 
 ptp_values = np.ptp(gen_expression, axis=0)
 threshold = np.max(ptp_values) * 0.0
-
 
 variable_genes_indices = np.where(abs_diff_per_gene > threshold)[0]
 filtered_gen_expression = gen_expression[:, variable_genes_indices]
@@ -280,7 +279,7 @@ mean_expression = np.mean(filtered_gen_expression, axis=0)
 
 fold_changes = filtered_gen_expression / (mean_expression + small_const)
 abs_diff_fold_changes = np.abs(np.diff(fold_changes, axis=0))
-sum_genes = np.sum(abs_diff_fold_changes, axis = 1)
+sum_genes = np.sum(abs_diff_fold_changes, axis=1)
 mask = sum_genes > 0.0999
 mask = np.append(mask, True)
 print(mask)
@@ -289,7 +288,6 @@ print("Number of points retained after filtering:", mask.sum())
 fold_changes = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
-
 color_for_genes = {'RUNX1': 'red', 'CD16': 'yellow'}
 default_color = 'gray'
 
@@ -305,9 +303,10 @@ for i, gene_idx in enumerate(variable_genes_indices):
 
         plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], label=gene_name, color=color_for_genes[gene_name], linewidth=8)
 
+
 # plt.xlabel('Trajectory Points')
 # plt.ylabel('Fold Change')
-#plt.title('Fold Change of Gene Expression Over Trajectory')
+# plt.title('Fold Change of Gene Expression Over Trajectory')
 plt.xticks([])
 plt.yticks([])
 plt.xlim(left=0, right=fold_changes.shape[0]-1)
@@ -316,9 +315,11 @@ plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_filte
 plt.close()
 print("fold change filtered is saved")
 
-#plotting filtered grid
 
-def generate_grid_image_from_interpolated_points(model, device, interpolated_points_file, output_filename, grid_size =(10, 10)):
+# plotting filtered grid
+
+def generate_grid_image_from_interpolated_points(model, device, interpolated_points_file, output_filename,
+                                                 grid_size=(10, 10)):
     model.eval()
 
     # Load the interpolated latent points
@@ -340,11 +341,14 @@ def generate_grid_image_from_interpolated_points(model, device, interpolated_poi
     tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
     grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
     grid_image = ToPILImage()(grid_image)
-    output_path = os.path.join(umap_dir, output_filename + '.jpg')
-    grid_image.save(output_path, quality=400)
+    grid_image.save(output_filename + '.jpg', quality=400)
     print("Grid Image saved successfully")
 
-generate_grid_image_from_interpolated_points ( model=model_1, device=device, interpolated_points_file='interpolation_latent_points.pt', output_filename='filtered_grid_myelo_neutro', grid_size=(10, 10))
+
+generate_grid_image_from_interpolated_points(model=model_1, device=device,
+                                             interpolated_points_file='interpolation_latent_points.pt',
+                                             output_filename='filtered_grid_myelo_neutro', grid_size=(10, 10))
+
 
 # plotting gif
 def interpolate_gif_from_masked_points(model, interpolated_points_file, output_filename, device=device):
@@ -370,14 +374,16 @@ def interpolate_gif_from_masked_points(model, interpolated_points_file, output_f
     imageio.mimsave(output_filename + '.gif', frames, fps=10)
     print("GIF saved successfully")
 
-interpolate_gif_from_masked_points(model=model_1,  device= device, interpolated_points_file= 'interpolation_latent_points.pt', output_filename='mask_gif_myelo_neutro')
 
-#clustering
+interpolate_gif_from_masked_points(model=model_1, device=device,
+                                   interpolated_points_file='interpolation_latent_points.pt',
+                                   output_filename='mask_gif_myelo_neutro')
+
+# clustering
 
 filtered_gene_names = [gene_names[i] for i in variable_genes_indices]
 X_train = TimeSeriesScalerMeanVariance().fit_transform(fold_changes.T)
 sz = X_train.shape[1]
-
 
 # Perform kShape clustering
 ks = KShape(n_clusters=3, verbose=True)
@@ -395,16 +401,18 @@ for cluster, genes in genes_in_clusters.items():
 
 print("Gene names for each cluster have been saved.")
 
-driving_gene_names = ["CEBPA", "PU1", "MPO", "ELANE", "CEBP", "LEF1", "RUNX1", "CEBPS", "CEBPY", "CEBPB", "GFI1", "CD14", "CD16", "CR1",
-                     "FMLP", "CSF3R", "CD177", "OLFM4", "TCR", "CD62L", "CD63", "IL-13", "CD49", "IL-17", "LDG", "TAN", "CEBPD", "CXCR1",
-                     "CXCL12", "CXCR4", "CXCR2", "CXCR4", "CD11b", "CD62L", "OLFM4", "CD11C", "IFN", "G-MDSC", "PAMP", "DAMP" ,
+driving_gene_names = ["CEBPA", "PU1", "MPO", "ELANE", "CEBP", "LEF1", "RUNX1", "CEBPS", "CEBPY", "CEBPB", "GFI1",
+                      "CD14", "CD16", "CR1",
+                      "FMLP", "CSF3R", "CD177", "OLFM4", "TCR", "CD62L", "CD63", "IL-13", "CD49", "IL-17", "LDG", "TAN",
+                      "CEBPD", "CXCR1",
+                      "CXCL12", "CXCR4", "CXCR2", "CXCR4", "CD11b", "CD62L", "OLFM4", "CD11C", "IFN", "G-MDSC", "PAMP",
+                      "DAMP",
                       "CXCL3", "CXCL5", "CXCL6", "CXCL7", "CXCL8", "CD54", "CXCR1", "CSF3R", "CLEC11A",
                       "CEBPD", "PU2", "NFIL3", "MAX", "MLX", "XPB1", "ICAM1", "CD62L",
-                      "BMAL1", "CXCL2", "P38", "MK2", "HIF1A", "GCSFR", "CSFR","FOSl1", "FOSL2", "JUNB", "BCL6",
+                      "BMAL1", "CXCL2", "P38", "MK2", "HIF1A", "GCSFR", "CSFR", "FOSl1", "FOSL2", "JUNB", "BCL6",
                       "KLF6", "IRF1"]
 
 driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
-
 
 for cluster_idx, genes in genes_in_clusters.items():
     for gene in genes:
@@ -412,7 +420,6 @@ for cluster_idx, genes in genes_in_clusters.items():
             if gene_part in gene:
                 driving_genes_in_clusters[gene_part].append(cluster_idx)
                 break
-
 
 for gene_part, clusters in driving_genes_in_clusters.items():
     if clusters:
@@ -444,15 +451,12 @@ for cluster_idx in range(3):
 # plt.xlabel('Trajectory Points Index')
 # plt.ylabel('Fold Change')
 # plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
-# plt.legend()
 plt.xticks([])
 plt.yticks([])
 plt.xlim(left=0, right=fold_changes.shape[0]-1)
 plt.tight_layout()
-plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.svg'))
 plt.close()
 print("Clusters finished")
-
 
 """
 plt.title("Gene Expression Profiles by Cluster")
