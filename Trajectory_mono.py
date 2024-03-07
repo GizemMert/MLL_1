@@ -288,7 +288,7 @@ print("Number of points retained after filtering:", mask.sum())
 fold_changes = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
-color_for_genes = {'GATA2': 'red'}
+color_for_genes = {'RUNX1': 'red', 'CD16': 'yellow'}
 default_color = 'gray'
 
 for i, gene_idx in enumerate(variable_genes_indices):
