@@ -449,10 +449,12 @@ for cluster_idx in range(3):
 # plt.xlabel('Trajectory Points Index')
 # plt.ylabel('Fold Change')
 # plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
-# plt.legend()
-#plt.xlim(0, sz - 1)
-plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.svg'))
+plt.xticks([])
+plt.yticks([])
+plt.xlim(left=0, right=fold_changes.shape[0]-1)
 plt.tight_layout()
+plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.svg'))
+
 plt.close()
 print("Clusters finished")
 
