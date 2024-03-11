@@ -176,23 +176,23 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
     torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
     print(f"Interpolated latent points saved to {file_path}_latent_points.pt")
 
-    decoded_images = []
+
+    frames = []
     for z in interpolated_latent_points:
-        z_tensor = torch.from_numpy(z).float().to(device).unsqueeze(0)
+        if isinstance(z, np.ndarray):
+            z_tensor = torch.from_numpy(z).float().to(device)
+        else:
+            z_tensor = z.float().to(device)
+        z_tensor = z_tensor.unsqueeze(0)
+
         with torch.no_grad():
-            decoded_img = model_1.decoder(z_tensor)
-            decoded_img = model_1.img_decoder(decoded_img)
-        decoded_images.append(decoded_img.cpu())
+            decoded_img = model.decoder(z_tensor)
+            decoded_img = model.img_decoder(decoded_img)
+        img_np = ToPILImage()(decoded_img.squeeze(0)).convert("RGB")
+        frames.append(img_np)
 
-    while len(decoded_images) < grid_size[0] * grid_size[1]:
-        decoded_images.append(torch.zeros_like(decoded_images[0]))
-    decoded_images = decoded_images[:grid_size[0] * grid_size[1]]
-
-    tensor_grid = torch.stack(decoded_images).squeeze(1)  # Remove batch dimension if necessary
-    grid_image = make_grid(tensor_grid, nrow=grid_size[1], normalize=True, padding=2)
-    grid_image = ToPILImage()(grid_image)
-    grid_image.save(filename + '.jpg', quality=300)
-    print("Grid Image saved successfully")
+    imageio.mimsave(filename + '.gif', frames, fps=10)
+    print("GIF saved successfully")
 
 def get_images_from_different_classes(dataloader, class_1_label, class_2_label):
     feature_1, feature_2 = None, None
@@ -230,7 +230,7 @@ selected_features = get_images_from_different_classes(train_dataloader, label_ma
 
 start_latent, end_latent = [get_latent_vector(feature.float().to(device)) for feature in selected_features]
 # interpolate_gif_gpr("interpolation_img_ge", start_latent, end_latent, steps=100, grid_size=(10, 10), device=device)
-interpolate_gif_gpr(model_1, "grid_banded_segmented", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10))
+interpolate_gif_gpr(model_1, "masked_banded_segmented", random_neutrophil_banded_point, random_neutrophil_seg_point, steps=100, grid_size=(10, 10))
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 adata = anndata.read_h5ad('s_data_feature_liver_lung.h5ad')
