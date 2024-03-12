@@ -291,13 +291,13 @@ plt.figure(figsize=(20, 10))
 color_for_genes = {'RUNX1T1': 'red', 'CXCR2': 'yellow', 'LEF1': 'blue',
                    'CD163': 'pink'}
 default_color = 'gray'
-"""
+
 for i, gene_idx in enumerate(variable_genes_indices):
     gene_name = gene_names[gene_idx]
     if gene_name not in color_for_genes:
 
         plt.plot(range(fold_changes.shape[0]), fold_changes[:, i], color=default_color, alpha=0.2)
-"""
+
 for i, gene_idx in enumerate(variable_genes_indices):
     gene_name = gene_names[gene_idx]
     if gene_name in color_for_genes:
