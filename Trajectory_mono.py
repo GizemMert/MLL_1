@@ -63,7 +63,7 @@ model_2.load_state_dict(torch.load(model_save_path_2, map_location=device))
 model_2.to(device)
 model_2.eval()
 
-umap_dir = 'umap_trajectory_myeloblast_monocyte'
+umap_dir = 'umap_trajectory_myeloblast_nsegmented'
 if not os.path.exists(umap_dir):
     os.makedirs(umap_dir)
 
@@ -163,7 +163,7 @@ def interpolate_gif_gpr(model, filename, latent_start, latent_end, steps=100, gr
 
     interpolated_latent_points = interpolate_gpr(latent_start, latent_end, steps=steps)
     
-    file_path = 'interpolation_mono'
+    file_path = 'interpolation_myelo_neutro'
     torch.save(interpolated_latent_points, file_path + '_latent_points.pt')
     print(f"Interpolated latent points saved to {file_path}_latent_points.pt")
 
@@ -225,7 +225,7 @@ interpolate_gif_gpr(model_1, "vae_interpolation_gpr_myelo_mono", random_myelobla
 
 #SEQUENCE DECODING and GENE EXPRESSED DETECTION
 adata = anndata.read_h5ad('s_data_feature_pancreas.h5ad')
-interpolated_points = torch.load('interpolation_mono_latent_points.pt')
+interpolated_points = torch.load('interpolation_myelo_neutro_latent_points.pt')
 
 
 model_2.eval()
@@ -288,7 +288,8 @@ print("Number of points retained after filtering:", mask.sum())
 fold_changes = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
-color_for_genes = {'RUNX1': 'red', 'CD16': 'yellow'}
+color_for_genes = {'RUNX1T1': 'red', 'CXCR2': 'yellow', 'LEF1': 'blue',
+                   'CD163': 'pink'}
 default_color = 'gray'
 """
 for i, gene_idx in enumerate(variable_genes_indices):
@@ -404,10 +405,16 @@ for cluster, genes in genes_in_clusters.items():
 
 print("Gene names for each cluster have been saved.")
 
-driving_gene_names = ["CD14", "CD16", "CD36", "CCR2", "CD64", "CCR5", "HLADR", "CX3CR1", "TREM2", "CD115", "CSF1R", "MAFB", "MAFF", "CD14",
-                      "CD11b", "CD66B", "CD15", "CSF1", "PU1", "IRF8", "KLF4", "FLI1", "CEBPA", "CEBPB", "NR4A1","JUNB", "CJUN", "CXCL12",
-                      "RUNX1", "NOTCH1", "LY6C", "CMOP", "MP", "HLADR", "PSTAT3", "ARG1", "LEF1", "CXCL4", "GATA2", "SFPI1", "LY6C2", "TRP53",
-                      "CREBBP", "EP300", "CSF2RB", "CSF1R" ,"LYZ1", "LYZ2", "LY6C1","JUN", "CSF2RA"]
+driving_gene_names = ["CEBPA", "PU1", "MPO", "ELANE", "CEBP", "LEF1", "RUNX1", "CEBPS", "CEBPY", "CEBPB", "GFI1",
+                      "CD14", "CD16", "CR1",
+                      "FMLP", "CSF3R", "CD177", "OLFM4", "TCR", "CD62L", "CD63", "IL-13", "CD49", "IL-17", "LDG", "TAN",
+                      "CEBPD", "CXCR1",
+                      "CXCL12", "CXCR4", "CXCR2", "CXCR4", "CD11b", "CD62L", "OLFM4", "CD11C", "IFN", "G-MDSC", "PAMP",
+                      "DAMP",
+                      "CXCL3", "CXCL5", "CXCL6", "CXCL7", "CXCL8", "CD54", "CXCR1", "CSF3R", "CLEC11A",
+                      "CEBPD", "PU2", "NFIL3", "MAX", "MLX", "XPB1", "ICAM1", "CD62L",
+                      "BMAL1", "CXCL2", "P38", "MK2", "HIF1A", "GCSFR", "CSFR", "FOSl1", "FOSL2", "JUNB", "BCL6",
+                      "KLF6", "IRF1"]
 driving_genes_in_clusters = {gene_part: [] for gene_part in driving_gene_names}
 
 
