@@ -1,15 +1,21 @@
-"""
+
 import torch
-from model import VariationalAutoencodermodel
+from Model_Vae_GE_2 import VAE_GE
 from torchsummary import summary
 
-model = VariationalAutoencodermodel()
+from model4 import VariationalAutoencodermodel4
+model = VariationalAutoencodermodel4(latent_dim=50)
+sample_input = torch.randn(256, 14, 14)
 
-sample_input = torch.randn(128, 256, 14, 14)
-# Print the model summary
-summary(model, input_size=sample_input.shape[1:])
+# Printing the model summary and parameters
+summary(model, input_size=sample_input.shape[0:])
+sample_input = sample_input.unsqueeze(0)
+z, _, mu, logvar = model(sample_input)
+print("Shape of z:", z.shape)
+print("Shape of mu:", mu.shape)
+print("Shape of logvar:", logvar.shape)
 
-
+"""
 import torch
 from model4 import VariationalAutoencodermodel4
 
@@ -54,7 +60,7 @@ sample_input_shape = (256, 14, 14)
 # Printing the model summary and parameters
 print_model_summary_and_params(model, sample_input_shape)
 
-"""
+
 import torch
 from torchsummary import summary
 from model4 import VariationalAutoencodermodel4
@@ -79,3 +85,4 @@ def calculate_trainable_params(model):
 # Calculate and print the total trainable parameters in both decoders
 total_trainable_params_decoders = calculate_trainable_params(model)
 print("Total trainable parameters in both decoders:", total_trainable_params_decoders)
+"""
