@@ -415,3 +415,36 @@ plt.savefig(os.path.join(umap_dir, 'umap_neutrophil_comparison_Trajectory.png'))
 plt.close()
 
 print("completed")
+
+# Calculate differences between consecutive interpolated points
+latent_diffs = np.diff(interpolated_points, axis=0)
+# Compute the norm of each difference vector (you might need to adapt this depending on your data structure)
+latent_diff_norms = np.linalg.norm(latent_diffs, axis=1)
+
+# Define a threshold for what you consider a 'significant' change
+change_threshold = 0.01 # Adjust this threshold as needed
+
+# Create a mask for points that represent significant change
+significant_change_mask = latent_diff_norms > change_threshold
+
+# Since np.diff reduces the length by 1, we need to add a True at the start to keep the first point
+significant_change_mask = np.insert(significant_change_mask, 0, True)
+
+# Filter the interpolated_points and gene_expression_profiles using the mask
+filtered_interpolated_points = interpolated_points[significant_change_mask]
+filtered_gene_expression_profiles = [gene_expression_profiles[i] for i in range(len(gene_expression_profiles)) if significant_change_mask[i]]
+
+# Stack the filtered gene expression profiles
+filtered_gen_expression = torch.stack(filtered_gene_expression_profiles).cpu().numpy()
+
+# Recalculate fold changes based on the filtered data
+mean_expression = np.mean(filtered_gen_expression, axis=0)
+fold_changes = filtered_gen_expression / (mean_expression + small_const)
+
+# Plot the new fold change graph without the stagnant regions
+plt.figure(figsize=(20, 10))
+for i, gene_idx in enumerate(variable_genes_indices):
+    gene_name = gene_names[gene_idx]
+    plt.plot(fold_changes[:, i], label=gene_name)
+
+# ... rest of your plotting code ...
