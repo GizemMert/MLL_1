@@ -285,7 +285,7 @@ mask = np.append(mask, True)
 print(mask)
 
 print("Number of points retained after filtering:", mask.sum())
-fold_changes = fold_changes[mask, :]
+fold_changes_1 = fold_changes[mask, :]
 
 plt.figure(figsize=(20, 10))
 color_for_genes = {'RUNX1T1': 'red', 'CXCR2': 'yellow', 'LEF1': 'blue',
@@ -460,10 +460,42 @@ plt.xticks([])
 plt.yticks([])
 plt.xlim(left=0, right=fold_changes.shape[0]-1)
 plt.tight_layout()
-plt.savefig(os.path.join(umap_dir, 'gene_expression_fold_change_trajectory_by_cluster.svg'))
+plt.savefig(os.path.join(umap_dir, 'before_filter_cluster.svg'))
 
 plt.close()
 print("Clusters finished")
+
+plt.figure(figsize=(20, 10))
+
+for cluster_idx in range(3):
+    gene_indices_in_cluster = np.where(y_pred == cluster_idx)[0]
+    filtered_gene_indices_in_cluster = [idx for idx in gene_indices_in_cluster if idx in variable_genes_indices]
+
+    cluster_fold_changes = fold_changes_1[:, filtered_gene_indices_in_cluster]
+
+    mean_cluster_fold_changes = np.mean(cluster_fold_changes, axis=1)
+    std_cluster_fold_changes = np.std(cluster_fold_changes, axis=1)
+
+    plt.plot(mean_cluster_fold_changes, label=f'Cluster {cluster_idx + 1}', linewidth=8)
+
+    plt.fill_between(
+        range(len(mean_cluster_fold_changes)),
+        mean_cluster_fold_changes - std_cluster_fold_changes,
+        mean_cluster_fold_changes + std_cluster_fold_changes,
+        alpha=0.2
+    )
+
+# plt.xlabel('Trajectory Points Index')
+# plt.ylabel('Fold Change')
+# plt.title('Mean Fold Change of Gene Expression Over Trajectory by Cluster')
+plt.xticks([])
+plt.yticks([])
+plt.xlim(left=0, right=fold_changes.shape[0]-1)
+plt.tight_layout()
+plt.savefig(os.path.join(umap_dir, 'filtered_cluster.svg'))
+
+plt.close()
+print("Filtered_Clusters finished")
 
 
 """
